@@ -1,11 +1,11 @@
 package com.example.plugins
 
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import kotlinx.serialization.Serializable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class User(val name: String, val age: Int)
@@ -25,7 +25,7 @@ class UserService(private val database: Database) {
     }
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
-            newSuspendedTransaction(Dispatchers.IO) { block() }
+        newSuspendedTransaction(Dispatchers.IO) { block() }
 
     suspend fun create(user: User): Int = dbQuery {
         Users.insert {
@@ -37,8 +37,8 @@ class UserService(private val database: Database) {
     suspend fun read(id: Int): User? {
         return dbQuery {
             Users.select { Users.id eq id }
-                    .map { User(it[Users.name], it[Users.age]) }
-                    .singleOrNull()
+                .map { User(it[Users.name], it[Users.age]) }
+                .singleOrNull()
         }
     }
 
