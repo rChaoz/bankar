@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class User(val name: String, val age: Int)
+
 class UserService(private val database: Database) {
     object Users : Table() {
         val id = integer("id").autoIncrement()

@@ -1,0 +1,17 @@
+POST localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "Andrew",
+  "age": 15
+}
+###
+PUT localhost:8080/users/2
+Content-Type: application/json
+
+{
+  "name": "Anderson",
+  "age": 20
+}
+###
+GET localhost:8080/users/2
