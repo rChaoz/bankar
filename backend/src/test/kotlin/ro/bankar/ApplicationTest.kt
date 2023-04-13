@@ -1,6 +1,6 @@
-package com.example
+package ro.bankar
 
-import com.example.plugins.configureRouting
+import ro.bankar.plugins.configureRouting
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
