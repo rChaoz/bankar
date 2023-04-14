@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.date
+import org.jetbrains.exposed.sql.or
 
 @Serializable
 data class SBankAccount(
@@ -41,6 +42,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var interestDate by BankAccounts.interestDate
 
     val cards by BankCard referrersOn BankCards.bankAccount
+    val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or (BankTransfers.recipient eq id) }
 
     /**
      * Returns a serializable object containg the data for this bank account.
@@ -50,10 +52,10 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
 
 internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     val iban = varchar("iban", 34).uniqueIndex()
-    val userID = reference("user_id", Users.id)
+    val userID = reference("user_id", Users)
     val type = enumeration<BankAccount.Type>("type")
-    val balance = decimal("balance", 20, 2)
-    val currency = varchar("currency", 7)
+    val balance = amount("balance")
+    val currency = currency("currency")
 
     val name = varchar("name", 30)
     val color = integer("color")

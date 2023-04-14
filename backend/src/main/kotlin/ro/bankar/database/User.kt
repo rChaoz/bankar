@@ -1,16 +1,21 @@
 package ro.bankar.database
 
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.kotlin.datetime.*
-import ro.bankar.generateSalt
-import ro.bankar.generateToken
-import ro.bankar.sha256
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
+import org.jetbrains.exposed.sql.kotlin.datetime.date
+import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.or
 import kotlin.time.Duration.Companion.days
 
 @Serializable
@@ -27,6 +32,15 @@ class SUser(
     val joinDate: LocalDate,
     val address1: String,
     val address2: String?,
+)
+
+@Serializable
+class SPublicUser(
+    val tag: String,
+    val firstName: String,
+    val middleName: String?,
+    val lastName: String,
+    val joinDate: LocalDate,
 )
 
 class User(id: EntityID<Int>) : IntEntity(id) {
@@ -76,6 +90,10 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var address2 by Users.address2
 
     val bankAccounts by BankAccount referrersOn BankAccounts.userID
+    var friends by User.via(FriendPairs.sourceUser, FriendPairs.targetUser)
+    var friendRequests by User.via(FriendRequests.sourceUserID, FriendRequests.targetUserID)
+    val sendTransferRequests by TransferRequest referrersOn TransferRequests.sourceUser
+    val receivedTransferRequests by TransferRequest referrersOn TransferRequests.targetUser
 
     /**
      * First step in authentication - verify that the password matches.
@@ -96,6 +114,11 @@ class User(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable() = SUser(email, tag, phone, disabled, firstName, middleName, lastName, joinDate, address1, address2)
 }
+
+/**
+ * Converts a list of Users to a list of serializable objects containing only the public information about the user.
+ */
+fun SizedIterable<User>.serializable() = map { SPublicUser(it.tag, it.firstName, it.middleName, it.lastName, it.joinDate) }
 
 internal object Users : IntIdTable(columnName = "user_id") {
     val email = varchar("email", 50).uniqueIndex()
@@ -118,4 +141,16 @@ internal object Users : IntIdTable(columnName = "user_id") {
 
     val about = varchar("about", 300).default("")
     val avatar = blob("avatar").nullable()
+}
+
+internal object FriendRequests : Table() {
+    val sourceUserID = reference("source_user_id", Users)
+    val targetUserID = reference("target_user_id", Users)
+    override val primaryKey = PrimaryKey(FriendPairs.sourceUser, FriendPairs.targetUser)
+}
+
+internal object FriendPairs : Table() {
+    val sourceUser = reference("source_user_id", Users)
+    val targetUser = reference("target_user_id", Users)
+    override val primaryKey = PrimaryKey(sourceUser, targetUser)
 }

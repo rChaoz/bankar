@@ -25,6 +25,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankCard>(BankCards)
 
     var bankAccount by BankAccount referencedOn BankCards.bankAccount
+
     var cardNumber by BankCards.cardNumber
     var pin by BankCards.pin
     var expiration by BankCards.expiration
@@ -32,6 +33,8 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     var limit by BankCards.limit
     var limitCurrent by BankCards.limitCurrent
     var limitReset by BankCards.limitReset
+
+    val transactions by CardTransaction referrersOn CardTransactions.cardID
 
     /**
      * Returns a serializable object containg the data for this bank account.
@@ -60,13 +63,13 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     )
 }
 
-object BankCards : IntIdTable(columnName = "card_id") {
-    val bankAccount = reference("bank_account_id", BankAccounts.id)
+internal object BankCards : IntIdTable(columnName = "card_id") {
+    val bankAccount = reference("bank_account_id", BankAccounts)
     val cardNumber = decimal("card_number", 16, 0).uniqueIndex()
     val pin = decimal("pin", 4, 0)
     val expiration = date("expiration")
     val cvv = decimal("cvv", 3, 0)
-    val limit = decimal("limit", 20, 2)
-    val limitCurrent = decimal("limit_current", 20, 2)
+    val limit = amount("limit")
+    val limitCurrent = amount("limit_current")
     val limitReset = date("limit_reset")
 }
