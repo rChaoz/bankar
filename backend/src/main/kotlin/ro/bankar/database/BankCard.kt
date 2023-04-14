@@ -34,7 +34,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     var limitCurrent by BankCards.limitCurrent
     var limitReset by BankCards.limitReset
 
-    val transactions by CardTransaction referrersOn CardTransactions.cardID
+    val transactions by CardTransaction referrersOn CardTransactions.card
 
     /**
      * Returns a serializable object containg the data for this bank account.

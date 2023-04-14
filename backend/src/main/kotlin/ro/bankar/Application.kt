@@ -4,13 +4,15 @@ import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
-import ro.bankar.database.BankAccounts
-import ro.bankar.database.BankCards
-import ro.bankar.database.Users
+import ro.bankar.database.*
 import ro.bankar.plugins.*
 
 fun main(args: Array<String>) {
-    fun forTables(block: (Table) -> Unit) = listOf(Users, BankAccounts, BankCards).forEach(block)
+    fun forTables(block: (Table) -> Unit) = listOf(
+        Users, TransferRequests, FriendRequests, FriendPairs,
+        BankAccounts, BankTransfers, BankCards, CardTransactions,
+        AssetAccounts,
+    ).forEach(block)
 
     if (args.size == 1 && args[0] == "reset") {
         Database.connect()

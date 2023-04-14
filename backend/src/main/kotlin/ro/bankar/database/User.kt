@@ -90,8 +90,11 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var address2 by Users.address2
 
     val bankAccounts by BankAccount referrersOn BankAccounts.userID
+    val assetAccounts by AssetAccount referrersOn AssetAccounts.user
+
     var friends by User.via(FriendPairs.sourceUser, FriendPairs.targetUser)
-    var friendRequests by User.via(FriendRequests.sourceUserID, FriendRequests.targetUserID)
+    var friendRequests by User.via(FriendRequests.sourceUser, FriendRequests.targetUser)
+
     val sendTransferRequests by TransferRequest referrersOn TransferRequests.sourceUser
     val receivedTransferRequests by TransferRequest referrersOn TransferRequests.targetUser
 
@@ -144,8 +147,8 @@ internal object Users : IntIdTable(columnName = "user_id") {
 }
 
 internal object FriendRequests : Table() {
-    val sourceUserID = reference("source_user_id", Users)
-    val targetUserID = reference("target_user_id", Users)
+    val sourceUser = reference("source_user_id", Users)
+    val targetUser = reference("target_user_id", Users)
     override val primaryKey = PrimaryKey(FriendPairs.sourceUser, FriendPairs.targetUser)
 }
 
