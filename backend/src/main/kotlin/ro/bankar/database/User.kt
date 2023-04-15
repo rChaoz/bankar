@@ -11,6 +11,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
@@ -24,7 +25,6 @@ class SUser(
     val tag: String,
     val phone: String,
 
-    val disabled: Boolean,
     val firstName: String,
     val middleName: String?,
     val lastName: String,
@@ -33,6 +33,56 @@ class SUser(
     val address1: String,
     val address2: String?,
 )
+
+/**
+ * Data sent by the client when signing up.
+ */
+@Serializable
+data class SSignupData (
+    val email: String,
+    val tag: String,
+    val phone: String,
+    val password: String,
+
+    val firstName: String,
+    val middleName: String? = null,
+    val lastName: String,
+
+    val address1: String,
+    val address2: String? = null,
+) {
+    companion object {
+        // E-mail regex
+        private val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
+        // Phone number regex
+        private val phoneRegex = Regex("""^\d{10,20}$""")
+        // Tag regex
+        private val tagRegex = Regex("""^[a-z0-9._-]{4,25}$""")
+        // Regex for password: at least 8 characters, at least one uppercase letter, at least one lowercase letter, at least one digit, at least one special character
+        private val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$""")
+        // Regex for a valid name
+        private val nameRegex = Regex("""^[a-zA-Z- ]{2,20}$""")
+    }
+
+    /**
+     * Validate all fields. In case of invalid field, returns the name of the field, as a String.
+     */
+    fun validate() = when {
+        // Check login information
+        !emailRegex.matches(email) -> "email"
+        !phoneRegex.matches(phone) -> "phone"
+        !tagRegex.matches(tag) -> "tag"
+        !passwordRegex.matches(password) -> "password"
+        // Check name
+        !nameRegex.matches(firstName) -> "firstName"
+        middleName != null && !nameRegex.matches(middleName) -> "middleName"
+        !nameRegex.matches(lastName) -> "lastName"
+        // Check address
+        address1.length < 5 -> "address1"
+        address2 != null && address2.length < 5 -> "address2"
+        else -> null
+    }
+}
 
 @Serializable
 class SPublicUser(
@@ -46,29 +96,34 @@ class SPublicUser(
 class User(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<User>(Users) {
         /**
-         * Creates a new user from a serialized user object, and a given password.
+         * Creates a new user from a serialized user signup object
          */
-        fun createUser(sUser: SUser, password: String) = generateSalt().let { salt ->
+        fun createUser(userData: SSignupData) = generateSalt().let { salt ->
             User.new {
-                email = sUser.email
-                tag = sUser.tag
-                phone = sUser.phone
+                email = userData.email
+                tag = userData.tag
+                phone = userData.phone
 
-                passwordHash = password.sha256(salt)
+                passwordHash = userData.password.sha256(salt)
                 passwordSalt = salt
 
-                firstName = sUser.firstName
-                middleName = sUser.middleName
-                lastName = sUser.lastName
-                address1 = sUser.address1
-                address2 = sUser.address2
+                firstName = userData.firstName
+                middleName = userData.middleName
+                lastName = userData.lastName
+                address1 = userData.address1
+                address2 = userData.address2
             }
         }
 
         /**
          * Get a user by tag, e-mail or phone
          */
-        fun findByAnything(id: String) = find { (Users.email eq id) or (Users.tag eq id) or (Users.phone eq id) }
+        fun findByAnything(id: String) = find { (Users.email eq id) or (Users.tag eq id) or (Users.phone eq id) }.firstOrNull()
+
+        /**
+         * Get a user by session token
+         */
+        fun findBySessionToken(token: String) = find { (Users.sessionToken eq token) and (Users.sessionTokenExpiration greater CurrentDateTime) }.firstOrNull()
     }
 
     var email by Users.email
@@ -107,15 +162,22 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Second step in authentication - generate session token for the user
      */
-    fun newSessionToken() = generateToken().also {
+    fun createSessionToken() = generateToken().also {
         sessionToken = it
+        sessionTokenExpiration = (Clock.System.now() + 90.days).toLocalDateTime(TimeZone.UTC)
+    }
+
+    /**
+     * When any action is performed, the session token expiration is updated.
+     */
+    fun updateTokenExpiration() {
         sessionTokenExpiration = (Clock.System.now() + 90.days).toLocalDateTime(TimeZone.UTC)
     }
 
     /**
      * Returns a serializable user
      */
-    fun serializable() = SUser(email, tag, phone, disabled, firstName, middleName, lastName, joinDate, address1, address2)
+    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, joinDate, address1, address2)
 }
 
 /**
@@ -125,7 +187,7 @@ fun SizedIterable<User>.serializable() = map { SPublicUser(it.tag, it.firstName,
 
 internal object Users : IntIdTable(columnName = "user_id") {
     val email = varchar("email", 50).uniqueIndex()
-    val tag = varchar("tag", 30).uniqueIndex()
+    val tag = varchar("tag", 25).uniqueIndex()
     val phone = varchar("phone", 15).uniqueIndex()
     val disabled = bool("disabled").default(false)
 

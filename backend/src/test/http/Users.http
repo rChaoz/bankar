@@ -1,0 +1,150 @@
+// Signup
+### Invalid signup request (invalid content type)
+POST localhost:8080/signup
+Content-Type: text/plain
+
+Plain text here
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 415, "Response status is not 415"))
+%}
+
+### Invalid signup request (missing address)
+POST localhost:8080/signup
+Content-Type: application/json
+
+{
+  "email": "example@gmail.com",
+  "tag": "username",
+  "phone": "1234567890",
+  "password": "password",
+  "firstName": "John",
+  "middleName": "Big",
+  "lastName": "Doe"
+}
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 400, "Response status is not 400"))
+%}
+
+### Invalid signup request (invalid email)
+POST localhost:8080/signup
+Content-Type: application/json
+
+{
+  "email": "some_invalid@email",
+  "tag": "username",
+  "phone": "1234567890",
+  "password": "password",
+  "firstName": "John",
+  "middleName": "Big",
+  "lastName": "Doe",
+  "address1": "123 Main St"
+}
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 400, "Response status is not 400"))
+%}
+
+### Correct signup request
+POST localhost:8080/signup
+Content-Type: application/json
+
+{
+  "email": "example@gmail.com",
+  "tag": "username",
+  "phone": "1234567890",
+  "password": "pAssw0rd!",
+  "firstName": "John",
+  "middleName": "Big",
+  "lastName": "Doe",
+  "address1": "123 Main St"
+}
+
+> {%
+    client.test("Request executed successfully", () => {
+        client.assert(response.status === 200, "Response status is not 200")
+        client.global.set("loginSession", response.headers["LoginSession"])
+    })
+%}
+
+
+### Invalid initial login request (invalid content type)
+POST localhost:8080/login/initial
+Content-Type: text/plain
+
+Plain text
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 415, "Response status is not 415"))
+%}
+
+### Invalid initial login request (incorrect credentials)
+POST localhost:8080/login/initial
+Content-Type: application/json
+
+{
+  "id": "example@gmail.com",
+  "password": "password!"
+}
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 401, "Response status is not 401"))
+%}
+
+### Correct initial login request
+POST localhost:8080/login/initial
+Content-Type: application/json
+
+{
+  "id": "example@gmail.com",
+  "password": "pAssw0rd!"
+}
+
+> {%
+    client.test("Request executed successfully", () => {
+        client.assert(response.status === 200, "Response status is not 200")
+        client.global.set("loginSession", response.headers.valueOf("LoginSession"))
+    })
+%}
+
+### Invalid final login request (invalid session)
+POST localhost:8080/login/final
+Content-Type: application/json
+
+{
+  "smsCode": "0000"
+}
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 401, "Response status is not 401"))
+%}
+
+### Invalid final login request (invalid sms code)
+POST localhost:8080/login/final
+Content-Type: application/json
+LoginSession: {{loginSession}}
+
+{
+  "smsCode": "0000"
+}
+
+> {%
+    client.test("Request executed successfully", () => client.assert(response.status === 401, "Response status is not 401"))
+%}
+
+### Correct final login request
+POST localhost:8080/login/final
+Content-Type: application/json
+LoginSession: {{loginSession}}
+
+{
+  "smsCode": "1234"
+}
+
+> {%
+    client.test("Request executed successfully", () => {
+        client.assert(response.status === 200, "Response status is not 200")
+        client.global.set("authToken", response.headers["Authorization"])
+    })
+%}
