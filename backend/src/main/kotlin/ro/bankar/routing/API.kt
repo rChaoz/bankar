@@ -8,8 +8,8 @@ import ro.bankar.api.SmsService
 
 fun Routing.configureAPIs() {
     // Configure SMS service
-    SmsService.configure(System.getenv("SENDSMS_USER"), System.getenv("SENDSMS_KEY"), System.getenv("REPORT_URL"))
     get("sms_report") {
+        // Notify waiting request (that sent the SMS)
         val messageID = call.request.queryParameters["message_id"]
         val status = call.request.queryParameters["status"]?.toIntOrNull()
         if (messageID == null || status == null || !SmsService.onSmsReport(messageID, status)) {

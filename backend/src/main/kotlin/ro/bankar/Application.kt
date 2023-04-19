@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.freemarker.*
 import io.ktor.server.plugins.autohead.*
 import org.jetbrains.exposed.sql.Database
+import ro.bankar.api.SmsService
 import ro.bankar.plugins.*
 
 fun main(args: Array<String>) {
@@ -20,6 +21,7 @@ var DEV_MODE = false
 @Suppress("unused")
 fun Application.module() {
     DEV_MODE = environment.developmentMode
+    SmsService.configure(System.getenv("SENDSMS_USER"), System.getenv("SENDSMS_KEY"), System.getenv("REPORT_URL"))
     configureSerialization()
     configureSessions()
     configureAuthentication()

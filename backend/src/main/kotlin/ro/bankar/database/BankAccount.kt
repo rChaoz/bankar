@@ -44,7 +44,7 @@ data class SNewAccount(
     val currency: String,
 ) {
     fun validate() = when {
-        name.length < 2 || name.length > 30 -> "name"
+        name.length !in 2..30 -> "name"
         Currencies.values().none { it.code == currency } -> "currency"
         else -> null
     }
@@ -83,7 +83,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or (BankTransfers.recipient eq id) }
 
     /**
-     * Returns a serializable object containg the data for this bank account
+     * Returns a serializable object containing the data for this bank account
      */
     fun serializable() = SBankAccountData(
         cards.map(BankCard::serializable),
@@ -101,10 +101,10 @@ fun SizedIterable<BankAccount>.serializable() = map {
 
 internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     val iban = varchar("iban", 34).uniqueIndex().clientDefault {
-        val accountNumber = generateNumeric(10)
-        val bankCode = "192153"
+        val accountNumber = generateNumeric(16)
+        val bankCode = "RBNK"
         val countryCode = "RO"
-        val checkDigits = 98 - ("$bankCode$accountNumber${countryCode.toInt(36)}00".toBigInteger() % 97.toBigInteger()).toInt()
+        val checkDigits = 98 - ("${bankCode.toInt(36)}$accountNumber${countryCode.toInt(36)}00".toBigInteger() % 97.toBigInteger()).toInt()
         "$countryCode$checkDigits$bankCode$accountNumber"
     }
     val userID = reference("user_id", Users)
