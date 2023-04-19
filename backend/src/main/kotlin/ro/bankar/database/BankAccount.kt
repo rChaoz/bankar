@@ -10,7 +10,10 @@ import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.or
+import ro.bankar.amount
 import ro.bankar.banking.Currencies
+import ro.bankar.currency
+import ro.bankar.generateNumeric
 
 @Serializable
 data class SBankAccount(
@@ -98,7 +101,7 @@ fun SizedIterable<BankAccount>.serializable() = map {
 
 internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     val iban = varchar("iban", 34).uniqueIndex().clientDefault {
-        val accountNumber = generateAccountNumber()
+        val accountNumber = generateNumeric(10)
         val bankCode = "192153"
         val countryCode = "RO"
         val checkDigits = 98 - ("$bankCode$accountNumber${countryCode.toInt(36)}00".toBigInteger() % 97.toBigInteger()).toInt()

@@ -5,8 +5,7 @@ import freemarker.template.TemplateExceptionHandler
 import freemarker.template.Version
 import java.util.*
 
-
-object Email {
+object EmailService {
     private val freemakerConfig = Configuration(Version(2, 3, 20)).apply {
         setClassForTemplateLoading(object {}.javaClass, "/templates")
         defaultEncoding = "UTF-8"
@@ -14,5 +13,5 @@ object Email {
         templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
     }
 
-    // TODO Add emails to send here
+    // TODO
 }

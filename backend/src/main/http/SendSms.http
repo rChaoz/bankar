@@ -1,0 +1,44 @@
+### Authorize Application Request
+GET https://api.sendsms.ro/json?
+    action=user_authorize_application&
+    application_name=BanKAR
+
+> {%
+    // noinspection JSUnresolvedReference
+    client.global.set("request_key", response.body.details.request_key)
+%}
+
+### Allow Token Request
+GET https://api.sendsms.ro/json?action=user_allow_token_request&username={{username}}&password={{password}}&request_key={{request_key}}
+
+### Get API Key
+GET https://api.sendsms.ro/json?action=user_get_api_key&request_key={{request_key}}
+
+### Send SMS to incorrect number
+GET https://api.sendsms.ro/json?
+    action=message_send&
+    username={{username}}&
+    password={{api_key}}&
+    to=00{{phone_number}}&
+    from=BanKAR&
+    text=Hey! Your BanKAR code is 123456. Do not share this with anyone!&
+    report_mask=19&
+    report_url={{report_url}}
+
+### Send SMS correctly
+GET https://api.sendsms.ro/json?
+    action=message_send&
+    username={{username}}&
+    password={{api_key}}&
+    to={{phone_number}}&
+    from=BanKAR&
+    text=Hey! Your BanKAR code is 123456. Do not share this with anyone!&
+    report_mask=19&
+    report_url={{report_url}}
+
+### Test
+GET http://localhost:8080/test_sms
+###
+GET http://localhost:8080/send_sms
+### Send SMS report
+GET http://localhost:8080/sms_report?status=2&message_id=123456789

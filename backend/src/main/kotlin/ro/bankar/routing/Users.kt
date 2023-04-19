@@ -9,10 +9,15 @@ import io.ktor.server.sessions.*
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import ro.bankar.DEV_MODE
+import ro.bankar.api.SmsService
 import ro.bankar.database.SSignupData
 import ro.bankar.database.User
+import ro.bankar.generateNumeric
 import ro.bankar.plugins.LoginSession
 import kotlin.time.Duration.Companion.minutes
+
+private fun generateCode() = if (DEV_MODE) "123456" else generateNumeric(6)
 
 fun Routing.configureUsers() {
     // Users
@@ -33,8 +38,9 @@ fun Routing.configureUsers() {
                 return@post
             }
             // Save user to session
-            // TODO Call API to send SMS message
-            call.sessions.set(LoginSession(user.id.value, "1234", Clock.System.now() + 30.minutes))
+            val code = generateCode()
+            SmsService.sendCode(user.phone, code)
+            call.sessions.set(LoginSession(user.id.value, code, Clock.System.now() + 30.minutes))
             call.respond(HttpStatusCode.OK)
             // Client should call /login/final with the SMS code
         }
@@ -95,8 +101,10 @@ fun Routing.configureUsers() {
             return@post
         }
 
-        // Save login session
-        call.sessions.set(LoginSession(user.id.value, "1234", Clock.System.now() + 30.minutes))
+        // Save login session (first login step)
+        val code = generateCode()
+        SmsService.sendCode(user.phone, code)
+        call.sessions.set(LoginSession(user.id.value, code, Clock.System.now() + 30.minutes))
         call.respond(HttpStatusCode.OK)
         // Client should call /login/final with the SMS code
     }

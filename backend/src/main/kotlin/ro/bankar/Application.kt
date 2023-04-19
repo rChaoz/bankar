@@ -15,8 +15,11 @@ fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
 }
 
+var DEV_MODE = false
+
 @Suppress("unused")
 fun Application.module() {
+    DEV_MODE = environment.developmentMode
     configureSerialization()
     configureSessions()
     configureAuthentication()

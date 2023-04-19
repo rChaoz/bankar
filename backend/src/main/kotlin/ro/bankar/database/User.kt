@@ -17,6 +17,9 @@ import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
+import ro.bankar.generateSalt
+import ro.bankar.generateToken
+import ro.bankar.sha256
 import kotlin.time.Duration.Companion.days
 
 @Serializable
@@ -55,7 +58,7 @@ data class SSignupData (
         // E-mail regex
         private val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
         // Phone number regex
-        private val phoneRegex = Regex("""^\d{10,20}$""")
+        private val phoneRegex = Regex("""^\+\d{11}$""")
         // Tag regex
         private val tagRegex = Regex("""^[a-z0-9._-]{4,25}$""")
         // Regex for password: at least 8 characters, at least one uppercase letter, at least one lowercase letter, at least one digit, at least one special character

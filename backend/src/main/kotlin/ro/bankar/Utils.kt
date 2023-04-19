@@ -1,4 +1,4 @@
-package ro.bankar.database
+package ro.bankar
 
 import org.h2.security.SHA256
 import org.jetbrains.exposed.sql.Table
@@ -22,10 +22,7 @@ fun String.sha256(salt: ByteArray): ByteArray = SHA256.getHashWithSalt(this.toBy
  */
 fun generateToken() = buildString(20) { repeat(20) { append(CHARS[RANDOM.nextInt(CHARS.size)]) } }
 
-/**
- * Generates a 10-digit account number
- */
-fun generateAccountNumber() = buildString(10) { repeat(10) { append(RANDOM.nextInt(10)) } }
+fun generateNumeric(numDigits: Int) = buildString(numDigits) { repeat(numDigits) { append(RANDOM.nextInt(10)) } }
 
 /**
  * Column to store currency amount. Equivalent to `decimal(name, 20, 2)`.
