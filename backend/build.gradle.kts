@@ -43,6 +43,8 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposed_version")
     implementation("com.h2database:h2:$h2_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
+    implementation("net.axay:simplekotlinmail-core:1.4.0")
+    implementation("io.ktor:ktor-server-freemarker-jvm:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.2.4")

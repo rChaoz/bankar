@@ -6,12 +6,15 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
 @Serializable
 data class SCardTransaction(
     val reference: Long,
+    val cardID: Int,
+    val cardLastFour: String,
     val amount: Double,
     val currency: String,
     val dateTime: LocalDateTime,
@@ -28,8 +31,10 @@ class CardTransaction(id: EntityID<Int>) : IntEntity(id) {
     var dateTime by CardTransactions.dateTime
     var details by CardTransactions.details
 
-    fun serializable() = SCardTransaction(reference, amount.toDouble(), currency, dateTime, details)
+    fun serializable() = SCardTransaction(reference, card.id.value, card.cardNumber.toString().takeLast(4), amount.toDouble(), currency, dateTime, details)
 }
+
+fun SizedIterable<CardTransaction>.serializable() = map(CardTransaction::serializable)
 
 internal object CardTransactions : IntIdTable(columnName = "transaction_id") {
     val reference = long("reference_id").uniqueIndex()

@@ -1,0 +1,39 @@
+### Get all bank accounts
+GET localhost:8080/accounts
+Authorization: Bearer {{auth-token}}
+
+### Create new debit account (invalid type)
+POST localhost:8080/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth-token}}
+
+{
+  "type": "debit",
+  "name": "New Account",
+  "currency": "EUR",
+  "color": 0
+}
+
+### Create new debit account (invalid currency)
+POST localhost:8080/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth-token}}
+
+{
+  "type": "DEBIT",
+  "name": "New Account",
+  "currency": "HEH",
+  "color": 0
+}
+
+### Create new debit account (valid)
+POST localhost:8080/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth-token}}
+
+{
+  "type": "DEBIT",
+  "name": "New Account",
+  "currency": "RON",
+  "color": 0
+}

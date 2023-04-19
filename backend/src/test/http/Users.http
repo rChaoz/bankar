@@ -145,6 +145,6 @@ LoginSession: {{loginSession}}
 > {%
     client.test("Request executed successfully", () => {
         client.assert(response.status === 200, "Response status is not 200")
-        client.global.set("authToken", response.headers["Authorization"])
+        client.global.set("auth-token", response.headers["Authorization"])
     })
 %}

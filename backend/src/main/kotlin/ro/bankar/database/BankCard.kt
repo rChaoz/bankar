@@ -6,10 +6,12 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 
 @Serializable
 data class SBankCard(
+    val id: Int,
     val number: String?,
     val lastFour: String,
     val pin: String?,
@@ -19,10 +21,13 @@ data class SBankCard(
     val limit: Double,
     val limitCurrent: Double,
     val limitReset: LocalDate,
+    val transaction: List<SCardTransaction>,
 )
 
 class BankCard(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<BankCard>(BankCards)
+    companion object : IntEntityClass<BankCard>(BankCards) {
+        fun find(id: Int, accountID: Int)  = find { (BankCards.id eq id) and (BankCards.bankAccount eq accountID) }.firstOrNull()
+    }
 
     var bankAccount by BankAccount referencedOn BankCards.bankAccount
 
@@ -41,6 +46,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
      * @param includeSensitive Whether to include sensitive information, such as card number, PIN, expiration date or CVV
      */
     fun serializable(includeSensitive: Boolean = false) = if (includeSensitive) SBankCard(
+        id.value,
         cardNumber.toString(),
         cardNumber.toString().takeLast(4),
         pin.toString(),
@@ -49,8 +55,10 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         cvv.toString(),
         limit.toDouble(),
         limitCurrent.toDouble(),
-        limitReset
+        limitReset,
+        transactions.serializable(),
     ) else SBankCard(
+        id.value,
         null,
         cardNumber.toString().takeLast(4),
         null,
@@ -59,7 +67,8 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         null,
         limit.toDouble(),
         limitCurrent.toDouble(),
-        limitReset
+        limitReset,
+        transactions.serializable(),
     )
 }
 

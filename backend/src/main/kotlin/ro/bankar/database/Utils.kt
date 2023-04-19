@@ -23,6 +23,11 @@ fun String.sha256(salt: ByteArray): ByteArray = SHA256.getHashWithSalt(this.toBy
 fun generateToken() = buildString(20) { repeat(20) { append(CHARS[RANDOM.nextInt(CHARS.size)]) } }
 
 /**
+ * Generates a 10-digit account number
+ */
+fun generateAccountNumber() = buildString(10) { repeat(10) { append(RANDOM.nextInt(10)) } }
+
+/**
  * Column to store currency amount. Equivalent to `decimal(name, 20, 2)`.
  */
 fun Table.amount(name: String) = decimal(name, 20, 2)

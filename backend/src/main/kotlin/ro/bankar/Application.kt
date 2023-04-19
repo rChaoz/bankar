@@ -1,21 +1,16 @@
 package ro.bankar
 
+import freemarker.cache.ClassTemplateLoader
 import io.ktor.server.application.*
+import io.ktor.server.freemarker.*
+import io.ktor.server.plugins.autohead.*
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
-import ro.bankar.plugins.configureSessions
 import ro.bankar.plugins.*
 
 fun main(args: Array<String>) {
-
-    if (args.size == 1 && args[0] == "reset") {
-        Database.connect()
-        Database.tables.reversed().forEach { transaction { SchemaUtils.drop(it) } }
-    }
-    if (args.size == 1 && (args[0] == "init" || args[0] == "reset")) {
-        Database.connect()
-        Database.tables.forEach { transaction { SchemaUtils.create(it) } }
+    if (args.size == 1) {
+        if (args[0] == "init") Database.init()
+        else if (args[0] == "reset") Database.reset()
     }
     io.ktor.server.netty.EngineMain.main(args)
 }
@@ -25,7 +20,11 @@ fun Application.module() {
     configureSerialization()
     configureSessions()
     configureAuthentication()
-    configureDatabase()
+    Database.connect()
     configureSockets()
+    install(AutoHeadResponse)
+    install(FreeMarker) {
+        templateLoader = ClassTemplateLoader(this::class.java.classLoader, "templates")
+    }
     configureRouting()
 }
