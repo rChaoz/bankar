@@ -1,6 +1,5 @@
-// Signup
 ### Invalid signup request (invalid content type)
-POST localhost:8080/signup
+POST {{host}}/signup
 Content-Type: text/plain
 
 Plain text here
@@ -10,13 +9,13 @@ Plain text here
 %}
 
 ### Invalid signup request (missing address)
-POST localhost:8080/signup
+POST {{host}}/signup
 Content-Type: application/json
 
 {
   "email": "example@gmail.com",
   "tag": "username",
-  "phone": "1234567890",
+  "phone": "+40123456789",
   "password": "password",
   "firstName": "John",
   "middleName": "Big",
@@ -28,13 +27,13 @@ Content-Type: application/json
 %}
 
 ### Invalid signup request (invalid email)
-POST localhost:8080/signup
+POST {{host}}/signup
 Content-Type: application/json
 
 {
   "email": "some_invalid@email",
   "tag": "username",
-  "phone": "1234567890",
+  "phone": "+40123456789",
   "password": "password",
   "firstName": "John",
   "middleName": "Big",
@@ -47,13 +46,13 @@ Content-Type: application/json
 %}
 
 ### Correct signup request
-POST localhost:8080/signup
+POST {{host}}/signup
 Content-Type: application/json
 
 {
   "email": "example@gmail.com",
   "tag": "username",
-  "phone": "1234567890",
+  "phone": "+40123456789",
   "password": "pAssw0rd!",
   "firstName": "John",
   "middleName": "Big",
@@ -70,7 +69,7 @@ Content-Type: application/json
 
 
 ### Invalid initial login request (invalid content type)
-POST localhost:8080/login/initial
+POST {{host}}/login/initial
 Content-Type: text/plain
 
 Plain text
@@ -80,7 +79,7 @@ Plain text
 %}
 
 ### Invalid initial login request (incorrect credentials)
-POST localhost:8080/login/initial
+POST {{host}}/login/initial
 Content-Type: application/json
 
 {
@@ -93,7 +92,7 @@ Content-Type: application/json
 %}
 
 ### Correct initial login request
-POST localhost:8080/login/initial
+POST {{host}}/login/initial
 Content-Type: application/json
 
 {
@@ -109,7 +108,7 @@ Content-Type: application/json
 %}
 
 ### Invalid final login request (invalid session)
-POST localhost:8080/login/final
+POST {{host}}/login/final
 Content-Type: application/json
 
 {
@@ -121,7 +120,7 @@ Content-Type: application/json
 %}
 
 ### Invalid final login request (invalid sms code)
-POST localhost:8080/login/final
+POST {{host}}/login/final
 Content-Type: application/json
 LoginSession: {{loginSession}}
 
@@ -134,12 +133,12 @@ LoginSession: {{loginSession}}
 %}
 
 ### Correct final login request
-POST localhost:8080/login/final
+POST {{host}}/login/final
 Content-Type: application/json
 LoginSession: {{loginSession}}
 
 {
-  "smsCode": "1234"
+  "smsCode": "123456"
 }
 
 > {%

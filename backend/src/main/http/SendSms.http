@@ -35,10 +35,3 @@ GET https://api.sendsms.ro/json?
     text=Hey! Your BanKAR code is 123456. Do not share this with anyone!&
     report_mask=19&
     report_url={{report_url}}
-
-### Test
-GET http://localhost:8080/test_sms
-###
-GET http://localhost:8080/send_sms
-### Send SMS report
-GET http://localhost:8080/sms_report?status=2&message_id=123456789

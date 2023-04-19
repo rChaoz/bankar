@@ -1,11 +1,11 @@
 ### Get all bank accounts
-GET localhost:8080/accounts
-Authorization: Bearer {{auth-token}}
+GET {{host}}/accounts
+Authorization: Bearer {{auth_token}}
 
 ### Create new debit account (invalid type)
-POST localhost:8080/accounts/new
+POST {{host}}/accounts/new
 Content-Type: application/json
-Authorization: Bearer {{auth-token}}
+Authorization: Bearer {{auth_token}}
 
 {
   "type": "debit",
@@ -15,9 +15,9 @@ Authorization: Bearer {{auth-token}}
 }
 
 ### Create new debit account (invalid currency)
-POST localhost:8080/accounts/new
+POST {{host}}/accounts/new
 Content-Type: application/json
-Authorization: Bearer {{auth-token}}
+Authorization: Bearer {{auth_token}}
 
 {
   "type": "DEBIT",
@@ -27,9 +27,9 @@ Authorization: Bearer {{auth-token}}
 }
 
 ### Create new debit account (valid)
-POST localhost:8080/accounts/new
+POST {{host}}/accounts/new
 Content-Type: application/json
-Authorization: Bearer {{auth-token}}
+Authorization: Bearer {{auth_token}}
 
 {
   "type": "DEBIT",
@@ -37,3 +37,20 @@ Authorization: Bearer {{auth-token}}
   "currency": "RON",
   "color": 0
 }
+
+### Get account information
+GET {{host}}/accounts/1
+Authorization: Bearer {{auth_token}}
+
+### Create new card for account
+POST {{host}}/accounts/1/new
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "New Card"
+}
+
+### Get card information
+GET {{host}}/accounts/1/1
+Authorization: Bearer {{auth_token}}

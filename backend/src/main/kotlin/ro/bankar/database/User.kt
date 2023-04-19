@@ -20,6 +20,7 @@ import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.sha256
+import java.lang.RuntimeException
 import kotlin.time.Duration.Companion.days
 
 @Serializable
@@ -117,6 +118,19 @@ class User(id: EntityID<Int>) : IntEntity(id) {
                 address2 = userData.address2
             }
         }
+
+        /**
+         * Checks if user with e-mail, phone or number already exists
+         */
+        fun checkRegistered(data: SSignupData) =
+            find { (Users.phone eq data.phone) or (Users.tag eq data.tag) or (Users.email eq data.email) }.firstOrNull()?.let {
+                when {
+                    it.phone == data.phone -> "phone"
+                    it.tag == data.tag -> "tag"
+                    it.email == data.email -> "email"
+                    else -> throw RuntimeException("impossible")
+                }
+            }
 
         /**
          * Get a user by tag, e-mail or phone
