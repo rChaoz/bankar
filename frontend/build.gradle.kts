@@ -1,18 +1,7 @@
-group = "ro.bankar"
-version = "1.0-SNAPSHOT"
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    }
-}
-
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    kotlin("multiplatform") apply false
-    kotlin("android") apply false
-    id("com.android.application") apply false
-    id("com.android.library") apply false
-    id("org.jetbrains.compose") apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.com.android.application) apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.org.jetbrains.kotlin.android) apply false
 }
