@@ -38,6 +38,7 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
     implementation("io.ktor:ktor-server-sessions-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-freemarker-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-hsts:$ktor_version")
     implementation("io.ktor:ktor-client-cio-jvm:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation-jvm:$ktor_version")
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
