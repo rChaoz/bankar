@@ -40,6 +40,7 @@ android {
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.4"
+
     }
     packaging {
         resources {
@@ -51,6 +52,7 @@ android {
 dependencies {
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
@@ -59,6 +61,8 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.io.ktor.client)
+    implementation(libs.io.ktor.client.okhttp)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
