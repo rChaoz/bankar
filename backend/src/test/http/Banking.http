@@ -1,0 +1,56 @@
+### Get all bank accounts
+GET {{host}}/accounts
+Authorization: Bearer {{auth_token}}
+
+### Create new debit account (invalid type)
+POST {{host}}/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "type": "debit",
+  "name": "New Account",
+  "currency": "EUR",
+  "color": 0
+}
+
+### Create new debit account (invalid currency)
+POST {{host}}/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "type": "DEBIT",
+  "name": "New Account",
+  "currency": "HEH",
+  "color": 0
+}
+
+### Create new debit account (valid)
+POST {{host}}/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "type": "DEBIT",
+  "name": "New Account",
+  "currency": "RON",
+  "color": 0
+}
+
+### Get account information
+GET {{host}}/accounts/1
+Authorization: Bearer {{auth_token}}
+
+### Create new card for account
+POST {{host}}/accounts/1/new
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "New Card"
+}
+
+### Get card information
+GET {{host}}/accounts/1/1
+Authorization: Bearer {{auth_token}}
