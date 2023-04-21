@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -182,7 +185,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 label = {
                     Text(text = "Phone, e-mail or tag")
                 },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
             )
 
             var showPassword by remember { mutableStateOf(false) }
@@ -208,6 +211,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 label = {
                     Text(text = "Password")
                 },
+                keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
                 keyboardActions = KeyboardActions(onDone = { model.login(onStepComplete, focusManager) })
             )
             Row(
@@ -235,6 +239,12 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
 private fun FinalLoginStep(onGoBack: () -> Unit) {
     var code by remember { mutableStateOf("") }
     BackHandler(onBack = onGoBack)
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        delay(500)
+        focusRequester.requestFocus()
+    }
 
     Column(
         modifier = Modifier.padding(25.dp),
@@ -244,7 +254,9 @@ private fun FinalLoginStep(onGoBack: () -> Unit) {
         TextField(
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
             leadingIcon = { Icon(Icons.Default.Lock, "Account ID") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             value = code,
