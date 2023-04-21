@@ -1,9 +1,11 @@
 package ro.bankar.app.ui.theme
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 
@@ -82,8 +84,43 @@ fun AppTheme(
         darkColors
     }
 
+    @Suppress("AnimateAsStateLabel")
+    val animatedColors = with(colors) {
+        ColorScheme(
+            animateColorAsState(primary).value,
+            animateColorAsState(onPrimary).value,
+            animateColorAsState(primaryContainer).value,
+            animateColorAsState(onPrimaryContainer).value,
+            animateColorAsState(inversePrimary).value,
+            animateColorAsState(secondary).value,
+            animateColorAsState(onSecondary).value,
+            animateColorAsState(secondaryContainer).value,
+            animateColorAsState(onSecondaryContainer).value,
+            animateColorAsState(tertiary).value,
+            animateColorAsState(onTertiary).value,
+            animateColorAsState(tertiaryContainer).value,
+            animateColorAsState(onTertiaryContainer).value,
+            animateColorAsState(background).value,
+            animateColorAsState(onBackground).value,
+            animateColorAsState(surface).value,
+            animateColorAsState(onSurface).value,
+            animateColorAsState(surfaceVariant).value,
+            animateColorAsState(onSurfaceVariant).value,
+            animateColorAsState(surfaceTint).value,
+            animateColorAsState(inverseSurface).value,
+            animateColorAsState(inverseOnSurface).value,
+            animateColorAsState(error).value,
+            animateColorAsState(onError).value,
+            animateColorAsState(errorContainer).value,
+            animateColorAsState(onErrorContainer).value,
+            animateColorAsState(outline).value,
+            animateColorAsState(outlineVariant).value,
+            animateColorAsState(scrim).value,
+        )
+    }
+
     MaterialTheme(
-        colorScheme = colors,
+        colorScheme = animatedColors,
         content = content,
         typography = Typography
     )

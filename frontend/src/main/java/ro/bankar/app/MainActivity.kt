@@ -3,25 +3,56 @@ package ro.bankar.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import ro.bankar.app.ui.LoginScreen
 import ro.bankar.app.ui.theme.AppTheme
+
+data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
+
+val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
+val LocalDataStore = compositionLocalOf<DataStore<Preferences>?> { null }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AppTheme(useDarkTheme = false) {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
+            val coroutineScope = rememberCoroutineScope()
+
+            val isSystemDarkMode = isSystemInDarkTheme()
+            val isDarkTheme by remember { dataStore.data.map { it[IS_DARK_MODE] ?: isSystemDarkMode } }.collectAsState(isSystemDarkMode)
+
+            AppTheme(useDarkTheme = isDarkTheme) {
+                CompositionLocalProvider(
+                    LocalThemeMode provides ThemeMode(isDarkTheme) {
+                        coroutineScope.launch {
+                            dataStore.edit { it[IS_DARK_MODE] = !isDarkTheme }
+                        }
+                    },
+                    LocalDataStore provides dataStore
                 ) {
-                    Surface {
-                        LoginScreen()
+                    // A surface container using the 'background' color from the theme
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        Surface {
+                            LoginScreen()
+                        }
                     }
                 }
             }

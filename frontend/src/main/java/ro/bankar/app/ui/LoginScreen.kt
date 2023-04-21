@@ -1,12 +1,13 @@
 package ro.bankar.app.ui
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -50,8 +51,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.theme.AppTheme
 import kotlin.time.Duration.Companion.seconds
 
@@ -59,11 +62,19 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun LoginScreen() {
     val pager = rememberPagerState()
+    val themeMode = LocalThemeMode.current
 
-    Surface(color = MaterialTheme.colorScheme.primary) {
+    Surface(color = MaterialTheme.colorScheme.primaryContainer) {
         Box(
             modifier = Modifier.fillMaxSize(),
         ) {
+            ThemeToggle(
+                isDarkMode = themeMode.isDarkMode,
+                onToggle = themeMode.toggleThemeMode,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 10.dp, end = 10.dp)
+            )
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
@@ -76,6 +87,7 @@ fun LoginScreen() {
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
                 Surface(
+                    color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(15.dp),
                     shadowElevation = 5.dp,
@@ -139,6 +151,8 @@ class InitialLoginModel : ViewModel() {
         try {
             delay(3.seconds)
             onStepComplete()
+        } catch (e: Exception) {
+            Log.d("BanKAR", "login: a crapat")
         } finally {
             loading = false
         }
@@ -196,14 +210,20 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 },
                 keyboardActions = KeyboardActions(onDone = { model.login(onStepComplete, focusManager) })
             )
-
-            Text(text = "Forgot password?", modifier = Modifier.clickable {})
-            Button(
-                enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !model.loading,
-                onClick = { model.login(onStepComplete, focusManager) },
-                modifier = Modifier.align(Alignment.End),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = "Sign In")
+                TextButton(onClick = {}) {
+                    Text(text = "Forgot password?")
+                }
+                Button(
+                    enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !model.loading,
+                    onClick = { model.login(onStepComplete, focusManager) },
+                ) {
+                    Text(text = "Sign In")
+                }
             }
         }
 
