@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sign_in">Conectare</string>
+    <string name="dont_have_account_yet">Nu aveți cont deja?</string>
+    <string name="create_one_now">Creați un cont acum</string>
+    <string name="phone_email_tag">Telefon, e-mail sau tag</string>
+    <string name="password">Parola</string>
+    <string name="show_password">Afișează parola</string>
+    <string name="forgot_password">Ați uitat parola?</string>
+    <string name="six_digit_code_sent">Un cod de 6 cifre v-a fost trimis prin SMS la telefonul dvs. mobil.\nIntroduceți codul:</string>
+    <string name="code">Cod</string>
+    <string name="confirm">Confirmă</string>
+</resources>

@@ -1,3 +1,13 @@
 <resources>
-    <string name="app_name">BanKAR</string>
+    <string name="app_name" translatable="false">BanKAR</string>
+    <string name="sign_in">Sign In</string>
+    <string name="dont_have_account_yet">Don\'t have account yet?</string>
+    <string name="create_one_now">Create one now</string>
+    <string name="phone_email_tag">Phone, e-mail or tag</string>
+    <string name="password">Password</string>
+    <string name="show_password">Show password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="six_digit_code_sent">A 6-digit verification code has been sent to your mobile phone via SMS.\nPlease enter the code below:</string>
+    <string name="code">Code</string>
+    <string name="confirm">Confirm</string>
 </resources>

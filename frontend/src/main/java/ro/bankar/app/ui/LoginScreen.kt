@@ -1,6 +1,5 @@
 package ro.bankar.app.ui
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -42,6 +41,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -85,7 +85,7 @@ fun LoginScreen() {
                     .align(Alignment.Center),
             ) {
                 Text(
-                    "Sign In",
+                    stringResource(R.string.sign_in),
                     style = MaterialTheme.typography.displayLarge,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -128,11 +128,11 @@ fun LoginScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Don't have an account yet?",
+                    text = stringResource(R.string.dont_have_account_yet),
                 )
                 TextButton(onClick = {}) {
                     Text(
-                        text = "Create one now",
+                        text = stringResource(R.string.create_one_now),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.inverseSurface,
@@ -154,8 +154,6 @@ class InitialLoginModel : ViewModel() {
         try {
             delay(3.seconds)
             onStepComplete()
-        } catch (e: Exception) {
-            Log.d("BanKAR", "login: a crapat")
         } finally {
             loading = false
         }
@@ -179,11 +177,11 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 singleLine = true,
                 shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.AccountCircle, "Account ID") },
+                leadingIcon = { Icon(Icons.Default.AccountCircle, stringResource(R.string.phone_email_tag)) },
                 value = model.username,
                 onValueChange = { model.username = it },
                 label = {
-                    Text(text = "Phone, e-mail or tag")
+                    Text(text = stringResource(R.string.phone_email_tag))
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
             )
@@ -193,7 +191,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 singleLine = true,
                 shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Lock, "Account password") },
+                leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.password)) },
                 trailingIcon = {
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
@@ -201,7 +199,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                                 if (showPassword) R.drawable.baseline_visibility_24
                                 else R.drawable.baseline_visibility_off_24
                             ),
-                            "Show password"
+                            stringResource(R.string.show_password)
                         )
                     }
                 },
@@ -209,7 +207,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 value = model.password,
                 onValueChange = { model.password = it },
                 label = {
-                    Text(text = "Password")
+                    Text(text = stringResource(R.string.password))
                 },
                 keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
                 keyboardActions = KeyboardActions(onDone = { model.login(onStepComplete, focusManager) })
@@ -220,13 +218,13 @@ private fun InitialLoginStep(onStepComplete: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(onClick = {}) {
-                    Text(text = "Forgot password?")
+                    Text(text = stringResource(R.string.forgot_password))
                 }
                 Button(
                     enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !model.loading,
                     onClick = { model.login(onStepComplete, focusManager) },
                 ) {
-                    Text(text = "Sign In")
+                    Text(text = stringResource(R.string.sign_in))
                 }
             }
         }
@@ -250,14 +248,14 @@ private fun FinalLoginStep(onGoBack: () -> Unit) {
         modifier = Modifier.padding(25.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        Text(text = "A 6-digit verification code has been sent to your mobile phone.\nPlease enter the code below:")
+        Text(text = stringResource(R.string.six_digit_code_sent))
         TextField(
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester),
-            leadingIcon = { Icon(Icons.Default.Lock, "Account ID") },
+            leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.code)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             value = code,
             placeholder = { Text("123456") },
@@ -268,7 +266,7 @@ private fun FinalLoginStep(onGoBack: () -> Unit) {
             onClick = {},
             modifier = Modifier.align(Alignment.End)
         ) {
-            Text(text = "Confirm")
+            Text(text = stringResource(R.string.confirm))
         }
     }
 }
