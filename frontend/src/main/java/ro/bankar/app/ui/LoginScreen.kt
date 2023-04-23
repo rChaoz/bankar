@@ -1,8 +1,11 @@
 package ro.bankar.app.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,10 +30,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,10 +63,14 @@ import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.theme.AppTheme
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalFoundationApi::class)
+private enum class LoginStep {
+    Initial, Final;
+}
+
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun LoginScreen() {
-    val pager = rememberPagerState()
+    var loginStep by rememberSaveable { mutableStateOf(LoginStep.Initial) }
     val themeMode = LocalThemeMode.current
 
     Surface(color = MaterialTheme.colorScheme.primaryContainer) {
@@ -95,28 +101,30 @@ fun LoginScreen() {
                     shape = RoundedCornerShape(15.dp),
                     shadowElevation = 5.dp,
                 ) {
-                    HorizontalPager(
-                        userScrollEnabled = false,
-                        pageCount = 2,
-                        state = pager,
-                        modifier = Modifier.animateContentSize(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val focusManager = LocalFocusManager.current
-                        val coroutineScope = rememberCoroutineScope()
-                        if (it == 0) InitialLoginStep {
-                            coroutineScope.launch {
-                                pager.animateScrollToPage(1)
+                    val isLoading = remember { mutableStateOf(false) }
+                    LoadingOverlay(isLoading.value) {
+                        AnimatedContent(
+                            targetState = loginStep,
+                            label = "Login Step Animation",
+                            transitionSpec = {
+                                if (targetState == LoginStep.Final) {
+                                    (slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w })
+                                } else {
+                                    (slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w })
+                                }
                             }
-                            // Because focused field will prevent page from un-loading
-                            focusManager.clearFocus()
-                        }
-                        else FinalLoginStep {
-                            coroutineScope.launch {
-                                pager.animateScrollToPage(0)
+                        ) {
+                            when (it) {
+                                LoginStep.Initial -> InitialLoginStep(
+                                    onStepComplete = { loginStep = LoginStep.Final },
+                                    isLoading,
+                                )
+
+                                LoginStep.Final -> FinalLoginStep(
+                                    onGoBack = { loginStep = LoginStep.Initial },
+                                    isLoading,
+                                )
                             }
-                            // Same
-                            focusManager.clearFocus()
                         }
                     }
                 }
@@ -146,95 +154,91 @@ fun LoginScreen() {
 class InitialLoginModel : ViewModel() {
     var username by mutableStateOf("")
     var password by mutableStateOf("")
-    var loading by mutableStateOf(false)
 
-    fun login(onStepComplete: () -> Unit, focusManager: FocusManager? = null) = viewModelScope.launch {
+    fun login(onStepComplete: () -> Unit, setIsLoading: (Boolean) -> Unit, focusManager: FocusManager? = null) = viewModelScope.launch {
         focusManager?.clearFocus()
-        loading = true
+        setIsLoading(true)
         try {
             delay(3.seconds)
             onStepComplete()
         } finally {
-            loading = false
+            setIsLoading(false)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun InitialLoginStep(onStepComplete: () -> Unit) {
+private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState<Boolean>) {
     val model: InitialLoginModel = viewModel()
     val focusManager = LocalFocusManager.current
+    Column(
+        modifier = Modifier
+            .padding(25.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(15.dp)
+    ) {
+        TextField(
+            singleLine = true,
+            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(Icons.Default.AccountCircle, stringResource(R.string.phone_email_tag)) },
+            value = model.username,
+            onValueChange = { model.username = it },
+            label = {
+                Text(text = stringResource(R.string.phone_email_tag))
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
+        )
 
-    LoadingOverlay(isLoading = model.loading) {
-        Column(
-            modifier = Modifier
-                .padding(25.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(15.dp)
+        var showPassword by remember { mutableStateOf(false) }
+        val (loading, setLoading) = isLoading
+        TextField(
+            singleLine = true,
+            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.password)) },
+            trailingIcon = {
+                IconButton(onClick = { showPassword = !showPassword }) {
+                    Icon(
+                        painterResource(
+                            if (showPassword) R.drawable.baseline_visibility_24
+                            else R.drawable.baseline_visibility_off_24
+                        ),
+                        stringResource(R.string.show_password)
+                    )
+                }
+            },
+            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            value = model.password,
+            onValueChange = { model.password = it },
+            label = {
+                Text(text = stringResource(R.string.password))
+            },
+            keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
+            keyboardActions = KeyboardActions(onDone = { model.login(onStepComplete, setLoading, focusManager) })
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextField(
-                singleLine = true,
-                shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.AccountCircle, stringResource(R.string.phone_email_tag)) },
-                value = model.username,
-                onValueChange = { model.username = it },
-                label = {
-                    Text(text = stringResource(R.string.phone_email_tag))
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
-            )
-
-            var showPassword by remember { mutableStateOf(false) }
-            TextField(
-                singleLine = true,
-                shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.password)) },
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            painterResource(
-                                if (showPassword) R.drawable.baseline_visibility_24
-                                else R.drawable.baseline_visibility_off_24
-                            ),
-                            stringResource(R.string.show_password)
-                        )
-                    }
-                },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                value = model.password,
-                onValueChange = { model.password = it },
-                label = {
-                    Text(text = stringResource(R.string.password))
-                },
-                keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
-                keyboardActions = KeyboardActions(onDone = { model.login(onStepComplete, focusManager) })
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            TextButton(onClick = {}) {
+                Text(text = stringResource(R.string.forgot_password))
+            }
+            Button(
+                enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !loading,
+                onClick = { model.login(onStepComplete, setLoading, focusManager) },
             ) {
-                TextButton(onClick = {}) {
-                    Text(text = stringResource(R.string.forgot_password))
-                }
-                Button(
-                    enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !model.loading,
-                    onClick = { model.login(onStepComplete, focusManager) },
-                ) {
-                    Text(text = stringResource(R.string.sign_in))
-                }
+                Text(text = stringResource(R.string.sign_in))
             }
         }
-
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FinalLoginStep(onGoBack: () -> Unit) {
+private fun FinalLoginStep(onGoBack: () -> Unit, isLoading: MutableState<Boolean>) {
     var code by remember { mutableStateOf("") }
     BackHandler(onBack = onGoBack)
     val focusRequester = remember { FocusRequester() }
@@ -256,7 +260,7 @@ private fun FinalLoginStep(onGoBack: () -> Unit) {
                 .fillMaxWidth()
                 .focusRequester(focusRequester),
             leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.code)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             value = code,
             placeholder = { Text("123456") },
             onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 6) code = it },

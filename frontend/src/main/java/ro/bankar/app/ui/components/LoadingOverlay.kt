@@ -14,8 +14,8 @@ import androidx.compose.ui.draw.alpha
 
 @Composable
 fun LoadingOverlay(
-    modifier: Modifier = Modifier,
     isLoading: Boolean,
+    modifier: Modifier = Modifier,
     progress: Float? = null,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,

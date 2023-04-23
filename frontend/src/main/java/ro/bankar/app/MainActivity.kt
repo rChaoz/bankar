@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ro.bankar.app.ui.LoginScreen
@@ -31,15 +32,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val coroutineScope = rememberCoroutineScope()
+            val ioScope = rememberCoroutineScope { Dispatchers.IO }
 
             val isSystemDarkMode = isSystemInDarkTheme()
-            val isDarkTheme by remember { dataStore.data.map { it[IS_DARK_MODE] ?: isSystemDarkMode } }.collectAsState(isSystemDarkMode)
+            val isDarkTheme by remember { dataStore.data.map { it[IS_DARK_MODE] ?: isSystemDarkMode } }.collectAsState(isSystemDarkMode, Dispatchers.IO)
 
             AppTheme(useDarkTheme = isDarkTheme) {
                 CompositionLocalProvider(
                     LocalThemeMode provides ThemeMode(isDarkTheme) {
-                        coroutineScope.launch {
+                        ioScope.launch {
                             dataStore.edit { it[IS_DARK_MODE] = !isDarkTheme }
                         }
                     },
