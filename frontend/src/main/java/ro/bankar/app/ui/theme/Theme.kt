@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.theme
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -84,40 +85,40 @@ fun AppTheme(
         darkColors
     }
 
-    @Suppress("AnimateAsStateLabel")
-    val animatedColors = with(colors) {
-        ColorScheme(
-            animateColorAsState(primary).value,
-            animateColorAsState(onPrimary).value,
-            animateColorAsState(primaryContainer).value,
-            animateColorAsState(onPrimaryContainer).value,
-            animateColorAsState(inversePrimary).value,
-            animateColorAsState(secondary).value,
-            animateColorAsState(onSecondary).value,
-            animateColorAsState(secondaryContainer).value,
-            animateColorAsState(onSecondaryContainer).value,
-            animateColorAsState(tertiary).value,
-            animateColorAsState(onTertiary).value,
-            animateColorAsState(tertiaryContainer).value,
-            animateColorAsState(onTertiaryContainer).value,
-            animateColorAsState(background).value,
-            animateColorAsState(onBackground).value,
-            animateColorAsState(surface).value,
-            animateColorAsState(onSurface).value,
-            animateColorAsState(surfaceVariant).value,
-            animateColorAsState(onSurfaceVariant).value,
-            animateColorAsState(surfaceTint).value,
-            animateColorAsState(inverseSurface).value,
-            animateColorAsState(inverseOnSurface).value,
-            animateColorAsState(error).value,
-            animateColorAsState(onError).value,
-            animateColorAsState(errorContainer).value,
-            animateColorAsState(onErrorContainer).value,
-            animateColorAsState(outline).value,
-            animateColorAsState(outlineVariant).value,
-            animateColorAsState(scrim).value,
-        )
-    }
+    val transition = updateTransition(targetState = colors, "Theme Toggle")
+
+    @Suppress("TransitionPropertiesLabel")
+    val animatedColors = ColorScheme(
+        transition.animateColor { it.primary }.value,
+        transition.animateColor { it.onPrimary }.value,
+        transition.animateColor { it.primaryContainer }.value,
+        transition.animateColor { it.onPrimaryContainer }.value,
+        transition.animateColor { it.inversePrimary }.value,
+        transition.animateColor { it.secondary }.value,
+        transition.animateColor { it.onSecondary }.value,
+        transition.animateColor { it.secondaryContainer }.value,
+        transition.animateColor { it.onSecondaryContainer }.value,
+        transition.animateColor { it.tertiary }.value,
+        transition.animateColor { it.onTertiary }.value,
+        transition.animateColor { it.tertiaryContainer }.value,
+        transition.animateColor { it.onTertiaryContainer }.value,
+        transition.animateColor { it.background }.value,
+        transition.animateColor { it.onBackground }.value,
+        transition.animateColor { it.surface }.value,
+        transition.animateColor { it.onSurface }.value,
+        transition.animateColor { it.surfaceVariant }.value,
+        transition.animateColor { it.onSurfaceVariant }.value,
+        transition.animateColor { it.surfaceTint }.value,
+        transition.animateColor { it.inverseSurface }.value,
+        transition.animateColor { it.inverseOnSurface }.value,
+        transition.animateColor { it.error }.value,
+        transition.animateColor { it.onError }.value,
+        transition.animateColor { it.errorContainer }.value,
+        transition.animateColor { it.onErrorContainer }.value,
+        transition.animateColor { it.outline }.value,
+        transition.animateColor { it.outlineVariant }.value,
+        transition.animateColor { it.scrim }.value,
+    )
 
     MaterialTheme(
         colorScheme = animatedColors,
