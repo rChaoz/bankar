@@ -8,6 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.graphics.Color
 
 
 private val lightColors = lightColorScheme(
@@ -74,6 +77,16 @@ private val darkColors = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
+class CustomColors(val accountDefault: Color, val negativeAmount: Color, val positiveAmount: Color)
+
+private val lightCustomColors = CustomColors(accountDefault, light_negativeAmount, light_positiveAmount)
+private val darkCustomColors = CustomColors(accountDefault, dark_negativeAmount, dark_positiveAmount)
+
+val LocalCustomColors = compositionLocalOf { lightCustomColors }
+
+@Suppress("UnusedReceiverParameter")
+val MaterialTheme.customColors @Composable get() = LocalCustomColors.current
+
 @Composable
 fun AppTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
@@ -120,9 +133,11 @@ fun AppTheme(
         transition.animateColor { it.scrim }.value,
     )
 
-    MaterialTheme(
-        colorScheme = animatedColors,
-        content = content,
-        typography = Typography
-    )
+    CompositionLocalProvider(LocalCustomColors provides if (useDarkTheme) darkCustomColors else lightCustomColors) {
+        MaterialTheme(
+            colorScheme = animatedColors,
+            content = content,
+            typography = Typography
+        )
+    }
 }

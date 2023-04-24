@@ -10,4 +10,10 @@
     <string name="six_digit_code_sent">Un cod de 6 cifre v-a fost trimis prin SMS la telefonul dvs. mobil.\nIntroduceți codul:</string>
     <string name="code">Cod</string>
     <string name="confirm">Confirmă</string>
+    <string name="search">Caută</string>
+    <string name="profile">Profil</string>
+    <string name="search_everyting">Caută orice...</string>
+    <string name="friends">Prieteni</string>
+    <string name="home">Acasă</string>
+    <string name="settings">Setări</string>
 </resources>

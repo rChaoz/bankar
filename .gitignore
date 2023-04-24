@@ -8,3 +8,4 @@ build/
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/deploymentTargetDropDown.xml
+*.iml

@@ -10,4 +10,10 @@
     <string name="six_digit_code_sent">A 6-digit verification code has been sent to your mobile phone via SMS.\nPlease enter the code below:</string>
     <string name="code">Code</string>
     <string name="confirm">Confirm</string>
+    <string name="search">Search</string>
+    <string name="profile">Profile</string>
+    <string name="search_everyting">Search everything...</string>
+    <string name="friends">Friends</string>
+    <string name="home">Home</string>
+    <string name="settings">Settings</string>
 </resources>

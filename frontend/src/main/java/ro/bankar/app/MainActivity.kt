@@ -19,7 +19,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import ro.bankar.app.ui.LoginScreen
 import ro.bankar.app.ui.theme.AppTheme
 
@@ -31,6 +33,8 @@ val LocalDataStore = compositionLocalOf<DataStore<Preferences>?> { null }
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Get initial preferences TODO check if user is logged in etc.
+        val initialPrefs = runBlocking { dataStore.data.first() }
         setContent {
             val ioScope = rememberCoroutineScope { Dispatchers.IO }
 

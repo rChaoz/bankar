@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.datetime)
     implementation(libs.io.ktor.client)
     implementation(libs.io.ktor.client.okhttp)
     testImplementation(libs.junit)

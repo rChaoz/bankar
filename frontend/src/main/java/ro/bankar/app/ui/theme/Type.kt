@@ -32,27 +32,28 @@ val Typography = Typography(
         fontSize = 62.sp,
         lineHeight = 70.sp,
     ),
-    /* Text styles to override
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
+    titleMedium = TextStyle(
+        fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-titleLarge = TextStyle(
-    fontFamily = FontFamily.Default,
-    fontWeight = FontWeight.Normal,
-    fontSize = 22.sp,
-    lineHeight = 28.sp,
-    letterSpacing = 0.sp
-),
-labelSmall = TextStyle(
-    fontFamily = FontFamily.Default,
-    fontWeight = FontWeight.Medium,
-    fontSize = 11.sp,
-    lineHeight = 16.sp,
-    letterSpacing = 0.5.sp
-)
-*/
+        letterSpacing = .2.sp,
+    ),
+    labelLarge = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = .1.sp,
+    ),
+    labelMedium = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+        lineHeight = 18.sp,
+        letterSpacing = .5.sp,
+    ),
+    labelSmall = TextStyle(
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = .5.sp,
+    ),
 )
