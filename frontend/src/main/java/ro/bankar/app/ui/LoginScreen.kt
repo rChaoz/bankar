@@ -2,7 +2,12 @@ package ro.bankar.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
@@ -71,6 +76,7 @@ private enum class LoginStep {
 @Composable
 fun LoginScreen() {
     var loginStep by rememberSaveable { mutableStateOf(LoginStep.Initial) }
+    val isLoading = remember { mutableStateOf(false) }
     val themeMode = LocalThemeMode.current
 
     Surface(color = MaterialTheme.colorScheme.primaryContainer) {
@@ -97,17 +103,15 @@ fun LoginScreen() {
                 )
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(15.dp),
                     shadowElevation = 5.dp,
                 ) {
-                    val isLoading = remember { mutableStateOf(false) }
                     LoadingOverlay(isLoading.value) {
                         AnimatedContent(
                             targetState = loginStep,
                             label = "Login Step Animation",
                             transitionSpec = {
-                                if (targetState == LoginStep.Final) {
+                                if (targetState.ordinal > initialState.ordinal) {
                                     (slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w })
                                 } else {
                                     (slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w })
@@ -129,22 +133,27 @@ fun LoginScreen() {
                     }
                 }
             }
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 15.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            AnimatedVisibility(
+                visible = loginStep == LoginStep.Initial,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = scaleIn() + fadeIn(),
+                exit = scaleOut() + fadeOut(),
             ) {
-                Text(
-                    text = stringResource(R.string.dont_have_account_yet),
-                )
-                TextButton(onClick = {}) {
+                Column(
+                    modifier = Modifier.padding(bottom = 15.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = stringResource(R.string.create_one_now),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.inverseSurface,
+                        text = stringResource(R.string.dont_have_account_yet),
                     )
+                    TextButton(onClick = {}, enabled = !isLoading.value) {
+                        Text(
+                            text = stringResource(R.string.create_one_now),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.inverseSurface,
+                        )
+                    }
                 }
             }
         }
@@ -155,7 +164,11 @@ class InitialLoginModel : ViewModel() {
     var username by mutableStateOf("")
     var password by mutableStateOf("")
 
-    fun login(onStepComplete: () -> Unit, setIsLoading: (Boolean) -> Unit, focusManager: FocusManager? = null) = viewModelScope.launch {
+    fun login(
+        onStepComplete: () -> Unit,
+        setIsLoading: (Boolean) -> Unit,
+        focusManager: FocusManager? = null
+    ) = viewModelScope.launch {
         focusManager?.clearFocus()
         setIsLoading(true)
         try {
@@ -249,10 +262,13 @@ private fun FinalLoginStep(onGoBack: () -> Unit, isLoading: MutableState<Boolean
     }
 
     Column(
-        modifier = Modifier.padding(25.dp),
+        modifier = Modifier
+            .padding(25.dp)
+            .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
         Text(text = stringResource(R.string.six_digit_code_sent))
+        // TODO Custom code field
         TextField(
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
