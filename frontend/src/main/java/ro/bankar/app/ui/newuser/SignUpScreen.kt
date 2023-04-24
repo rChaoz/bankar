@@ -74,6 +74,65 @@ enum class SignUpStep {
     Initial, Middle, Final;
 }
 
+class SignUpModel : ViewModel() {
+    var step by mutableStateOf(SignUpStep.Initial)
+    var isLoading by mutableStateOf(false)
+
+    // First step
+    var fullName by mutableStateOf("")
+    var dateOfBirth by mutableStateOf("")
+    var address by mutableStateOf("")
+    var email by mutableStateOf("")
+    var tag by mutableStateOf("")
+    var password by mutableStateOf("")
+    var confirmPassword by mutableStateOf("")
+
+    // Second step
+    var phoneNumber by mutableStateOf("")
+
+    // Final step
+    var code by mutableStateOf("")
+    lateinit var onSuccess: State<() -> Unit>
+
+    fun goBack() {
+        if (step == SignUpStep.Middle) step = SignUpStep.Initial
+        else if (step == SignUpStep.Final) step = SignUpStep.Middle
+    }
+
+    fun doInitialStep(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
+        try {
+            delay(2.seconds)
+            step = SignUpStep.Middle
+        } finally {
+            isLoading = false
+        }
+    }
+
+    fun doMiddleStep(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
+        try {
+            delay(2.seconds)
+            step = SignUpStep.Final
+        } finally {
+            isLoading = false
+        }
+    }
+
+    fun doFinalStep(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
+        try {
+            delay(2.seconds)
+            onSuccess.value()
+        } finally {
+            isLoading = false
+        }
+    }
+}
+
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
@@ -151,58 +210,6 @@ fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
                 )
             }
         }
-    }
-}
-
-class SignUpModel : ViewModel() {
-    var step by mutableStateOf(SignUpStep.Initial)
-    var isLoading by mutableStateOf(false)
-
-    // First step
-    var fullName by mutableStateOf("")
-    var dateOfBirth by mutableStateOf("")
-    var address by mutableStateOf("")
-    var email by mutableStateOf("")
-    var tag by mutableStateOf("")
-    var password by mutableStateOf("")
-    var confirmPassword by mutableStateOf("")
-
-    // Second step
-    var phoneNumber by mutableStateOf("")
-
-    // Final step
-    var code by mutableStateOf("")
-    lateinit var onSuccess: State<() -> Unit>
-
-    fun goBack() {
-        if (step == SignUpStep.Middle) step = SignUpStep.Initial
-        else if (step == SignUpStep.Final) step = SignUpStep.Middle
-    }
-
-    fun doInitialStep(focusManager: FocusManager) = viewModelScope.launch {
-        focusManager.clearFocus()
-        isLoading = true
-        try {
-            delay(2.seconds)
-            step = SignUpStep.Middle
-        } finally {
-            isLoading = false
-        }
-    }
-
-    fun doMiddleStep(focusManager: FocusManager) = viewModelScope.launch {
-        focusManager.clearFocus()
-        isLoading = true
-        try {
-            delay(2.seconds)
-            step = SignUpStep.Final
-        } finally {
-            isLoading = false
-        }
-    }
-
-    fun doFinalStep() {
-        onSuccess.value()
     }
 }
 
@@ -387,6 +394,7 @@ private fun MiddleSignUpStep(model: SignUpModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FinalSignUpStep(model: SignUpModel) {
+    val focusManager = LocalFocusManager.current
     BackHandler(onBack = model::goBack)
     LaunchedEffect(true) {
         model.code = ""
@@ -409,7 +417,7 @@ private fun FinalSignUpStep(model: SignUpModel) {
             textStyle = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick = model::doFinalStep,
+            onClick =  { model.doFinalStep(focusManager) },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(text = "Confirm")

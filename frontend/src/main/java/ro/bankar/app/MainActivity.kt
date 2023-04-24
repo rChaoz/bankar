@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -73,11 +75,15 @@ private fun Main(dataStore: DataStore<Preferences>) {
             AnimatedNavHost(
                 controller,
                 startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
-                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) },
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() },
                 popEnterTransition = { EnterTransition.None },
-                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
             ) {
-                newUserNavigation(controller, onSuccess = { controller.navigate(Nav.Main.route) })
+                newUserNavigation(controller, onSuccess = {
+                    controller.navigate(Nav.Main.route) {
+                        popUpTo(Nav.NewUser.route) { inclusive = true }
+                    }
+                })
                 composable(Nav.Main.route) { MainScreen() }
             }
         }

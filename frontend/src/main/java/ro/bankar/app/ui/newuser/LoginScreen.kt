@@ -3,7 +3,6 @@ package ro.bankar.app.ui.newuser
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -35,11 +34,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,27 +56,70 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
+import ro.bankar.app.USER_SESSION
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.theme.AppTheme
 import kotlin.time.Duration.Companion.seconds
 
-private enum class LoginStep {
+enum class LoginStep {
     Initial, Final;
 }
+class LoginModel : ViewModel() {
+    var username by mutableStateOf("")
+    var password by mutableStateOf("")
+    var isLoading by mutableStateOf(false)
+    var step by mutableStateOf(LoginStep.Initial)
+    var code by mutableStateOf("")
+    lateinit var onSuccess: State<() -> Unit>
 
-@OptIn(ExperimentalAnimationApi::class)
+    fun goBack() {
+        if (step == LoginStep.Final) step = LoginStep.Initial
+    }
+
+    fun doInitial(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
+        try {
+            delay(2.seconds)
+            step = LoginStep.Final
+        } finally {
+            isLoading = false
+        }
+    }
+
+    fun doFinal(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
+        try {
+            delay(2.seconds)
+            onSuccess.value()
+        } finally {
+            isLoading = false
+        }
+    }
+}
+
 @Composable
 fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
-    var loginStep by rememberSaveable { mutableStateOf(LoginStep.Initial) }
-    val isLoading = remember { mutableStateOf(false) }
+    val model: LoginModel = viewModel()
+    val scope = rememberCoroutineScope()
+    val dataStore = LocalDataStore.current
+    model.onSuccess = rememberUpdatedState {
+        scope.launch {
+            dataStore?.edit { it[USER_SESSION] = "test" }
+            onSuccess()
+        }
+    }
     val themeMode = LocalThemeMode.current
 
     Surface(color = MaterialTheme.colorScheme.primaryContainer) {
@@ -106,9 +149,9 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                     shape = RoundedCornerShape(15.dp),
                     shadowElevation = 5.dp,
                 ) {
-                    LoadingOverlay(isLoading.value) {
+                    LoadingOverlay(model.isLoading) {
                         AnimatedContent(
-                            targetState = loginStep,
+                            targetState = model.step,
                             label = "Login Step Animation",
                             transitionSpec = {
                                 if (targetState.ordinal > initialState.ordinal) {
@@ -119,22 +162,15 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                             }
                         ) {
                             when (it) {
-                                LoginStep.Initial -> InitialLoginStep(
-                                    onStepComplete = { loginStep = LoginStep.Final },
-                                    isLoading,
-                                )
-
-                                LoginStep.Final -> FinalLoginStep(
-                                    onGoBack = { loginStep = LoginStep.Initial },
-                                    onSuccess,
-                                )
+                                LoginStep.Initial -> InitialLoginStep(model)
+                                LoginStep.Final -> FinalLoginStep(model)
                             }
                         }
                     }
                 }
             }
             AnimatedVisibility(
-                visible = loginStep == LoginStep.Initial,
+                visible = model.step == LoginStep.Initial,
                 modifier = Modifier.align(Alignment.BottomCenter),
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut(),
@@ -146,7 +182,7 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                     Text(
                         text = stringResource(R.string.dont_have_account_yet),
                     )
-                    TextButton(onClick = onSignUp, enabled = !isLoading.value) {
+                    TextButton(onClick = onSignUp, enabled = !model.isLoading) {
                         Text(
                             text = stringResource(R.string.create_one_now),
                             style = MaterialTheme.typography.bodyLarge,
@@ -160,31 +196,11 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
     }
 }
 
-class InitialLoginModel : ViewModel() {
-    var username by mutableStateOf("")
-    var password by mutableStateOf("")
-
-    fun login(
-        onStepComplete: () -> Unit,
-        setIsLoading: (Boolean) -> Unit,
-        focusManager: FocusManager? = null
-    ) = viewModelScope.launch {
-        focusManager?.clearFocus()
-        setIsLoading(true)
-        try {
-            delay(2.seconds)
-            onStepComplete()
-        } finally {
-            setIsLoading(false)
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState<Boolean>) {
-    val model: InitialLoginModel = viewModel()
+private fun InitialLoginStep(model: LoginModel) {
     val focusManager = LocalFocusManager.current
+
     Column(
         modifier = Modifier
             .padding(25.dp)
@@ -205,7 +221,6 @@ private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState
         )
 
         var showPassword by remember { mutableStateOf(false) }
-        val (loading, setLoading) = isLoading
         TextField(
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
@@ -229,7 +244,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState
                 Text(text = stringResource(R.string.password))
             },
             keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
-            keyboardActions = KeyboardActions(onDone = { model.login(onStepComplete, setLoading, focusManager) })
+            keyboardActions = KeyboardActions(onDone = { model.doInitial(focusManager) })
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -240,8 +255,8 @@ private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState
                 Text(text = stringResource(R.string.forgot_password))
             }
             Button(
-                enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !loading,
-                onClick = { model.login(onStepComplete, setLoading, focusManager) },
+                enabled = model.username.isNotEmpty() && model.password.isNotEmpty() && !model.isLoading,
+                onClick = { model.doInitial(focusManager) },
             ) {
                 Text(text = stringResource(R.string.sign_in))
             }
@@ -251,12 +266,14 @@ private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FinalLoginStep(onGoBack: () -> Unit, onSuccess: () -> Unit) {
-    var code by remember { mutableStateOf("") }
-    BackHandler(onBack = onGoBack)
+private fun FinalLoginStep(model: LoginModel) {
+    val focusManager = LocalFocusManager.current
+    BackHandler(onBack = model::goBack)
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) {
+
+    LaunchedEffect(true) {
+        model.code = ""
         delay(500)
         focusRequester.requestFocus()
     }
@@ -277,13 +294,13 @@ private fun FinalLoginStep(onGoBack: () -> Unit, onSuccess: () -> Unit) {
                 .focusRequester(focusRequester),
             leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.code)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            value = code,
+            value = model.code,
             placeholder = { Text("123456") },
-            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 6) code = it },
+            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 6) model.code = it },
             textStyle = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick = onSuccess,
+            onClick = { model.doFinal(focusManager) },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(text = stringResource(R.string.confirm))
