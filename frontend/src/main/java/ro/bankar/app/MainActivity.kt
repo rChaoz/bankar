@@ -77,7 +77,7 @@ private fun Main(dataStore: DataStore<Preferences>) {
                 startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
                 enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() },
                 popEnterTransition = { EnterTransition.None },
-                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
+                popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
             ) {
                 newUserNavigation(controller, onSuccess = {
                     controller.navigate(Nav.Main.route) {
