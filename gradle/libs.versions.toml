@@ -1,7 +1,7 @@
 [versions]
 com-android-application = "8.0.0"
 constraintlayout-compose = "1.0.1"
-android-navigation-compose = "2.5.3"
+accompanist-navigation-animation = "0.31.0-alpha"
 androidx-datastore-preferences = "1.0.0"
 org-jetbrains-kotlin-android = "1.8.10"
 core-ktx = "1.10.0"
@@ -17,7 +17,7 @@ io-ktor-client = "2.2.4"
 
 [libraries]
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayout-compose" }
-androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "android-navigation-compose" }
+accompanist-navigation-animation = { group = "com.google.accompanist", name = "accompanist-navigation-animation", version.ref = "accompanist-navigation-animation" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidx-datastore-preferences" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

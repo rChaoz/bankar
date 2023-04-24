@@ -1,4 +1,4 @@
-package ro.bankar.app.ui
+package ro.bankar.app.ui.newuser
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -6,16 +6,16 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DateRange
@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,17 +34,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -51,135 +55,168 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
+import ro.bankar.app.USER_SESSION
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.theme.AppTheme
 import kotlin.time.Duration.Companion.seconds
 
-private enum class SignUpStep {
+enum class SignUpStep {
     Initial, Middle, Final;
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun SignUpScreen() {
-    var signUpStep by rememberSaveable { mutableStateOf(SignUpStep.Initial) }
-    val isLoading = remember { mutableStateOf(false) }
+fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
     val themeMode = LocalThemeMode.current
+    val model: SignUpModel = viewModel()
 
-    Surface(color = MaterialTheme.colorScheme.primary) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+    val dataStore = LocalDataStore.current
+    val ioScope = rememberCoroutineScope()
+    model.onSuccess = rememberUpdatedState {
+        ioScope.launch {
+            dataStore?.edit { it[USER_SESSION] = "Test" }
+            onSuccess()
+        }
+    }
+
+    Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            ThemeToggle(
                 modifier = Modifier
-                    .padding(10.dp)
-                    .align(Alignment.Center),
+                    .align(Alignment.End)
+                    .padding(top = 10.dp, end = 10.dp),
+                isDarkMode = themeMode.isDarkMode,
+                onToggle = themeMode.toggleThemeMode,
+            )
+            Box(
+                modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    "Sign Up",
-                    style = MaterialTheme.typography.displayLarge,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(15.dp),
-                    shadowElevation = 5.dp,
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .align(Alignment.Center),
                 ) {
-                    LoadingOverlay(isLoading.value) {
-                        AnimatedContent(
-                            targetState = signUpStep,
-                            label = "Login Step Animation",
-                            transitionSpec = {
-                                if (targetState.ordinal > initialState.ordinal) {
-                                    (slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w })
-                                } else {
-                                    (slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w })
+                    Text(
+                        "Sign Up",
+                        style = MaterialTheme.typography.displayLarge,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(15.dp),
+                        shadowElevation = 5.dp,
+                    ) {
+                        LoadingOverlay(model.isLoading) {
+                            AnimatedContent(
+                                targetState = model.step,
+                                label = "Login Step Animation",
+                                transitionSpec = {
+                                    if (targetState.ordinal > initialState.ordinal) {
+                                        (slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w })
+                                    } else {
+                                        (slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w })
+                                    }
                                 }
-                            }
-                        ) {
-                            when (it) {
-                                SignUpStep.Initial -> InitialSignUpStep(
-                                    onStepComplete = { signUpStep = SignUpStep.Middle },
-                                    isLoading,
-                                )
-
-                                SignUpStep.Middle -> MiddleSignUpStep(
-                                    onGoBack = { signUpStep = SignUpStep.Initial },
-                                    onStepComplete = { signUpStep = SignUpStep.Final },
-                                    isLoading = isLoading,
-                                )
-
-                                SignUpStep.Final -> FinalSignUpStep(
-                                    onGoBack = { signUpStep = SignUpStep.Middle },
-                                    isLoading,
-                                )
+                            ) {
+                                when (it) {
+                                    SignUpStep.Initial -> InitialSignUpStep(model)
+                                    SignUpStep.Middle -> MiddleSignUpStep(model)
+                                    SignUpStep.Final -> FinalSignUpStep(model)
+                                }
                             }
                         }
                     }
                 }
             }
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 5.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Text(
+                text = stringResource(R.string.have_account_already),
+            )
+            TextButton(onClick = onSignIn) {
                 Text(
-                    text = "Have an account already?",
+                    text = stringResource(R.string.sign_in),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.inverseSurface,
                 )
-                TextButton(onClick = {}) {
-                    Text(
-                        text = "Log In",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.inverseSurface,
-                    )
-                }
             }
         }
     }
 }
 
-class InitialSignUpModel : ViewModel() {
-    var full_name by mutableStateOf("")
-    var date_of_birth by mutableStateOf("")
+class SignUpModel : ViewModel() {
+    var step by mutableStateOf(SignUpStep.Initial)
+    var isLoading by mutableStateOf(false)
+
+    // First step
+    var fullName by mutableStateOf("")
+    var dateOfBirth by mutableStateOf("")
     var address by mutableStateOf("")
     var email by mutableStateOf("")
     var tag by mutableStateOf("")
     var password by mutableStateOf("")
-    var confirm_password by mutableStateOf("")
+    var confirmPassword by mutableStateOf("")
 
-    fun signup(onStepComplete: () -> Unit, focusManager: FocusManager? = null, setLoading: (Boolean) -> Unit) = viewModelScope.launch {
-        focusManager?.clearFocus()
-        setLoading(true)
+    // Second step
+    var phoneNumber by mutableStateOf("")
+
+    // Final step
+    var code by mutableStateOf("")
+    lateinit var onSuccess: State<() -> Unit>
+
+    fun goBack() {
+        if (step == SignUpStep.Middle) step = SignUpStep.Initial
+        else if (step == SignUpStep.Final) step = SignUpStep.Middle
+    }
+
+    fun doInitialStep(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
         try {
-            delay(3.seconds)
-            onStepComplete()
+            delay(2.seconds)
+            step = SignUpStep.Middle
         } finally {
-            setLoading(false)
+            isLoading = false
         }
+    }
+
+    fun doMiddleStep(focusManager: FocusManager) = viewModelScope.launch {
+        focusManager.clearFocus()
+        isLoading = true
+        try {
+            delay(2.seconds)
+            step = SignUpStep.Final
+        } finally {
+            isLoading = false
+        }
+    }
+
+    fun doFinalStep() {
+        onSuccess.value()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun InitialSignUpStep(onStepComplete: () -> Unit, isLoading: MutableState<Boolean>) {
-    val (loading, setLoading) = isLoading
-    val model: InitialSignUpModel = viewModel()
+private fun InitialSignUpStep(model: SignUpModel) {
     val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
-            .padding(25.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+            .padding(25.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
         TextField(
@@ -187,8 +224,8 @@ private fun InitialSignUpStep(onStepComplete: () -> Unit, isLoading: MutableStat
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Face, "Account ID") },
-            value = model.full_name,
-            onValueChange = { model.full_name = it },
+            value = model.fullName,
+            onValueChange = { model.fullName = it },
             label = {
                 Text(text = "Full Name")
             },
@@ -200,8 +237,8 @@ private fun InitialSignUpStep(onStepComplete: () -> Unit, isLoading: MutableStat
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.DateRange, "Date of birth") },
-            value = model.date_of_birth,
-            onValueChange = { model.date_of_birth = it },
+            value = model.dateOfBirth,
+            onValueChange = { model.dateOfBirth = it },
             label = {
                 Text(text = "Date of Birth")
             },
@@ -274,70 +311,53 @@ private fun InitialSignUpStep(onStepComplete: () -> Unit, isLoading: MutableStat
         )
 
         var showPassword2 by remember { mutableStateOf(false) }
-        val condition = model.full_name.isNotEmpty() && model.date_of_birth.isNotEmpty() &&
+        val condition = model.fullName.isNotEmpty() && model.dateOfBirth.isNotEmpty() &&
                 model.address.isNotEmpty() && model.email.isNotEmpty() &&
                 model.tag.isNotEmpty() && model.password.isNotEmpty() &&
-                model.confirm_password.isNotEmpty() && !loading && model.password == model.confirm_password
+                model.confirmPassword.isNotEmpty() && !model.isLoading && model.password == model.confirmPassword
 
         TextField(
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Lock, "Account password") },
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
             trailingIcon = {
                 IconButton(onClick = { showPassword2 = !showPassword2 }) {
                     Icon(
-                        painterResource(
+                        painter = painterResource(
                             if (showPassword2) R.drawable.baseline_visibility_24
                             else R.drawable.baseline_visibility_off_24
                         ),
-                        "Show password"
+                        contentDescription = stringResource(R.string.show_password)
                     )
                 }
             },
             visualTransformation = if (showPassword2) VisualTransformation.None else PasswordVisualTransformation(),
-            value = model.confirm_password,
-            onValueChange = { model.confirm_password = it },
+            value = model.confirmPassword,
+            onValueChange = { model.confirmPassword = it },
             label = {
                 Text(text = "Confirm Password")
             },
             keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
-            keyboardActions = KeyboardActions(onDone = { if (condition) model.signup(onStepComplete, focusManager, setLoading) })
+            keyboardActions = KeyboardActions(onDone = { if (condition) model.doInitialStep(focusManager) })
         )
 
         Button(
             enabled = condition,
-            onClick = { model.signup(onStepComplete, focusManager, setLoading) },
+            onClick = { model.doInitialStep(focusManager) },
             modifier = Modifier.align(Alignment.End),
         ) {
-            Text(text = "Sign Up")
+            Text(text = stringResource(R.string.sign_up))
         }
     }
 
-}
-
-class MiddleSignUpModel : ViewModel() {
-    var phone_number by mutableStateOf("")
-
-    fun signup(onStepComplete: () -> Unit, focusManager: FocusManager? = null, setLoading: (Boolean) -> Unit) = viewModelScope.launch {
-        focusManager?.clearFocus()
-        setLoading(true)
-        try {
-            delay(3.seconds)
-            onStepComplete()
-        } finally {
-            setLoading(false)
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MiddleSignUpStep(onStepComplete: () -> Unit, onGoBack: () -> Unit, isLoading: MutableState<Boolean>) {
-    val (loading, setLoading) = isLoading
-    val model: MiddleSignUpModel = viewModel()
+private fun MiddleSignUpStep(model: SignUpModel) {
     val focusManager = LocalFocusManager.current
-    BackHandler(onBack = onGoBack)
+    BackHandler(onBack = model::goBack)
 
     Column(
         modifier = Modifier.padding(25.dp),
@@ -348,15 +368,15 @@ private fun MiddleSignUpStep(onStepComplete: () -> Unit, onGoBack: () -> Unit, i
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Lock, "Account ID") },
+            leadingIcon = { Icon(imageVector = Icons.Default.Phone, contentDescription = null) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            value = model.phone_number,
+            value = model.phoneNumber,
             placeholder = { Text("0733768565") },
-            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 10) model.phone_number = it },
+            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 10) model.phoneNumber = it },
             textStyle = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick = { model.signup(onStepComplete, focusManager, setLoading) },
+            onClick = { model.doMiddleStep(focusManager) },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(text = "Confirm")
@@ -366,28 +386,30 @@ private fun MiddleSignUpStep(onStepComplete: () -> Unit, onGoBack: () -> Unit, i
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FinalSignUpStep(onGoBack: () -> Unit, isLoading: MutableState<Boolean>) {
-    var code by remember { mutableStateOf("") }
-    BackHandler(onBack = onGoBack)
+private fun FinalSignUpStep(model: SignUpModel) {
+    BackHandler(onBack = model::goBack)
+    LaunchedEffect(true) {
+        model.code = ""
+    }
 
     Column(
         modifier = Modifier.padding(25.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        Text(text = "A 6-digit verification code has been sent to your mobile phone.\nPlease enter the code below:")
+        Text(text = stringResource(R.string.six_digit_code_sent))
         TextField(
             singleLine = true,
             shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Lock, "Account ID") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            value = code,
+            value = model.code,
             placeholder = { Text("123456") },
-            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 6) code = it },
+            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 6) model.code = it },
             textStyle = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick = {},
+            onClick = model::doFinalStep,
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(text = "Confirm")
@@ -397,8 +419,8 @@ private fun FinalSignUpStep(onGoBack: () -> Unit, isLoading: MutableState<Boolea
 
 @Preview(showBackground = true)
 @Composable
-fun SignUpScreenPreview() {
+private fun SignUpScreenPreview() {
     AppTheme {
-        SignUpScreen()
+        SignUpScreen({}, {})
     }
 }

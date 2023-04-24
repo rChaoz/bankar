@@ -1,4 +1,4 @@
-package ro.bankar.app.ui
+package ro.bankar.app.ui.newuser
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -74,7 +74,7 @@ private enum class LoginStep {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun LoginScreen() {
+fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
     var loginStep by rememberSaveable { mutableStateOf(LoginStep.Initial) }
     val isLoading = remember { mutableStateOf(false) }
     val themeMode = LocalThemeMode.current
@@ -126,7 +126,7 @@ fun LoginScreen() {
 
                                 LoginStep.Final -> FinalLoginStep(
                                     onGoBack = { loginStep = LoginStep.Initial },
-                                    isLoading,
+                                    onSuccess,
                                 )
                             }
                         }
@@ -146,7 +146,7 @@ fun LoginScreen() {
                     Text(
                         text = stringResource(R.string.dont_have_account_yet),
                     )
-                    TextButton(onClick = {}, enabled = !isLoading.value) {
+                    TextButton(onClick = onSignUp, enabled = !isLoading.value) {
                         Text(
                             text = stringResource(R.string.create_one_now),
                             style = MaterialTheme.typography.bodyLarge,
@@ -172,7 +172,7 @@ class InitialLoginModel : ViewModel() {
         focusManager?.clearFocus()
         setIsLoading(true)
         try {
-            delay(3.seconds)
+            delay(2.seconds)
             onStepComplete()
         } finally {
             setIsLoading(false)
@@ -251,7 +251,7 @@ private fun InitialLoginStep(onStepComplete: () -> Unit, isLoading: MutableState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FinalLoginStep(onGoBack: () -> Unit, isLoading: MutableState<Boolean>) {
+private fun FinalLoginStep(onGoBack: () -> Unit, onSuccess: () -> Unit) {
     var code by remember { mutableStateOf("") }
     BackHandler(onBack = onGoBack)
     val focusRequester = remember { FocusRequester() }
@@ -283,7 +283,7 @@ private fun FinalLoginStep(onGoBack: () -> Unit, isLoading: MutableState<Boolean
             textStyle = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick = {},
+            onClick = onSuccess,
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(text = stringResource(R.string.confirm))
@@ -293,8 +293,8 @@ private fun FinalLoginStep(onGoBack: () -> Unit, isLoading: MutableState<Boolean
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
+private fun LoginScreenPreview() {
     AppTheme {
-        LoginScreen()
+        LoginScreen({}, {})
     }
 }

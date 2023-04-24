@@ -3,27 +3,35 @@ package ro.bankar.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import ro.bankar.app.ui.LoginScreen
+import ro.bankar.app.ui.main.MainNav
+import ro.bankar.app.ui.main.MainScreen
+import ro.bankar.app.ui.newuser.NewUserNav
+import ro.bankar.app.ui.newuser.newUserNavigation
 import ro.bankar.app.ui.theme.AppTheme
+
+const val TAG = "BanKAR"
 
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
 
@@ -33,33 +41,44 @@ val LocalDataStore = compositionLocalOf<DataStore<Preferences>?> { null }
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Get initial preferences TODO check if user is logged in etc.
-        val initialPrefs = runBlocking { dataStore.data.first() }
-        setContent {
-            val ioScope = rememberCoroutineScope { Dispatchers.IO }
+        setContent { Main(dataStore) }
+    }
+}
 
-            val isSystemDarkMode = isSystemInDarkTheme()
-            val isDarkTheme by remember { dataStore.data.map { it[IS_DARK_MODE] ?: isSystemDarkMode } }.collectAsState(isSystemDarkMode, Dispatchers.IO)
+enum class Nav(val route: String) {
+    NewUser(NewUserNav.route), Main(MainNav.route), Verification("verification");
+}
 
-            AppTheme(useDarkTheme = isDarkTheme) {
-                CompositionLocalProvider(
-                    LocalThemeMode provides ThemeMode(isDarkTheme) {
-                        ioScope.launch {
-                            dataStore.edit { it[IS_DARK_MODE] = !isDarkTheme }
-                        }
-                    },
-                    LocalDataStore provides dataStore
-                ) {
-                    // A surface container using the 'background' color from the theme
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
-                    ) {
-                        Surface {
-                            LoginScreen()
-                        }
-                    }
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun Main(dataStore: DataStore<Preferences>) {
+    val ioScope = rememberCoroutineScope { Dispatchers.IO }
+    val initialPrefs = remember { runBlocking { dataStore.data.first() } }
+
+    val initialDarkMode = initialPrefs[IS_DARK_MODE] ?: isSystemInDarkTheme()
+    val isDarkTheme by remember { dataStore.data.map { it[IS_DARK_MODE] ?: initialDarkMode } }.collectAsState(initialDarkMode, Dispatchers.IO)
+
+    AppTheme(useDarkTheme = isDarkTheme) {
+        CompositionLocalProvider(
+            LocalThemeMode provides ThemeMode(isDarkTheme) {
+                ioScope.launch {
+                    dataStore.edit { it[IS_DARK_MODE] = !isDarkTheme }
                 }
+            },
+            LocalDataStore provides dataStore,
+        ) {
+            // Setup navigation
+            val controller = rememberAnimatedNavController()
+
+            AnimatedNavHost(
+                controller,
+                startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) },
+                popEnterTransition = { EnterTransition.None },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) },
+            ) {
+                newUserNavigation(controller, onSuccess = { controller.navigate(Nav.Main.route) })
+                composable(Nav.Main.route) { MainScreen() }
             }
         }
     }

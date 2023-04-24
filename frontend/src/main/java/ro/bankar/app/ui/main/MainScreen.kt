@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,19 +29,37 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
+import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
+import ro.bankar.app.TAG
+import ro.bankar.app.USER_SESSION
 import ro.bankar.app.ui.main.home.Home
 import ro.bankar.app.ui.theme.AppTheme
 
-enum class MainTabs(val route: String) {
+enum class MainNav(val route: String) {
     Home("home"), Friends("friends"), Settings("settings");
+
+    companion object {
+        const val route = "main"
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun MainScreen() {
+    Log.d(TAG, "MainScreen: Rendering")
     var searchValue by remember { mutableStateOf("") }
-    var tab by remember { mutableStateOf(MainTabs.Home) }
+    var tab by remember { mutableStateOf(MainNav.Home) }
+
+    // To allow logout for testing
+    if (tab == MainNav.Friends) {
+        val dataStore = LocalDataStore.current
+        LaunchedEffect(true) {
+            dataStore?.edit { it -= USER_SESSION }
+        }
+    }
+
     Scaffold(
         topBar = {
             Surface(color = MaterialTheme.colorScheme.secondary) {
@@ -55,7 +75,7 @@ fun HomeScreen() {
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(selected = tab == MainTabs.Friends, onClick = { tab = MainTabs.Friends }, icon = {
+                NavigationBarItem(selected = tab == MainNav.Friends, onClick = { tab = MainNav.Friends }, icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_people_24),
                         contentDescription = stringResource(R.string.friends)
@@ -63,7 +83,7 @@ fun HomeScreen() {
                 }, label = {
                     Text(text = stringResource(R.string.friends))
                 })
-                NavigationBarItem(selected = tab == MainTabs.Home, onClick = { tab = MainTabs.Home }, icon = {
+                NavigationBarItem(selected = tab == MainNav.Home, onClick = { tab = MainNav.Home }, icon = {
                     Icon(
                         imageVector = Icons.Default.Home,
                         contentDescription = stringResource(R.string.home)
@@ -71,7 +91,7 @@ fun HomeScreen() {
                 }, label = {
                     Text(text = stringResource(R.string.home))
                 })
-                NavigationBarItem(selected = tab == MainTabs.Settings, onClick = { tab = MainTabs.Settings }, icon = {
+                NavigationBarItem(selected = tab == MainNav.Settings, onClick = { tab = MainNav.Settings }, icon = {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = stringResource(R.string.settings)
@@ -90,9 +110,9 @@ fun HomeScreen() {
 
 @Preview
 @Composable
-fun MainScreenPreview() {
+private fun MainScreenPreview() {
     AppTheme {
-        HomeScreen()
+        MainScreen()
     }
 }
 
@@ -100,6 +120,6 @@ fun MainScreenPreview() {
 @Composable
 fun MainScreenPreviewDark() {
     AppTheme {
-        HomeScreen()
+        MainScreen()
     }
 }

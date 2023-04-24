@@ -62,7 +62,7 @@ dependencies {
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
     implementation(libs.androidx.constraintlayout.compose)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.accompanist.navigation.animation)
     implementation(libs.kotlinx.datetime)
     implementation(libs.io.ktor.client)
     implementation(libs.io.ktor.client.okhttp)
