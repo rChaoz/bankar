@@ -1,2 +1,0 @@
-package ro.bankar.app
-
