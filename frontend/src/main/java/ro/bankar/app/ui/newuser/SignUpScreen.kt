@@ -2,7 +2,6 @@ package ro.bankar.app.ui.newuser
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
@@ -133,7 +132,6 @@ class SignUpModel : ViewModel() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
     val themeMode = LocalThemeMode.current
@@ -149,11 +147,11 @@ fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
     }
 
     Surface(color = MaterialTheme.colorScheme.primaryContainer) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 15.dp)) {
             ThemeToggle(
                 modifier = Modifier
                     .align(Alignment.End)
-                    .padding(top = 10.dp, end = 10.dp),
+                    .padding(end = 10.dp),
                 isDarkMode = themeMode.isDarkMode,
                 onToggle = themeMode.toggleThemeMode,
             )
@@ -417,7 +415,7 @@ private fun FinalSignUpStep(model: SignUpModel) {
             textStyle = MaterialTheme.typography.bodyLarge,
         )
         Button(
-            onClick =  { model.doFinalStep(focusManager) },
+            onClick = { model.doFinalStep(focusManager) },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(text = "Confirm")

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="sign_in">Conectare</string>
-    <string name="dont_have_account_yet">Nu aveți cont deja?</string>
+    <string name="no_have_account_yet">Nu aveți cont deja?</string>
     <string name="create_one_now">Creați un cont acum</string>
     <string name="phone_email_tag">Telefon, e-mail sau tag</string>
     <string name="password">Parola</string>
@@ -12,10 +12,17 @@
     <string name="confirm">Confirmă</string>
     <string name="search">Caută</string>
     <string name="profile">Profil</string>
-    <string name="search_everyting">Caută orice…</string>
+    <string name="search_everything">Caută orice…</string>
     <string name="friends">Prieteni</string>
     <string name="home">Acasă</string>
     <string name="settings">Setări</string>
     <string name="sign_up">Creare cont</string>
     <string name="have_account_already">Aveți cont deja?</string>
+    <string name="connection_error">Eroare de conexiune, încercați mai târziu</string>
+    <string name="invalid_server_response">Eroare de comunicare, încercați mai târziu</string>
+    <string name="unknown_error">Eroare necunoscută</string>
+    <string name="invalid_user_or_pass">Nume sau parolă greșite</string>
+    <string name="account_disabled">Acest cont este dezactivat. Contactați-ne pentru reactivare.</string>
+    <string name="login_session_expired">Sesiune de autentificare expirată, vă rugam autentificați-vă din nou.</string>
+    <string name="wrong_login_code">Cod greșit</string>
 </resources>

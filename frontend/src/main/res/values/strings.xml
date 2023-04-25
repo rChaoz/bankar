@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">BanKAR</string>
     <string name="sign_in">Sign In</string>
-    <string name="dont_have_account_yet">Don\'t have account yet?</string>
+    <string name="no_have_account_yet">Don\'t have account yet?</string>
     <string name="create_one_now">Create one now</string>
     <string name="phone_email_tag">Phone, e-mail or tag</string>
     <string name="password">Password</string>
@@ -12,10 +12,17 @@
     <string name="confirm">Confirm</string>
     <string name="search">Search</string>
     <string name="profile">Profile</string>
-    <string name="search_everyting">Search everything…</string>
+    <string name="search_everything">Search everything…</string>
     <string name="friends">Friends</string>
     <string name="home">Home</string>
     <string name="settings">Settings</string>
     <string name="sign_up">Sign Up</string>
     <string name="have_account_already">Have an account already?</string>
+    <string name="connection_error">Unable to connect to server, please try again later</string>
+    <string name="invalid_server_response">Invalid server response, please try again later</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="invalid_user_or_pass">Invalid username or password</string>
+    <string name="account_disabled">This account is disabled. Contact support for reactivation.</string>
+    <string name="login_session_expired">Login session expired, please sign in again</string>
+    <string name="wrong_login_code">Wrong login code</string>
 </resources>

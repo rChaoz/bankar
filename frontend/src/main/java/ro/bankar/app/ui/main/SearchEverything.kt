@@ -41,7 +41,7 @@ fun SearchEverything(value: String, onValueChange: (String) -> Unit, modifier: M
                 }
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center, propagateMinConstraints = true) {
                     if (value.isEmpty()) Text(
-                        text = stringResource(R.string.search_everyting),
+                        text = stringResource(R.string.search_everything),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     innerTextField()
