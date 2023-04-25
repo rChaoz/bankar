@@ -26,6 +26,7 @@ out/
 !**/src/test/**/out/
 *.private.env.*
 *.jks
+!selfsigned.jks
 
 ### NetBeans ###
 /nbproject/private/

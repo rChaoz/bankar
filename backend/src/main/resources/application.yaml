@@ -11,7 +11,7 @@ ktor:
       - resources
   security:
     ssl:
-      keyStore: keystore.jks
-      keyAlias: bankar
-      keyStorePassword: $KEYSTORE_PASS
-      privateKeyPassword: $KEYSTORE_PASS
+      keyStore: "$KEYSTORE:selfsigned.jks"
+      keyAlias: "$KEYSTORE_ALIAS:bankar"
+      keyStorePassword: "$KEYSTORE_PASS:bankar"
+      privateKeyPassword: "$KEYSTORE_PASS:bankar"

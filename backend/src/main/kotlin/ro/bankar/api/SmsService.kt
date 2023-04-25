@@ -13,6 +13,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ro.bankar.DEV_MODE
+import ro.bankar.SKIP_DELIVERY_CHECK
 import ro.bankar.generateNumeric
 import kotlin.collections.set
 import kotlin.coroutines.Continuation
@@ -76,6 +77,7 @@ object SmsService {
         }.body<SmsResponse>()
         // Check status code
         if (response.status != 1) return false
+        if (SKIP_DELIVERY_CHECK) return true
         // Await delivery confirmation
         return try {
             withTimeout(10000) { suspendCancellableCoroutine { smsMap[messageID] = it } }
