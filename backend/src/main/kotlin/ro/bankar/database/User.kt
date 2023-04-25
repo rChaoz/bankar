@@ -20,73 +20,10 @@ import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.sha256
+import ro.bankar.model.SUser
+import ro.bankar.model.SNewUser
 import java.lang.RuntimeException
 import kotlin.time.Duration.Companion.days
-
-@Serializable
-class SUser(
-    val email: String,
-    val tag: String,
-    val phone: String,
-
-    val firstName: String,
-    val middleName: String?,
-    val lastName: String,
-
-    val joinDate: LocalDate,
-    val address1: String,
-    val address2: String?,
-)
-
-/**
- * Data sent by the client when signing up.
- */
-@Serializable
-data class SSignupData (
-    val email: String,
-    val tag: String,
-    val phone: String,
-    val password: String,
-
-    val firstName: String,
-    val middleName: String? = null,
-    val lastName: String,
-
-    val address1: String,
-    val address2: String? = null,
-) {
-    companion object {
-        // E-mail regex
-        private val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
-        // Phone number regex
-        private val phoneRegex = Regex("""^\+\d{11}$""")
-        // Tag regex
-        private val tagRegex = Regex("""^[a-z0-9._-]{4,25}$""")
-        // Regex for password: at least 8 characters, at least one uppercase letter, at least one lowercase letter, at least one digit, at least one special character
-        private val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$""")
-        // Regex for a valid name
-        private val nameRegex = Regex("""^[a-zA-Z- ]{2,20}$""")
-    }
-
-    /**
-     * Validate all fields. In case of invalid field, returns the name of the field, as a String.
-     */
-    fun validate() = when {
-        // Check login information
-        !emailRegex.matches(email) -> "email"
-        !phoneRegex.matches(phone) -> "phone"
-        !tagRegex.matches(tag) -> "tag"
-        !passwordRegex.matches(password) -> "password"
-        // Check name
-        !nameRegex.matches(firstName) -> "firstName"
-        middleName != null && !nameRegex.matches(middleName) -> "middleName"
-        !nameRegex.matches(lastName) -> "lastName"
-        // Check address
-        address1.length < 5 -> "address1"
-        address2 != null && address2.length < 5 -> "address2"
-        else -> null
-    }
-}
 
 @Serializable
 class SPublicUser(
@@ -102,7 +39,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         /**
          * Creates a new user from a serialized user signup object
          */
-        fun createUser(userData: SSignupData) = generateSalt().let { salt ->
+        fun createUser(userData: SNewUser) = generateSalt().let { salt ->
             User.new {
                 email = userData.email
                 tag = userData.tag
@@ -122,7 +59,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         /**
          * Checks if user with e-mail, phone or number already exists
          */
-        fun checkRegistered(data: SSignupData) =
+        fun checkRegistered(data: SNewUser) =
             find { (Users.phone eq data.phone) or (Users.tag eq data.tag) or (Users.email eq data.email) }.firstOrNull()?.let {
                 when {
                     it.phone == data.phone -> "phone"

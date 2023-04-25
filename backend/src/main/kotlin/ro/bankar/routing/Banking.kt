@@ -7,10 +7,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import ro.bankar.InvalidParamResponse
-import ro.bankar.NotFoundResponse
-import ro.bankar.StatusResponse
 import ro.bankar.database.*
+import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.NotFoundResponse
+import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
 
 fun Route.configureBanking() {

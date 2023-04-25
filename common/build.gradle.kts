@@ -1,12 +1,22 @@
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 
 kotlin {
 	jvm()
 	android()
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.5.0")
+            }
+        }
+    }
 }
 
 android {

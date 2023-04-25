@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.com.android.application)
     @Suppress("DSL_SCOPE_VIOLATION")
     alias(libs.plugins.org.jetbrains.kotlin.android)
+
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -26,6 +28,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -63,9 +66,10 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.accompanist.navigation.animation)
-    implementation(libs.kotlinx.datetime)
     implementation(libs.io.ktor.client)
     implementation(libs.io.ktor.client.okhttp)
+    implementation(libs.io.ktor.content.negotiation)
+    implementation(libs.io.ktor.serialization.json)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)

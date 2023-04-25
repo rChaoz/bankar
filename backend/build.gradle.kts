@@ -9,7 +9,7 @@ val h2_version: String by project
 plugins {
     kotlin("jvm")
     id("io.ktor.plugin") version "2.2.4"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.20"
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 group = "ro.bankar"
@@ -23,7 +23,6 @@ application {
 
 dependencies {
 	implementation(project(":common"))
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auto-head-response-jvm:$ktor_version")

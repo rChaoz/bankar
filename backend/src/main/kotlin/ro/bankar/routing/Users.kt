@@ -1,21 +1,27 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Routing
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
+import io.ktor.server.sessions.clear
+import io.ktor.server.sessions.get
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import kotlinx.datetime.Clock
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.DEV_MODE
-import ro.bankar.InvalidParamResponse
-import ro.bankar.StatusResponse
 import ro.bankar.api.SmsService
-import ro.bankar.database.SSignupData
 import ro.bankar.database.User
 import ro.bankar.generateNumeric
+import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.SFinalLoginData
+import ro.bankar.model.SInitialLoginData
+import ro.bankar.model.SNewUser
+import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.LoginSession
 import kotlin.time.Duration.Companion.minutes
 
@@ -26,15 +32,9 @@ fun Routing.configureUsers() {
     route("login") {
         // First login step
         post("initial") {
-            // Data received from client
-            @Serializable
-            class InitialLoginData(
-                val id: String,
-                val password: String,
-            )
             newSuspendedTransaction t@{
                 // Verify login information
-                val login = call.receive<InitialLoginData>()
+                val login = call.receive<SInitialLoginData>()
                 val user = User.findByAnything(login.id)
                 if (user == null || !user.verifyPassword(login.password)) {
                     call.respond(HttpStatusCode.Unauthorized, StatusResponse("invalid_username_or_password")); return@t
@@ -53,14 +53,9 @@ fun Routing.configureUsers() {
 
         // Second login step
         post("final") {
-            // Data received from client
-            @Serializable
-            data class FinalLoginData(
-                val smsCode: String,
-            )
             newSuspendedTransaction t@{
                 // Verify SMS message
-                val login = call.receive<FinalLoginData>()
+                val login = call.receive<SFinalLoginData>()
                 val session = call.sessions.get<LoginSession>()
                 when {
                     session == null -> {
@@ -97,7 +92,7 @@ fun Routing.configureUsers() {
     post("signup") {
         newSuspendedTransaction t@{
             // Receive signup data
-            val data = call.receive<SSignupData>()
+            val data = call.receive<SNewUser>()
             // Validate data
             data.validate()?.let {
                 call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@t

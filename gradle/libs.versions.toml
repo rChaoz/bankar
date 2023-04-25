@@ -12,7 +12,6 @@ lifecycle-runtime-ktx = "2.6.1"
 lifecycle-viewmodel-compose = "2.6.1"
 activity-compose = "1.7.1"
 compose-bom = "2023.04.01"
-kotlinx-datetime = "0.4.0"
 io-ktor-client = "2.2.4"
 
 [libraries]
@@ -34,9 +33,10 @@ ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview
 ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 material3 = { group = "androidx.compose.material3", name = "material3" }
-kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 io-ktor-client = { group = "io.ktor", name = "ktor-client-android", version.ref = "io-ktor-client" }
 io-ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "io-ktor-client" }
+io-ktor-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "io-ktor-client" }
+io-ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "io-ktor-client" }
 
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "com-android-application" }
