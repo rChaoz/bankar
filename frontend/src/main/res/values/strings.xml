@@ -18,6 +18,9 @@
     <string name="settings">Settings</string>
     <string name="sign_up">Sign Up</string>
     <string name="have_account_already">Have an account already?</string>
+    <string name="help">Help</string>
+    <string name="contact_us">Contact us</string>
+    <string name="logo">Logo</string>
     <string name="connection_error">Unable to connect to server, please try again later</string>
     <string name="invalid_server_response">Invalid server response, please try again later</string>
     <string name="unknown_error">Unknown error</string>

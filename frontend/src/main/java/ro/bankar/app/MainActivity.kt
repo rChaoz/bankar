@@ -19,8 +19,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -28,11 +29,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ro.bankar.app.ui.main.MainNav
-import ro.bankar.app.ui.main.MainScreen
+import ro.bankar.app.ui.main.mainNavigation
 import ro.bankar.app.ui.newuser.NewUserNav
 import ro.bankar.app.ui.newuser.newUserNavigation
 import ro.bankar.app.ui.theme.AppTheme
 
+// For logging
 const val TAG = "BanKAR"
 
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
@@ -79,13 +81,19 @@ private fun Main(dataStore: DataStore<Preferences>) {
                 popEnterTransition = { EnterTransition.None },
                 popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
             ) {
-                newUserNavigation(controller, onSuccess = {
-                    controller.navigate(Nav.Main.route) {
-                        popUpTo(Nav.NewUser.route) { inclusive = true }
-                    }
-                })
-                composable(Nav.Main.route) { MainScreen() }
+                navigation(controller)
             }
         }
     }
+}
+
+
+@OptIn(ExperimentalAnimationApi::class)
+private fun NavGraphBuilder.navigation(controller: NavHostController) {
+    newUserNavigation(controller, onSuccess = {
+        controller.navigate(Nav.Main.route) {
+            popUpTo(Nav.NewUser.route) { inclusive = true }
+        }
+    })
+    mainNavigation(controller)
 }

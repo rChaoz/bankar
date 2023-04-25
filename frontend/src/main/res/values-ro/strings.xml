@@ -18,6 +18,9 @@
     <string name="settings">Setări</string>
     <string name="sign_up">Creare cont</string>
     <string name="have_account_already">Aveți cont deja?</string>
+    <string name="help">Ajutor</string>
+    <string name="contact_us">Contactați-ne</string>
+    <string name="logo">Logo</string>
     <string name="connection_error">Eroare de conexiune, încercați mai târziu</string>
     <string name="invalid_server_response">Eroare de comunicare, încercați mai târziu</string>
     <string name="unknown_error">Eroare necunoscută</string>

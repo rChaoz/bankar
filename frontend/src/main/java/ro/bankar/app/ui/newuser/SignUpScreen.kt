@@ -298,11 +298,11 @@ private fun InitialSignUpStep(model: SignUpModel) {
             trailingIcon = {
                 IconButton(onClick = { showPassword1 = !showPassword1 }) {
                     Icon(
-                        painterResource(
+                        painter = painterResource(
                             if (showPassword1) R.drawable.baseline_visibility_24
                             else R.drawable.baseline_visibility_off_24
                         ),
-                        "Show password"
+                        contentDescription = stringResource(R.string.show_password)
                     )
                 }
             },

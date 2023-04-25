@@ -1,7 +1,6 @@
 package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,28 +31,22 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
-import ro.bankar.app.TAG
 import ro.bankar.app.USER_SESSION
 import ro.bankar.app.ui.main.home.Home
 import ro.bankar.app.ui.theme.AppTheme
 
-enum class MainNav(val route: String) {
-    Home("home"), Friends("friends"), Settings("settings");
-
-    companion object {
-        const val route = "main"
-    }
+private enum class Tabs {
+    Home, Friends, Settings;
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
-    Log.d(TAG, "MainScreen: Rendering")
     var searchValue by remember { mutableStateOf("") }
-    var tab by remember { mutableStateOf(MainNav.Home) }
+    var tab by remember { mutableStateOf(Tabs.Home) }
 
     // To allow logout for testing
-    if (tab == MainNav.Friends) {
+    if (tab == Tabs.Friends) {
         val dataStore = LocalDataStore.current
         LaunchedEffect(true) {
             dataStore?.edit { it -= USER_SESSION }
@@ -75,7 +68,7 @@ fun MainScreen() {
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(selected = tab == MainNav.Friends, onClick = { tab = MainNav.Friends }, icon = {
+                NavigationBarItem(selected = tab == Tabs.Friends, onClick = { tab = Tabs.Friends }, icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.baseline_people_24),
                         contentDescription = stringResource(R.string.friends)
@@ -83,7 +76,7 @@ fun MainScreen() {
                 }, label = {
                     Text(text = stringResource(R.string.friends))
                 })
-                NavigationBarItem(selected = tab == MainNav.Home, onClick = { tab = MainNav.Home }, icon = {
+                NavigationBarItem(selected = tab == Tabs.Home, onClick = { tab = Tabs.Home }, icon = {
                     Icon(
                         imageVector = Icons.Default.Home,
                         contentDescription = stringResource(R.string.home)
@@ -91,7 +84,7 @@ fun MainScreen() {
                 }, label = {
                     Text(text = stringResource(R.string.home))
                 })
-                NavigationBarItem(selected = tab == MainNav.Settings, onClick = { tab = MainNav.Settings }, icon = {
+                NavigationBarItem(selected = tab == Tabs.Settings, onClick = { tab = Tabs.Settings }, icon = {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = stringResource(R.string.settings)
