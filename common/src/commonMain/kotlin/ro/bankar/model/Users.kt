@@ -32,6 +32,9 @@ data class SNewUser (
     val middleName: String? = null,
     val lastName: String,
 
+    val countryCode: String,
+    val state: String,
+    val city: String,
     val address1: String,
     val address2: String? = null,
 ) {
@@ -39,9 +42,11 @@ data class SNewUser (
         // E-mail regex
         val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
         // Phone number regex
-        val phoneRegex = Regex("""^\+\d{11}$""")
+        val phoneRegex = Regex("""^\+\d{8,11}$""")
         // Tag regex
-        val tagRegex = Regex("""^[a-z0-9._-]{4,25}$""")
+        val tagLengthRange = 4..25
+        val tagRegex = Regex("""^[a-z][a-z0-9._-]{${tagLengthRange.first - 1},${tagLengthRange.last - 1}}$""")
+
         // Regex for password: between 8 and 32 characters (inclusive), at least one uppercase letter, at least one
         // lowercase letter, at least one digit, at least one special character
         val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,32}$""")
@@ -53,20 +58,26 @@ data class SNewUser (
      * Validate all fields. In case of invalid field, returns the name of the field, as a String.
      * Otherwise, if all fields are valid, return `null`.
      */
-    fun validate() = when {
-        // Check login information
-        !emailRegex.matches(email) -> "email"
-        !phoneRegex.matches(phone) -> "phone"
-        !tagRegex.matches(tag) -> "tag"
-        !passwordRegex.matches(password) -> "password"
-        // Check name
-        !nameRegex.matches(firstName) -> "firstName"
-        middleName != null && !nameRegex.matches(middleName) -> "middleName"
-        !nameRegex.matches(lastName) -> "lastName"
-        // Check address
-        address1.length < 5 -> "address1"
-        address2 != null && address2.length < 5 -> "address2"
-        else -> null
+    fun validate(countryData: SCountries): String? {
+        val country = countryData.find { it.code == countryCode } ?: return "country"
+        if (state !in country.states) return "state"
+
+        return when {
+            // Check login information
+            !emailRegex.matches(email) -> "email"
+            !phoneRegex.matches(phone) -> "phone"
+            !tagRegex.matches(tag) -> "tag"
+            !passwordRegex.matches(password) -> "password"
+            // Check name
+            !nameRegex.matches(firstName.trim()) -> "firstName"
+            middleName != null && !nameRegex.matches(middleName.trim()) -> "middleName"
+            !nameRegex.matches(lastName.trim()) -> "lastName"
+            // Check address
+            city.trim().length !in 2..30 -> "city"
+            address1.trim().length !in 5..200 -> "address1"
+            address2 != null && address2.trim().length !in 5..200 -> "address2"
+            else -> null
+        }
     }
 }
 

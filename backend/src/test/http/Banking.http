@@ -1,9 +1,9 @@
 ### Get all bank accounts
-GET {{host}}/accounts
+GET {{host}}/api/accounts
 Authorization: Bearer {{auth_token}}
 
 ### Create new debit account (invalid type)
-POST {{host}}/accounts/new
+POST {{host}}/api/accounts/new
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
@@ -15,7 +15,7 @@ Authorization: Bearer {{auth_token}}
 }
 
 ### Create new debit account (invalid currency)
-POST {{host}}/accounts/new
+POST {{host}}/api/accounts/new
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
@@ -27,7 +27,7 @@ Authorization: Bearer {{auth_token}}
 }
 
 ### Create new debit account (valid)
-POST {{host}}/accounts/new
+POST {{host}}/api/accounts/new
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 
@@ -39,7 +39,7 @@ Authorization: Bearer {{auth_token}}
 }
 
 ### Get account information
-GET {{host}}/accounts/1
+GET {{host}}/api/accounts/1
 Authorization: Bearer {{auth_token}}
 
 ### Create new card for account
@@ -52,5 +52,5 @@ Authorization: Bearer {{auth_token}}
 }
 
 ### Get card information
-GET {{host}}/accounts/1/1
+GET {{host}}/api/accounts/1/1
 Authorization: Bearer {{auth_token}}

@@ -19,10 +19,9 @@ import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
-import ro.bankar.sha256
-import ro.bankar.model.SUser
 import ro.bankar.model.SNewUser
-import java.lang.RuntimeException
+import ro.bankar.model.SUser
+import ro.bankar.sha256
 import kotlin.time.Duration.Companion.days
 
 @Serializable
@@ -48,11 +47,15 @@ class User(id: EntityID<Int>) : IntEntity(id) {
                 passwordHash = userData.password.sha256(salt)
                 passwordSalt = salt
 
-                firstName = userData.firstName
-                middleName = userData.middleName
-                lastName = userData.lastName
-                address1 = userData.address1
-                address2 = userData.address2
+                firstName = userData.firstName.trim()
+                middleName = userData.middleName?.trim()
+                lastName = userData.lastName.trim()
+
+                countryCode = userData.countryCode
+                state = userData.state
+                city = userData.city
+                address1 = userData.address1.trim()
+                address2 = userData.address2?.trim()
             }
         }
 
@@ -68,6 +71,11 @@ class User(id: EntityID<Int>) : IntEntity(id) {
                     else -> throw RuntimeException("impossible")
                 }
             }
+
+        /**
+         * Checks if tag is taken
+         */
+        fun isTagTaken(tag: String) = !find { Users.tag eq tag }.empty()
 
         /**
          * Get a user by tag, e-mail or phone
@@ -94,9 +102,15 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var middleName by Users.middleName
     var lastName by Users.lastName
 
-    var joinDate by Users.joinDate
+    var countryCode by Users.countryCode
+    var state by Users.state
+    var city by Users.city
     var address1 by Users.address1
     var address2 by Users.address2
+
+    var joinDate by Users.joinDate
+    var about by Users.about
+    var avatar by Users.avatar
 
     val bankAccounts by BankAccount referrersOn BankAccounts.userID
     val assetAccounts by AssetAccount referrersOn AssetAccounts.user
@@ -154,10 +168,13 @@ internal object Users : IntIdTable(columnName = "user_id") {
     val middleName = varchar("middle_name", 20).nullable()
     val lastName = varchar("last_name", 20)
 
-    val joinDate = date("join_date").defaultExpression(CurrentDate)
+    val countryCode = varchar("country_code", 2)
+    val state = varchar("state", 30)
+    val city = varchar("city", 30)
     val address1 = varchar("address1", 200)
     val address2 = varchar("address2", 200).nullable()
 
+    val joinDate = date("join_date").defaultExpression(CurrentDate)
     val about = varchar("about", 300).default("")
     val avatar = blob("avatar").nullable()
 }

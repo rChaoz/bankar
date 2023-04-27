@@ -1,5 +1,5 @@
 ### Invalid signup request (invalid content type)
-POST {{host}}/signup
+POST {{host}}/api/signup
 Content-Type: text/plain
 
 Plain text here
@@ -9,7 +9,7 @@ Plain text here
 %}
 
 ### Invalid signup request (missing address)
-POST {{host}}/signup
+POST {{host}}/api/signup
 Content-Type: application/json
 
 {
@@ -27,17 +27,20 @@ Content-Type: application/json
 %}
 
 ### Invalid signup request (invalid email)
-POST {{host}}/signup
+POST {{host}}/api/signup
 Content-Type: application/json
 
 {
   "email": "some_invalid@email",
   "tag": "username",
-  "phone": "+40123456789",
+  "phone": "+49123456789",
   "password": "password",
   "firstName": "John",
   "middleName": "Big",
   "lastName": "Doe",
+  "countryCode": "DE",
+  "state": "Berlin",
+  "city": "Berlin",
   "address1": "123 Main St"
 }
 
@@ -46,7 +49,7 @@ Content-Type: application/json
 %}
 
 ### Correct signup request
-POST {{host}}/signup
+POST {{host}}/api/signup
 Content-Type: application/json
 
 {
@@ -57,7 +60,10 @@ Content-Type: application/json
   "firstName": "John",
   "middleName": "Big",
   "lastName": "Doe",
-  "address1": "123 Main St"
+  "countryCode": "RO",
+  "state": "Bucuresti",
+  "city": "Bucuresti",
+  "address1": "Bd. Unirii"
 }
 
 > {%
@@ -69,7 +75,7 @@ Content-Type: application/json
 
 
 ### Invalid initial login request (invalid content type)
-POST {{host}}/login/initial
+POST {{host}}/api/login/initial
 Content-Type: text/plain
 
 Plain text
@@ -79,7 +85,7 @@ Plain text
 %}
 
 ### Invalid initial login request (incorrect credentials)
-POST {{host}}/login/initial
+POST {{host}}/api/login/initial
 Content-Type: application/json
 
 {
@@ -92,7 +98,7 @@ Content-Type: application/json
 %}
 
 ### Correct initial login request
-POST {{host}}/login/initial
+POST {{host}}/api/login/initial
 Content-Type: application/json
 
 {
@@ -108,7 +114,7 @@ Content-Type: application/json
 %}
 
 ### Invalid final login request (invalid session)
-POST {{host}}/login/final
+POST {{host}}/api/login/final
 Content-Type: application/json
 
 {
@@ -120,7 +126,7 @@ Content-Type: application/json
 %}
 
 ### Invalid final login request (invalid sms code)
-POST {{host}}/login/final
+POST {{host}}/api/login/final
 Content-Type: application/json
 LoginSession: {{loginSession}}
 
@@ -133,7 +139,7 @@ LoginSession: {{loginSession}}
 %}
 
 ### Correct final login request
-POST {{host}}/login/final
+POST {{host}}/api/login/final
 Content-Type: application/json
 LoginSession: {{loginSession}}
 

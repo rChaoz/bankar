@@ -1,12 +1,13 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import ro.bankar.api.SmsService
 
-fun Routing.configureAPIs() {
+fun Route.configureAPIs() {
     // Configure SMS service
     get("sms_report") {
         // Notify waiting request (that sent the SMS)

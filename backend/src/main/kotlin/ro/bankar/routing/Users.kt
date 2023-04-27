@@ -4,7 +4,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
-import io.ktor.server.routing.Routing
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.sessions.clear
@@ -13,6 +14,7 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import ro.bankar.COUNTRY_DATA
 import ro.bankar.DEV_MODE
 import ro.bankar.api.SmsService
 import ro.bankar.database.User
@@ -27,8 +29,15 @@ import kotlin.time.Duration.Companion.minutes
 
 private fun generateCode() = if (DEV_MODE) "123456" else generateNumeric(6)
 
-fun Routing.configureUsers() {
-    // Users
+fun Route.configureUsers() {
+    // Check if tag is taken (or if it's invalid)
+    get("check_tag") {
+        val tag = call.request.queryParameters["q"]
+        if (tag.isNullOrEmpty() || !SNewUser.tagRegex.matches(tag)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_tag"))
+        else if (newSuspendedTransaction { User.isTagTaken(tag) }) call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
+        else call.respond(HttpStatusCode.OK, StatusResponse("valid"))
+    }
+
     route("login") {
         // First login step
         post("initial") {
@@ -94,7 +103,7 @@ fun Routing.configureUsers() {
             // Receive signup data
             val data = call.receive<SNewUser>()
             // Validate data
-            data.validate()?.let {
+            data.validate(COUNTRY_DATA)?.let {
                 call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@t
             }
 
