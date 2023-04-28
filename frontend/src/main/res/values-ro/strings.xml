@@ -28,4 +28,21 @@
     <string name="account_disabled">Acest cont este dezactivat. Contactați-ne pentru reactivare.</string>
     <string name="login_session_expired">Sesiune de autentificare expirată, vă rugam autentificați-vă din nou.</string>
     <string name="wrong_login_code">Cod greșit</string>
+    <string name="tag">Tag</string>
+    <string name="email">E-mail</string>
+    <string name="confirm_password">Confirmați parola</string>
+    <string name="next">Mai departe</string>
+    <string name="first_pick_a_tag">Mai întâi, alegeți un tag să vă identifice:</string>
+    <string name="next_email_password">Apoi, introduceți o adresă de e-mail și alegeți o parolă puternică:</string>
+    <string name="enter_personal_information">Introduceți datele dvs. personale</string>
+    <string name="password_requirements">Parola trebuie: să aibă cel puțin 8 caractere, să conțină o literă mică &amp; o majusculă, o cifră și un simbol</string>
+    <string name="invalid_email">Adresă de e-mail invalidă</string>
+    <string name="password_too_short">Parolă prea scurta</string>
+    <string name="password_too_long">Parolă prea lungă</string>
+    <string name="password_doesnt_meet">Parola nu îndeplinește cerințele</string>
+    <string name="passwords_dont_match">Parolele nu se potrivesc</string>
+    <string name="invalid_tag">Tag invalid</string>
+    <string name="tag_already_exists">Tag-ul există deja</string>
+    <string name="tag_too_short">Tag prea scurt (minim %d caractere)</string>
+    <string name="tag_too_long">Tag prea lung (maximum %d caractere)</string>
 </resources>

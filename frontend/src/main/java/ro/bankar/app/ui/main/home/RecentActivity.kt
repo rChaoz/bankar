@@ -102,7 +102,7 @@ private fun Amount(amount: Float, currency: String) {
     Text(
         text = "%+.2f $currency".format(amount),
         style = MaterialTheme.typography.labelMedium,
-        color = if (amount < 0) MaterialTheme.customColors.negativeAmount else LocalCustomColors.current.positiveAmount
+        color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
     )
 }
 
@@ -120,7 +120,7 @@ private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
             CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
                 FilledIconButton(
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.customColors.positiveAmount,
+                        containerColor = MaterialTheme.customColors.green,
                         contentColor = MaterialTheme.colorScheme.background,
                     ),
                     onClick = {},
@@ -134,7 +134,7 @@ private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
                 }
                 FilledIconButton(
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.customColors.negativeAmount,
+                        containerColor = MaterialTheme.customColors.red,
                         contentColor = MaterialTheme.colorScheme.background,
                     ),
                     onClick = {},

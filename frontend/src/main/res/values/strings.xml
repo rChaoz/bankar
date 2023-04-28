@@ -28,4 +28,21 @@
     <string name="account_disabled">This account is disabled. Contact support for reactivation.</string>
     <string name="login_session_expired">Login session expired, please sign in again</string>
     <string name="wrong_login_code">Wrong login code</string>
+    <string name="tag">Tag</string>
+    <string name="email">E-mail</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="next">Next</string>
+    <string name="first_pick_a_tag">First, pick a tag to identify you:</string>
+    <string name="next_email_password">Next, enter your e-mail address and pick a strong password:</string>
+    <string name="enter_personal_information">Enter your personal information</string>
+    <string name="invalid_email">Invalid e-mail address</string>
+    <string name="password_too_short">Password too short</string>
+    <string name="password_too_long">Password too long</string>
+    <string name="password_requirements">Password must: be 8 characters or longer, contain a lowercase &amp; uppercase letter, a digit and a symbol</string>
+    <string name="password_doesnt_meet">Password does not met the requirements</string>
+    <string name="passwords_dont_match">Passwords don\'t match</string>
+    <string name="invalid_tag">Invalid tag</string>
+    <string name="tag_already_exists">Tag already exists</string>
+    <string name="tag_too_short">Tag too short (minimum %d characters)</string>
+    <string name="tag_too_long">Tag too long (maximum %d characters)</string>
 </resources>

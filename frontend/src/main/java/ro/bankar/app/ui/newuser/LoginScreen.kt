@@ -66,7 +66,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.ktor.client.request.header
 import io.ktor.client.request.setBody
-import io.ktor.http.path
+import io.ktor.http.appendPathSegments
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ro.bankar.app.LocalDataStore
@@ -115,7 +115,7 @@ class LoginModel : ViewModel() {
         isLoading = true
         usernameOrPasswordError = null
         val result = ktorClient.safePost<StatusResponse, StatusResponse> {
-            url.path("login/initial")
+            url.appendPathSegments("login/initial")
             setBody(SInitialLoginData(username, password))
         }
         isLoading = false
@@ -124,10 +124,10 @@ class LoginModel : ViewModel() {
                 loginSession = result.r.headers["LoginSession"]
                 step = LoginStep.Final
             }
-            is Response.ErrorMessage -> {
+            is Response.Error -> {
                 snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
             }
-            is Response.Status -> {
+            is Response.Fail -> {
                 when (result.s.status) {
                     "account_disabled" -> snackBar.showSnackbar(c.getString(R.string.account_disabled), withDismissAction = true)
                     "invalid_username_or_password" -> usernameOrPasswordError = c.getString(R.string.invalid_user_or_pass)
@@ -142,7 +142,7 @@ class LoginModel : ViewModel() {
         isLoading = true
         codeError = null
         val result = ktorClient.safePost<StatusResponse, StatusResponse> {
-            url.path("login/final")
+            url.appendPathSegments("login/final")
             header("LoginSession", loginSession)
             setBody(SFinalLoginData(code))
         }
@@ -152,16 +152,18 @@ class LoginModel : ViewModel() {
                 dataStore?.edit { store -> result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { store[USER_SESSION] = it } }
                 onSuccess()
             }
-            is Response.ErrorMessage -> {
+            is Response.Error -> {
                 snackBar.showSnackbar(context.getString(result.message), withDismissAction = true)
             }
-            is Response.Status -> {
-                if (result.s.status == "invalid_session" || result.s.status == "session_expired") {
-                    step = LoginStep.Initial
-                    snackBar.showSnackbar(context.getString(R.string.login_session_expired), withDismissAction = true)
-                } else if (result.s.status == "invalid_code")
-                    codeError = context.getString(R.string.wrong_login_code)
-                else snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true)
+            is Response.Fail -> {
+                when (result.s.status) {
+                    "invalid_session", "session_expired" -> {
+                        step = LoginStep.Initial
+                        snackBar.showSnackbar(context.getString(R.string.login_session_expired), withDismissAction = true)
+                    }
+                    "invalid_code" -> codeError = context.getString(R.string.wrong_login_code)
+                    else -> snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true)
+                }
             }
         }
     }
@@ -203,7 +205,7 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(15.dp),
-                        shadowElevation = 5.dp,
+                        shadowElevation = 3.dp,
                     ) {
                         LoadingOverlay(model.isLoading) {
                             AnimatedContent(

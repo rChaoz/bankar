@@ -68,8 +68,8 @@ val seed = Color(0xFFC47131)
 
 
 val accountDefault = Color(0xFF6D95FE)
-val light_negativeAmount = Color(0xFF9E0000)
-val light_positiveAmount = Color(0xFF007C1B)
+val light_red = Color(0xFF9E0000)
+val light_green = Color(0xFF007C1B)
 
-val dark_negativeAmount = Color(0xFFD32727)
-val dark_positiveAmount = Color(0xFF2BCC4E)
+val dark_red = Color(0xFFD32727)
+val dark_green = Color(0xFF2BCC4E)

@@ -70,7 +70,7 @@ fun HomeCard(title: String, icon: @Composable () -> Unit, content: @Composable (
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        shadowElevation = 6.dp
+        shadowElevation = 3.dp
     ) {
         Column(
             modifier = Modifier.topBorder(5.dp, MaterialTheme.colorScheme.inversePrimary).padding(2.dp)
