@@ -1,6 +1,6 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -14,8 +14,7 @@ class SUser(
     val lastName: String,
 
     val joinDate: LocalDate,
-    val address1: String,
-    val address2: String?,
+    val address: String,
 )
 
 /**
@@ -31,12 +30,12 @@ data class SNewUser (
     val firstName: String,
     val middleName: String? = null,
     val lastName: String,
+    val dateOfBirth: LocalDate,
 
     val countryCode: String,
     val state: String,
     val city: String,
-    val address1: String,
-    val address2: String? = null,
+    val address: String,
 ) {
     companion object {
         // E-mail regex
@@ -62,20 +61,22 @@ data class SNewUser (
         val country = countryData.find { it.code == countryCode } ?: return "country"
         if (state !in country.states) return "state"
 
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
         return when {
             // Check login information
             !emailRegex.matches(email) -> "email"
             !phoneRegex.matches(phone) -> "phone"
             !tagRegex.matches(tag) -> "tag"
             !passwordRegex.matches(password) -> "password"
-            // Check name
+            // Check name & date of birth
             !nameRegex.matches(firstName.trim()) -> "firstName"
             middleName != null && !nameRegex.matches(middleName.trim()) -> "middleName"
             !nameRegex.matches(lastName.trim()) -> "lastName"
+            dateOfBirth !in (today - DatePeriod(110))..(today - DatePeriod(13)) -> "dateOfBirth"
             // Check address
             city.trim().length !in 2..30 -> "city"
-            address1.trim().length !in 5..200 -> "address1"
-            address2 != null && address2.trim().length !in 5..200 -> "address2"
+            address.trim().length !in 5..300 -> "address"
             else -> null
         }
     }

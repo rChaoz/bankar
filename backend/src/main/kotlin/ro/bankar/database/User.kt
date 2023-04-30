@@ -50,12 +50,12 @@ class User(id: EntityID<Int>) : IntEntity(id) {
                 firstName = userData.firstName.trim()
                 middleName = userData.middleName?.trim()
                 lastName = userData.lastName.trim()
+                dateOfBirth = userData.dateOfBirth
 
                 countryCode = userData.countryCode
                 state = userData.state
                 city = userData.city
-                address1 = userData.address1.trim()
-                address2 = userData.address2?.trim()
+                address = userData.address.trim()
             }
         }
 
@@ -101,12 +101,12 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var firstName by Users.firstName
     var middleName by Users.middleName
     var lastName by Users.lastName
+    var dateOfBirth by Users.dateOfBirth
 
     var countryCode by Users.countryCode
     var state by Users.state
     var city by Users.city
-    var address1 by Users.address1
-    var address2 by Users.address2
+    var address by Users.address
 
     var joinDate by Users.joinDate
     var about by Users.about
@@ -145,7 +145,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Returns a serializable user
      */
-    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, joinDate, address1, address2)
+    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, joinDate, address)
 }
 
 /**
@@ -167,12 +167,12 @@ internal object Users : IntIdTable(columnName = "user_id") {
     val firstName = varchar("first_name", 20)
     val middleName = varchar("middle_name", 20).nullable()
     val lastName = varchar("last_name", 20)
+    val dateOfBirth = date("date_of_birth")
 
     val countryCode = varchar("country_code", 2)
     val state = varchar("state", 30)
     val city = varchar("city", 30)
-    val address1 = varchar("address1", 200)
-    val address2 = varchar("address2", 200).nullable()
+    val address = varchar("address", 300)
 
     val joinDate = date("join_date").defaultExpression(CurrentDate)
     val about = varchar("about", 300).default("")
