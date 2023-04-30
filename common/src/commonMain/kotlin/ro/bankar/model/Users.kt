@@ -1,6 +1,11 @@
 package ro.bankar.model
 
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -51,6 +56,13 @@ data class SNewUser (
         val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,32}$""")
         // Regex for a valid name
         val nameRegex = Regex("""^[\p{L}- ]{2,20}$""")
+
+        // Valid age range (in years)
+        val ageRange = 13..110
+
+        // Valid lengths for city & address
+        val cityLengthRange = 2..30
+        val addressLengthRange = 5..300
     }
 
     /**
@@ -70,13 +82,13 @@ data class SNewUser (
             !tagRegex.matches(tag) -> "tag"
             !passwordRegex.matches(password) -> "password"
             // Check name & date of birth
-            !nameRegex.matches(firstName.trim()) -> "firstName"
+            !nameRegex.matches(firstName) -> "firstName"
             middleName != null && !nameRegex.matches(middleName.trim()) -> "middleName"
-            !nameRegex.matches(lastName.trim()) -> "lastName"
-            dateOfBirth !in (today - DatePeriod(110))..(today - DatePeriod(13)) -> "dateOfBirth"
+            !nameRegex.matches(lastName) -> "lastName"
+            dateOfBirth !in (today - DatePeriod(ageRange.last))..(today - DatePeriod(ageRange.first)) -> "dateOfBirth"
             // Check address
-            city.trim().length !in 2..30 -> "city"
-            address.trim().length !in 5..300 -> "address"
+            city.length !in cityLengthRange -> "city"
+            address.length !in addressLengthRange -> "address"
             else -> null
         }
     }

@@ -30,12 +30,13 @@ android {
         }
         release {
             manifestPlaceholders["useCleartextTraffic"] = false
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
@@ -57,7 +58,10 @@ android {
 
 dependencies {
 	implementation(project(":common"))
-	
+
+    coreLibraryDesugaring(libs.com.android.tools.desugaring)
+    implementation(libs.maxkeppeler.compose.core)
+    implementation(libs.maxkeppeler.compose.calendar)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
