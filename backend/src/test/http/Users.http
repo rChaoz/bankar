@@ -1,5 +1,8 @@
-### Invalid signup request (invalid content type)
-POST {{host}}/api/signup
+## Check if tag is taken
+GET {{host}}/api/signup/check_tag?q=username
+
+### Invalid initial signup request (invalid content type)
+POST {{host}}/api/signup/initial
 Content-Type: text/plain
 
 Plain text here
@@ -8,8 +11,8 @@ Plain text here
     client.test("Request executed successfully", () => client.assert(response.status === 415, "Response status is not 415"))
 %}
 
-### Invalid signup request (missing address)
-POST {{host}}/api/signup
+### Invalid initial signup request (missing address)
+POST {{host}}/api/signup/initial
 Content-Type: application/json
 
 {
@@ -19,15 +22,16 @@ Content-Type: application/json
   "password": "password",
   "firstName": "John",
   "middleName": "Big",
-  "lastName": "Doe"
+  "lastName": "Doe",
+  "dateOfBirth": "2001-05-05"
 }
 
 > {%
     client.test("Request executed successfully", () => client.assert(response.status === 400, "Response status is not 400"))
 %}
 
-### Invalid signup request (invalid email)
-POST {{host}}/api/signup
+### Invalid initial signup request (invalid email)
+POST {{host}}/api/signup/initial
 Content-Type: application/json
 
 {
@@ -38,18 +42,19 @@ Content-Type: application/json
   "firstName": "John",
   "middleName": "Big",
   "lastName": "Doe",
+  "dateOfBirth": "2001-05-05",
   "countryCode": "DE",
   "state": "Berlin",
   "city": "Berlin",
-  "address1": "123 Main St"
+  "address": "123 Main St"
 }
 
 > {%
     client.test("Request executed successfully", () => client.assert(response.status === 400, "Response status is not 400"))
 %}
 
-### Correct signup request
-POST {{host}}/api/signup
+### Correct initial signup request
+POST {{host}}/api/signup/initial
 Content-Type: application/json
 
 {
@@ -60,18 +65,28 @@ Content-Type: application/json
   "firstName": "John",
   "middleName": "Big",
   "lastName": "Doe",
+  "dateOfBirth": "2001-05-05",
   "countryCode": "RO",
   "state": "Bucuresti",
   "city": "Bucuresti",
-  "address1": "Bd. Unirii"
+  "address": "Bd. Unirii"
 }
 
 > {%
     client.test("Request executed successfully", () => {
         client.assert(response.status === 200, "Response status is not 200")
-        client.global.set("loginSession", response.headers["LoginSession"])
+        client.global.set("signupSession", response.headers["SignupSession"])
     })
 %}
+
+### Correct final signup request
+POST {{host}}/api/signup/final
+Content-Type: application/json
+SignupSession: {{signupSession}}
+
+{
+  "smsCode": "123456"
+}
 
 
 ### Invalid initial login request (invalid content type)
