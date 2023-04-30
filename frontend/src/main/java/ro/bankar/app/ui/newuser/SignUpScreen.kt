@@ -180,7 +180,7 @@ class SignUpModel : ViewModel() {
         tagError.value = null
         val result = ktorClient.safeGet<StatusResponse, StatusResponse> {
             url {
-                path("check_tag")
+                path("signup/check_tag")
                 parameter("q", tag.value)
             }
         }

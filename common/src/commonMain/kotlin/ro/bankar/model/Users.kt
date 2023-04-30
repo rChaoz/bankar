@@ -1,11 +1,6 @@
 package ro.bankar.model
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -101,6 +96,6 @@ class SInitialLoginData(
 )
 
 @Serializable
-data class SFinalLoginData(
+data class SSMSCodeData(
     val smsCode: String,
 )
