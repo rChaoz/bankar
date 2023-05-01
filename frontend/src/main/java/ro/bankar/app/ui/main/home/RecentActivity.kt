@@ -80,16 +80,16 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
-                    overflow = TextOverflow.Visible,
+                    style = MaterialTheme.typography.bodyMedium,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = subtitle,
                     color = MaterialTheme.colorScheme.outline,
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
-                    overflow = TextOverflow.Visible,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             trailingContent()
@@ -101,7 +101,7 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
 private fun Amount(amount: Float, currency: String) {
     Text(
         text = "%+.2f $currency".format(amount),
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
     )
 }

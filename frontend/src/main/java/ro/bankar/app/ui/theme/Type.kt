@@ -33,6 +33,11 @@ val Typography = Typography(
         fontSize = 62.sp,
         lineHeight = 70.sp,
     ),
+    bodyMedium = TextStyle(
+        fontSize = 15.sp,
+        lineHeight = 21.sp,
+        letterSpacing = .3.sp
+    ),
     titleMedium = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
@@ -40,7 +45,7 @@ val Typography = Typography(
         letterSpacing = .2.sp,
     ),
     labelLarge = TextStyle(
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = .1.sp,
@@ -52,10 +57,9 @@ val Typography = Typography(
         letterSpacing = .5.sp,
     ),
     labelSmall = TextStyle(
-        fontWeight = FontWeight.Normal,
         fontStyle = FontStyle.Italic,
         fontSize = 12.sp,
         lineHeight = 15.sp,
-        letterSpacing = .5.sp,
+        letterSpacing = .4.sp,
     ),
 )
