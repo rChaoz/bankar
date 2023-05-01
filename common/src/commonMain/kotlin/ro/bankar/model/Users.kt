@@ -1,6 +1,11 @@
 package ro.bankar.model
 
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -41,7 +46,7 @@ data class SNewUser (
         // E-mail regex
         val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
         // Phone number regex
-        val phoneRegex = Regex("""^\+\d{8,11}$""")
+        val phoneRegex = Regex("""^\+\d{9,13}$""")
         // Tag regex
         val tagLengthRange = 4..25
         val tagRegex = Regex("""^[a-z][a-z0-9._-]{${tagLengthRange.first - 1},${tagLengthRange.last - 1}}$""")

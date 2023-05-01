@@ -78,6 +78,11 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         fun isTagTaken(tag: String) = !find { Users.tag eq tag }.empty()
 
         /**
+         * Checks if email is taken
+         */
+        fun isEmailTaken(email: String) = !find { Users.email eq email }.empty()
+
+        /**
          * Get a user by tag, e-mail or phone
          */
         fun findByAnything(id: String) = find { (Users.email eq id) or (Users.tag eq id) or (Users.phone eq id) }.firstOrNull()

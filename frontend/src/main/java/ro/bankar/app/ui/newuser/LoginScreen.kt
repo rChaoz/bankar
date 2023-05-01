@@ -12,13 +12,13 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -28,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -51,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -66,21 +68,21 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.ktor.client.request.header
 import io.ktor.client.request.setBody
-import io.ktor.http.appendPathSegments
+import io.ktor.client.request.url
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
 import ro.bankar.app.USER_SESSION
-import ro.bankar.app.ktor.Response
+import ro.bankar.app.ktor.SafeStatusResponse
 import ro.bankar.app.ktor.ktorClient
 import ro.bankar.app.ktor.safePost
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.SFinalLoginData
 import ro.bankar.model.SInitialLoginData
+import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.StatusResponse
 
 enum class LoginStep {
@@ -92,6 +94,7 @@ class LoginModel : ViewModel() {
     var username by mutableStateOf("")
     var password by mutableStateOf("")
     var code by mutableStateOf("")
+
     // Field errors
     var usernameOrPasswordError by mutableStateOf<String?>(null)
     var codeError by mutableStateOf<String?>(null)
@@ -109,25 +112,25 @@ class LoginModel : ViewModel() {
         if (step == LoginStep.Final) step = LoginStep.Initial
     }
 
-    private var loginSession: String? = null
+    private var loginSession by mutableStateOf<String?>(null)
     fun doInitial(focusManager: FocusManager, c: Context) = viewModelScope.launch {
         focusManager.clearFocus()
         isLoading = true
         usernameOrPasswordError = null
         val result = ktorClient.safePost<StatusResponse, StatusResponse> {
-            url.appendPathSegments("login/initial")
+            url("login/initial")
             setBody(SInitialLoginData(username, password))
         }
         isLoading = false
         when (result) {
-            is Response.Success -> {
+            is SafeStatusResponse.Success -> {
                 loginSession = result.r.headers["LoginSession"]
                 step = LoginStep.Final
             }
-            is Response.Error -> {
+            is SafeStatusResponse.InternalError -> {
                 snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
             }
-            is Response.Fail -> {
+            is SafeStatusResponse.Fail -> {
                 when (result.s.status) {
                     "account_disabled" -> snackBar.showSnackbar(c.getString(R.string.account_disabled), withDismissAction = true)
                     "invalid_username_or_password" -> usernameOrPasswordError = c.getString(R.string.invalid_user_or_pass)
@@ -142,26 +145,26 @@ class LoginModel : ViewModel() {
         isLoading = true
         codeError = null
         val result = ktorClient.safePost<StatusResponse, StatusResponse> {
-            url.appendPathSegments("login/final")
+            url("login/final")
             header("LoginSession", loginSession)
-            setBody(SFinalLoginData(code))
+            setBody(SSMSCodeData(code))
         }
         isLoading = false
         when (result) {
-            is Response.Success -> {
+            is SafeStatusResponse.Success -> {
                 dataStore?.edit { store -> result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { store[USER_SESSION] = it } }
                 onSuccess()
             }
-            is Response.Error -> {
+            is SafeStatusResponse.InternalError -> {
                 snackBar.showSnackbar(context.getString(result.message), withDismissAction = true)
             }
-            is Response.Fail -> {
+            is SafeStatusResponse.Fail -> {
                 when (result.s.status) {
                     "invalid_session", "session_expired" -> {
                         step = LoginStep.Initial
                         snackBar.showSnackbar(context.getString(R.string.login_session_expired), withDismissAction = true)
                     }
-                    "invalid_code" -> codeError = context.getString(R.string.wrong_login_code)
+                    "invalid_code" -> codeError = context.getString(R.string.incorrect_code)
                     else -> snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true)
                 }
             }
@@ -179,23 +182,21 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
 
     Scaffold(snackbarHost = { SnackbarHost(model.snackBar) }) { padding ->
         Surface(color = MaterialTheme.colorScheme.primaryContainer) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 ThemeToggle(
                     isDarkMode = themeMode.isDarkMode,
                     onToggle = themeMode.toggleThemeMode,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 10.dp, end = 10.dp)
+                    modifier = Modifier.padding(top = 10.dp, end = 10.dp)
                 )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier
                         .padding(10.dp)
-                        .align(Alignment.Center),
                 ) {
                     Text(
                         stringResource(R.string.sign_in),
@@ -229,7 +230,6 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                 }
                 AnimatedVisibility(
                     visible = model.step == LoginStep.Initial,
-                    modifier = Modifier.align(Alignment.BottomCenter),
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut(),
                 ) {
@@ -255,7 +255,6 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InitialLoginStep(model: LoginModel) {
     val focusManager = LocalFocusManager.current
@@ -266,29 +265,21 @@ private fun InitialLoginStep(model: LoginModel) {
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        TextField(
+        LoginField(
             value = model.username,
             onValueChange = { model.username = it },
-            singleLine = true,
-            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-            modifier = Modifier.fillMaxWidth(),
+            label = R.string.phone_email_tag,
             leadingIcon = { Icon(Icons.Default.AccountCircle, stringResource(R.string.phone_email_tag)) },
-            label = {
-                Text(text = stringResource(R.string.phone_email_tag))
-            },
+            keyboardType = KeyboardType.Email,
             isError = model.usernameOrPasswordError != null,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
         )
-
         val context = LocalContext.current
         var showPassword by remember { mutableStateOf(false) }
-        TextField(
+        LoginField(
             value = model.password,
             onValueChange = { model.password = it },
-            singleLine = true,
-            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-            modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.password)) },
+            label = R.string.password,
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
             trailingIcon = {
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(
@@ -300,14 +291,11 @@ private fun InitialLoginStep(model: LoginModel) {
                     )
                 }
             },
-            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            label = {
-                Text(text = stringResource(R.string.password))
-            },
+            keyboardType = KeyboardType.Password,
+            showPassword = showPassword,
             isError = model.usernameOrPasswordError != null,
-            supportingText = model.usernameOrPasswordError?.let { { Text(text = it) } },
-            keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Password),
-            keyboardActions = KeyboardActions(onDone = { model.doInitial(focusManager, context) })
+            supportingText = model.usernameOrPasswordError,
+            onDone = { model.doInitial(focusManager, context) }
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -348,30 +336,73 @@ private fun FinalLoginStep(model: LoginModel) {
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
         Text(text = stringResource(R.string.six_digit_code_sent))
-        // TODO Custom code field
-        TextField(
-            singleLine = true,
-            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester),
-            leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.code)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            value = model.code,
-            placeholder = { Text("123456") },
-            isError = model.codeError != null,
-            supportingText = model.codeError?.let { { Text(text = it) } },
-            onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 6) model.code = it },
-            textStyle = MaterialTheme.typography.bodyLarge,
-        )
         val context = LocalContext.current
+        LoginField(
+            value = model.code,
+            onValueChange = {
+                if (it.all { char -> char.isDigit() } && it.length <= 6) {
+                    model.code = it
+                    model.codeError = null
+                }
+            },
+            focusRequester,
+            leadingIcon = { Icon(Icons.Default.Lock, stringResource(R.string.code)) },
+            keyboardType = KeyboardType.NumberPassword,
+            placeholder = "123456",
+            isError = model.codeError != null,
+            textStyle = MaterialTheme.typography.bodyLarge,
+            onDone = {
+                if (model.code.length < 6) model.codeError = context.getString(R.string.code_has_6_digits)
+                else model.doFinal(focusManager, context)
+            }
+        )
+
         Button(
             onClick = { model.doFinal(focusManager, context) },
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.align(Alignment.End),
+            enabled = model.code.length == 6
         ) {
             Text(text = stringResource(R.string.confirm))
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LoginField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    focusRequester: FocusRequester? = null,
+    label: Int? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    isError: Boolean = false,
+    placeholder: String? = null,
+    supportingText: String? = null,
+    textStyle: TextStyle = LocalTextStyle.current,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    showPassword: Boolean = true,
+    onDone: (KeyboardActionScope.() -> Unit)? = null,
+) {
+    var modifier = Modifier.fillMaxWidth()
+    if (focusRequester != null) modifier = modifier.focusRequester(focusRequester)
+    TextField(
+        value,
+        onValueChange,
+        modifier,
+        singleLine = true,
+        shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
+        label = label?.let { { Text(text = stringResource(it)) } },
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        supportingText = supportingText?.let { { Text(text = it) } },
+        isError = isError,
+        textStyle = textStyle,
+        placeholder = placeholder?.let { { Text(text = it) } },
+        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = keyboardType, imeAction = if (onDone != null) ImeAction.Done else ImeAction.Next),
+        keyboardActions = KeyboardActions(onDone = onDone)
+    )
 }
 
 @Preview(showBackground = true)

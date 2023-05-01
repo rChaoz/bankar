@@ -10,8 +10,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
@@ -19,18 +22,25 @@ import androidx.compose.ui.res.stringResource
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> ComboBox(
-    selectedItem: T,
+    selectedItemText: String,
     onSelectItem: (T) -> Unit,
     items: List<T>,
     modifier: Modifier = Modifier,
-    label: Int,
+    enabled: Boolean = true,
+    label: Int? = null,
     isError: Boolean = false,
     supportingText: String? = null,
+    dropdownItemGenerator: @Composable (item: T, onClick: () -> Unit) -> Unit = { item, onClick ->
+        DropdownMenuItem(text = { Text(text = item.toString()) }, onClick = onClick)
+    }
 ) {
-    val (expanded, setExpanded) = remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = setExpanded, modifier = modifier) {
+    var expanded by remember { mutableStateOf(false) }
+    LaunchedEffect(enabled) {
+        if (!enabled && expanded) expanded = false
+    }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it && enabled }, modifier = modifier) {
         OutlinedTextField(
-            value = selectedItem.toString(),
+            value = selectedItemText,
             onValueChange = {},
             singleLine = true, readOnly = true,
             trailingIcon = {
@@ -41,12 +51,13 @@ fun <T> ComboBox(
                 )
             },
             modifier = Modifier.menuAnchor(),
-            label = { Text(text = stringResource(label)) },
+            enabled = enabled,
+            label = label?.let { { Text(text = stringResource(label)) } },
             isError = isError,
             supportingText = supportingText?.let { { Text(text = it) } },
         )
-        ExposedDropdownMenu(expanded, onDismissRequest = { setExpanded(false) }) {
-            for (item in items) DropdownMenuItem(text = { Text(text = item.toString()) }, onClick = { onSelectItem(item); setExpanded(false) })
+        ExposedDropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            for (item in items) dropdownItemGenerator(item) { onSelectItem(item); expanded = false }
         }
     }
 }

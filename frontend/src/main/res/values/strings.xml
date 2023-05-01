@@ -27,7 +27,7 @@
     <string name="invalid_user_or_pass">Invalid username or password</string>
     <string name="account_disabled">This account is disabled. Contact support for reactivation.</string>
     <string name="login_session_expired">Login session expired, please sign in again</string>
-    <string name="wrong_login_code">Wrong login code</string>
+    <string name="incorrect_code">Incorrect code</string>
     <string name="tag">Tag</string>
     <string name="email">E-mail</string>
     <string name="confirm_password">Confirm password</string>
@@ -70,4 +70,20 @@
     <string name="invalid_date_of_birth">Invalid date of birth</string>
     <string name="invalid_city">Invalid city name</string>
     <string name="invalid_address">Invalid address</string>
+    <string name="enter_mobile_phone">Please enter your mobile phone number. A verification code will be sent to this number:</string>
+    <string name="code_has_6_digits">Verification code has 6 digits</string>
+    <string name="invalid_phone">Invalid phone number</string>
+    <string name="phone">Phone number</string>
+    <string name="select">Select…</string>
+    <string name="prefix">Prefix</string>
+    <string name="code_was_sent">The 6-digit code has been sent to %s. Please enter the code below:</string>
+    <string name="edit_phone">Edit phone number</string>
+    <string name="back">Back</string>
+    <string name="user_already_exists">A user with the same %s already exists</string>
+    <string name="invalid_field">Invalid %s field</string>
+    <string name="signup_session_expired">Session expired, SMS code needs to be re-sent</string>
+    <string name="resend">Re-send</string>
+    <string name="already_registered">Already registered</string>
+    <string name="number_already_in_use">This phone number is already in use. Please use a different number.</string>
+    <string name="email_already_in_use">This e-mail address is already in use. Please use a different e-mail.</string>
 </resources>

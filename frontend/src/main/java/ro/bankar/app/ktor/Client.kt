@@ -10,6 +10,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -30,39 +31,66 @@ val ktorClient = HttpClient(OkHttp) {
     }
 }
 
-sealed class Response<T, S> {
-    class Success<T, S>(val r: HttpResponse, val result: T) : Response<T, S>()
-    class Fail<T, S>(val r: HttpResponse, val s: S) : Response<T, S>()
-    class Error<T, S>(val message: Int) : Response<T, S>()
+sealed class SafeStatusResponse<Result, Fail> {
+    class Success<Result, Fail>(val r: HttpResponse, val result: Result) : SafeStatusResponse<Result, Fail>()
+    class Fail<Result, Fail>(val r: HttpResponse, val s: Fail) : SafeStatusResponse<Result, Fail>()
+    class InternalError<Result, Fail>(val message: Int) : SafeStatusResponse<Result, Fail>()
 }
 
-suspend inline fun <reified T, reified S> HttpClient.safeRequest(
+sealed class SafeResponse<Result> {
+    class Success<Result>(val r: HttpResponse, val result: Result) : SafeResponse<Result>()
+    class Fail<Result>(val r: HttpResponse, val body: String) : SafeResponse<Result>()
+    class InternalError<Result>(val message: Int) : SafeResponse<Result>()
+}
+
+suspend inline fun <reified Result, reified Fail> HttpClient.safeStatusRequest(
     successCode: HttpStatusCode,
     crossinline request: suspend HttpClient.() -> HttpResponse
-): Response<T, S> =
+): SafeStatusResponse<Result, Fail> =
     withContext(Dispatchers.IO) {
         val result = runCatching { request() }
         if (result.isFailure) {
             Log.e(TAG, "HttpRequest", result.exceptionOrNull()!!)
-            Response.Error(R.string.connection_error)
+            SafeStatusResponse.InternalError(R.string.connection_error)
         } else {
             try {
                 val response = result.getOrThrow()
-                if (response.status == successCode) Response.Success(response, response.body())
-                else Response.Fail(response, response.body())
+                if (response.status == successCode) SafeStatusResponse.Success(response, response.body())
+                else SafeStatusResponse.Fail(response, response.body())
             } catch (e: Exception) {
                 Log.e(TAG, "HttpRequest", e)
-                Response.Error(R.string.invalid_server_response)
+                SafeStatusResponse.InternalError(R.string.invalid_server_response)
             }
         }
     }
 
-suspend inline fun <reified T, reified R> HttpClient.safeGet(
-    successCode: HttpStatusCode = HttpStatusCode.OK,
-    crossinline builder: HttpRequestBuilder.() -> Unit
-) = safeRequest<T, R>(successCode) { get(builder) }
+suspend inline fun <reified Result> HttpClient.safeRequest(
+    successCode: HttpStatusCode,
+    crossinline request: suspend HttpClient.() -> HttpResponse
+): SafeResponse<Result> =
+    withContext(Dispatchers.IO) {
+        val result = runCatching { request() }
+        if (result.isFailure) {
+            Log.e(TAG, "HttpRequest", result.exceptionOrNull()!!)
+            SafeResponse.InternalError(R.string.connection_error)
+        } else {
+            try {
+                val response = result.getOrThrow()
+                if (response.status == successCode) SafeResponse.Success(response, response.body())
+                else SafeResponse.Fail(response, response.bodyAsText())
+            } catch (e: Exception) {
+                Log.e(TAG, "HttpRequest", e)
+                SafeResponse.InternalError(R.string.invalid_server_response)
+            }
+        }
+    }
 
-suspend inline fun <reified T, reified R> HttpClient.safePost(
+suspend inline fun <reified Result, reified Fail> HttpClient.safeGet(
     successCode: HttpStatusCode = HttpStatusCode.OK,
     crossinline builder: HttpRequestBuilder.() -> Unit
-) = safeRequest<T, R>(successCode) { post(builder) }
+) = safeStatusRequest<Result, Fail>(successCode) { get(builder) }
+
+suspend inline fun <reified Result, reified Fail> HttpClient.safePost(
+    successCode: HttpStatusCode = HttpStatusCode.OK,
+    crossinline builder: HttpRequestBuilder.() -> Unit
+) = safeStatusRequest<Result, Fail>(successCode) { post(builder) }
