@@ -20,6 +20,9 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+# KTOR Rules
+-dontwarn org.slf4j.**
+
 # OkHttp3 Rules
 
 # JSR 305 annotations are for embedding nullability information.

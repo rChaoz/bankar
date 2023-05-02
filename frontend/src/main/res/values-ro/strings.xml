@@ -86,4 +86,17 @@
     <string name="already_registered">Deja înregistrat</string>
     <string name="number_already_in_use">Acest număr de telefon este deja utilizat. Vă rugăm folosiți alt număr.</string>
     <string name="email_already_in_use">Această adresă de e-mail este deja utilizată. Vă rugăm folosiți altă adresă.</string>
+    <string name="see_more">Mai multe</string>
+    <string name="recent_activity">Activitate recentă</string>
+    <string name="party_invite">Invitație party</string>
+    <string name="accept">Acceptă</string>
+    <string name="decline">Respinge</string>
+    <string name="party_invite_from">Invitație party de la %s</string>
+    <string name="payment">Plată</string>
+    <string name="transfer">Transfer</string>
+    <string name="from_s">De la %s</string>
+    <string name="to_s">Către %s</string>
+    <string name="bank_account">Cont bancar</string>
+    <string name="new_payment">Plată nouă</string>
+    <string name="assets">Avere</string>
 </resources>

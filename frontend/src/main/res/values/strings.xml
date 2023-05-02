@@ -86,4 +86,17 @@
     <string name="already_registered">Already registered</string>
     <string name="number_already_in_use">This phone number is already in use. Please use a different number.</string>
     <string name="email_already_in_use">This e-mail address is already in use. Please use a different e-mail.</string>
+    <string name="see_more">See more</string>
+    <string name="recent_activity">Recent activity</string>
+    <string name="party_invite">Party invite</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+    <string name="party_invite_from">Party invite from %s</string>
+    <string name="payment">Payment</string>
+    <string name="transfer">Transfer</string>
+    <string name="from_s">From %s</string>
+    <string name="to_s">To %s</string>
+    <string name="bank_account">Bank account</string>
+    <string name="new_payment">New payment</string>
+    <string name="assets">Assets</string>
 </resources>

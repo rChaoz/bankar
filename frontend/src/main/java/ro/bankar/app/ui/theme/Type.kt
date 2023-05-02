@@ -15,11 +15,11 @@ private val BebasNeue = FontFamily(Font(R.font.bebasneue_regular))
 
 // Set of Material typography styles to start with
 val Typography = Typography(
-    displaySmall = TextStyle(
+    displayLarge = TextStyle(
         fontFamily = BebasNeue,
         fontWeight = FontWeight.Medium,
-        fontSize = 40.sp,
-        lineHeight = 48.sp,
+        fontSize = 62.sp,
+        lineHeight = 70.sp,
     ),
     displayMedium = TextStyle(
         fontFamily = BebasNeue,
@@ -27,16 +27,37 @@ val Typography = Typography(
         fontSize = 50.sp,
         lineHeight = 58.sp,
     ),
-    displayLarge = TextStyle(
+    displaySmall = TextStyle(
         fontFamily = BebasNeue,
         fontWeight = FontWeight.Medium,
-        fontSize = 62.sp,
-        lineHeight = 70.sp,
+        fontSize = 40.sp,
+        lineHeight = 48.sp,
     ),
+
+    headlineMedium = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = 0.sp
+    ),
+    headlineSmall = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = 0.sp
+    ),
+
     bodyMedium = TextStyle(
         fontSize = 15.sp,
         lineHeight = 21.sp,
         letterSpacing = .3.sp
+    ),
+
+    titleLarge = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = .1.sp,
     ),
     titleMedium = TextStyle(
         fontWeight = FontWeight.Bold,
@@ -44,6 +65,7 @@ val Typography = Typography(
         lineHeight = 24.sp,
         letterSpacing = .2.sp,
     ),
+
     labelLarge = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,

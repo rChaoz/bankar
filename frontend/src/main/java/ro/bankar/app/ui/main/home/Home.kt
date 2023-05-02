@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,10 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.app.ui.theme.LocalCustomColors
+import ro.bankar.app.ui.theme.customColors
 
 @Composable
 fun Home() {
@@ -32,8 +36,11 @@ fun Home() {
         modifier = Modifier
             .verticalScroll(scrollState)
             .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         RecentActivity()
+        BankAccount()
+        Assets()
     }
 }
 
@@ -66,26 +73,43 @@ private fun Modifier.topBorder(thickness: Dp, color: Color) = composed {
 }
 
 @Composable
-fun HomeCard(title: String, icon: @Composable () -> Unit, content: @Composable () -> Unit) {
+fun HomeCard(title: String, icon: @Composable () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
+        tonalElevation = .5.dp,
         shadowElevation = 3.dp
     ) {
         Column(
-            modifier = Modifier.topBorder(5.dp, MaterialTheme.colorScheme.inversePrimary).padding(2.dp)
+            modifier = Modifier.topBorder(5.dp, MaterialTheme.colorScheme.inversePrimary)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(top = 20.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
+                Text(text = title, style = MaterialTheme.typography.titleLarge)
                 icon()
             }
             content()
         }
     }
+}
+
+@Composable
+fun Amount(
+    amount: Float,
+    currency: String,
+    modifier: Modifier = Modifier,
+    withPlusSign: Boolean = false,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge
+) {
+    Text(
+        text = "%${if (withPlusSign) "+.2f" else ".2f"} %s".format(amount, currency),
+        modifier = modifier,
+        style = textStyle,
+        color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
+    )
 }

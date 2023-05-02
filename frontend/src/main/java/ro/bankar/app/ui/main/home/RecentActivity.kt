@@ -18,11 +18,13 @@ import androidx.compose.material3.LocalMinimumTouchTargetEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,16 +38,18 @@ import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.app.ui.theme.LocalCustomColors
 import ro.bankar.app.ui.theme.customColors
 
 @Composable
 fun RecentActivity() {
-    HomeCard(title = "Recent Activity", icon = { Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null) }) {
+    HomeCard(title = stringResource(R.string.recent_activity), icon = { Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null) }) {
         PartyInvite(fromName = "Andi Koleci", time = LocalTime(16, 20), place = "Tesla Dealer")
         Payment(title = "MUULT Sushi :3", date = Clock.System.todayIn(TimeZone.currentSystemDefault()), amount = 23.2354f, currency = "RON")
         Transfer(name = "Hehe", dateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), amount = 25.215f, currency = "EUR")
         Transfer(name = "Hihi", dateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), amount = -15f, currency = "USD")
+        TextButton(onClick = { /*TODO*/ }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text(text = stringResource(R.string.see_more))
+        }
     }
 }
 
@@ -72,7 +76,7 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(6.dp),
+                .padding(vertical = 8.dp, horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -97,25 +101,16 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
     }
 }
 
-@Composable
-private fun Amount(amount: Float, currency: String) {
-    Text(
-        text = "%+.2f $currency".format(amount),
-        style = MaterialTheme.typography.labelLarge,
-        color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
     RecentActivityRow(icon = {
         FilledIcon(
             painter = painterResource(id = R.drawable.share_bill),
-            contentDescription = "Party Invite",
+            contentDescription = null,
             color = MaterialTheme.colorScheme.secondary,
         )
-    }, title = "Party invite from $fromName", subtitle = "${time.hour}:${time.minute} • $place") {
+    }, title = stringResource(R.string.party_invite_from).format(fromName), subtitle = "${time.hour}:${time.minute} • $place") {
         Row {
             CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
                 FilledIconButton(
@@ -129,7 +124,7 @@ private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
                     Icon(
                         modifier = Modifier.padding(start = 2.dp),
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Accept"
+                        contentDescription = stringResource(R.string.accept)
                     )
                 }
                 FilledIconButton(
@@ -143,7 +138,7 @@ private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
                     Icon(
                         modifier = Modifier.padding(end = 2.dp),
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Decline"
+                        contentDescription = stringResource(R.string.decline)
                     )
                 }
             }
@@ -156,7 +151,7 @@ private fun Payment(title: String, date: LocalDate, amount: Float, currency: Str
     RecentActivityRow(icon = {
         FilledIcon(
             painter = painterResource(R.drawable.payment),
-            contentDescription = "Payment",
+            contentDescription = stringResource(R.string.payment),
             color = MaterialTheme.colorScheme.secondary,
         )
     }, title = title, subtitle = "${date.dayOfMonth}.${date.monthNumber}.${date.year}") {
@@ -170,13 +165,13 @@ private fun Transfer(name: String, dateTime: LocalDateTime, amount: Float, curre
         icon = {
             FilledIcon(
                 painter = painterResource(R.drawable.baseline_transfer_24),
-                contentDescription = "Transfer",
+                contentDescription = stringResource(R.string.transfer),
                 color = MaterialTheme.colorScheme.secondary,
             )
         },
-        title = if (amount > 0) "From $name" else "To $name",
+        title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s).format(name),
         subtitle = with(dateTime) { "$hour:$minute • $dayOfMonth.$monthNumber.$year" }
     ) {
-        Amount(amount, currency)
+        Amount(amount, currency, withPlusSign = true)
     }
 }
