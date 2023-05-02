@@ -21,6 +21,16 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
+ktor {
+    distributions.main {
+        contents {
+            into("bin") {
+                from("./selfsigned.jks")
+            }
+        }
+    }
+}
+
 dependencies {
 	implementation(project(":common"))
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")

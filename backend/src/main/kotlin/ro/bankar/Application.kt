@@ -14,10 +14,7 @@ import ro.bankar.model.SCountries
 import ro.bankar.plugins.*
 
 fun main(args: Array<String>) {
-    if (args.size == 1) {
-        if (args[0] == "init") Database.init()
-        else if (args[0] == "reset") Database.reset()
-    }
+    if (args.size == 1 && args[0] == "reset") Database.reset()
     io.ktor.server.netty.EngineMain.main(args)
 }
 
@@ -31,11 +28,15 @@ fun Application.module() {
     DEV_MODE = environment.developmentMode
     SKIP_DELIVERY_CHECK = environment.config.propertyOrNull("ktor.skipDeliveryCheck")?.getString().toBoolean()
     COUNTRY_DATA = Json.decodeFromStream(object {}.javaClass.getResourceAsStream("/data/countries.json")!!)
-    SmsService.configure(System.getenv("SENDSMS_USER"), System.getenv("SENDSMS_KEY"), System.getenv("REPORT_URL"))
+    SmsService.configure(
+        System.getenv("SENDSMS_USER"),
+        System.getenv("SENDSMS_KEY"),
+        environment.config.propertyOrNull("ktor.sms.reportURL")?.getString(),
+    )
     configureSerialization()
     configureSessions()
     configureAuthentication()
-    Database.connect()
+    Database.init()
     configureSockets()
     install(AutoHeadResponse)
     install(FreeMarker) {

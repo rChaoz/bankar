@@ -15,13 +15,6 @@ import ro.bankar.database.PartyMembers
 import ro.bankar.database.TransferRequests
 import ro.bankar.database.Users
 
-fun Database.Companion.connect() = this.connect(
-    url = "jdbc:h2:file:./build/test",
-    user = "root",
-    driver = "org.h2.Driver",
-    password = ""
-)
-
 private val tables = listOf(
     Users, FriendRequests, FriendPairs,
     BankAccounts, BankTransfers, BankCards, CardTransactions,
@@ -29,13 +22,19 @@ private val tables = listOf(
     AssetAccounts,
 )
 
+private fun Database.Companion.connect() = this.connect(
+    url = "jdbc:h2:file:./build/test",
+    user = "root",
+    driver = "org.h2.Driver",
+    password = ""
+)
+
 fun Database.Companion.reset() {
-    this.connect()
+    connect()
     transaction { tables.reversed().forEach { SchemaUtils.drop(it) } }
-    init()
 }
 
 fun Database.Companion.init() {
-    this.connect()
+    connect()
     transaction { tables.forEach { SchemaUtils.create(it) } }
 }
