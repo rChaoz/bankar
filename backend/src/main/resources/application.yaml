@@ -1,7 +1,7 @@
 ktor:
   development: false
   sms:
-    reportURL: "http://rct33b.asuscomm.com/sms_report?status=%d"
+    reportURL: "https://rct33b.asuscomm.com/api/sms_report?status=%d"
   application:
     modules:
       - ro.bankar.ApplicationKt.module

@@ -25,7 +25,7 @@ ktor {
     distributions.main {
         contents {
             into("bin") {
-                from("./selfsigned.jks")
+                from("./").include("*.jks")
             }
         }
     }
