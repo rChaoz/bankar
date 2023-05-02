@@ -62,7 +62,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,6 +77,7 @@ import ro.bankar.app.USER_SESSION
 import ro.bankar.app.ktor.SafeStatusResponse
 import ro.bankar.app.ktor.ktorClient
 import ro.bankar.app.ktor.safePost
+import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.theme.AppTheme
@@ -106,7 +106,7 @@ class LoginModel : ViewModel() {
 
     // Set by model
     lateinit var onSuccess: () -> Unit
-    var dataStore: DataStore<Preferences>? = null
+    lateinit var dataStore: DataStore<Preferences>
 
     fun goBack() {
         if (step == LoginStep.Final) step = LoginStep.Initial
@@ -152,7 +152,7 @@ class LoginModel : ViewModel() {
         isLoading = false
         when (result) {
             is SafeStatusResponse.Success -> {
-                dataStore?.edit { store -> result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { store[USER_SESSION] = it } }
+                result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(USER_SESSION, it) }
                 onSuccess()
             }
             is SafeStatusResponse.InternalError -> {

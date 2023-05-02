@@ -19,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ro.bankar.app.R
 import ro.bankar.app.TAG
-import ro.bankar.app.configUrl
 
 val ktorClient = HttpClient(OkHttp) {
     install(DefaultRequest) {

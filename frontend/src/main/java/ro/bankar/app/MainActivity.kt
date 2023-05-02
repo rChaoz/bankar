@@ -11,21 +11,17 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ro.bankar.app.ui.main.MainNav
@@ -40,7 +36,6 @@ const val TAG = "BanKAR"
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
 
 val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
-val LocalDataStore = compositionLocalOf<DataStore<Preferences>?> { null }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,18 +51,17 @@ enum class Nav(val route: String) {
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun Main(dataStore: DataStore<Preferences>) {
-    val ioScope = rememberCoroutineScope { Dispatchers.IO }
+    val scope = rememberCoroutineScope()
     val initialPrefs = remember { runBlocking { dataStore.data.first() } }
 
+    // This is to prevent theme flickering on startup
     val initialDarkMode = initialPrefs[IS_DARK_MODE] ?: isSystemInDarkTheme()
-    val isDarkTheme by remember { dataStore.data.map { it[IS_DARK_MODE] ?: initialDarkMode } }.collectAsState(initialDarkMode, Dispatchers.IO)
+    val isDarkTheme by dataStore.collectPreferenceAsState(IS_DARK_MODE, initialDarkMode)
 
     AppTheme(useDarkTheme = isDarkTheme) {
         CompositionLocalProvider(
             LocalThemeMode provides ThemeMode(isDarkTheme) {
-                ioScope.launch {
-                    dataStore.edit { it[IS_DARK_MODE] = !isDarkTheme }
-                }
+                scope.launch { dataStore.setPreference(IS_DARK_MODE, !isDarkTheme) }
             },
             LocalDataStore provides dataStore,
         ) {

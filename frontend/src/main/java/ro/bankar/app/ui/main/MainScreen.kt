@@ -28,10 +28,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.datastore.preferences.core.edit
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
 import ro.bankar.app.USER_SESSION
+import ro.bankar.app.removePreference
 import ro.bankar.app.ui.main.home.Home
 import ro.bankar.app.ui.theme.AppTheme
 
@@ -48,9 +48,7 @@ fun MainScreen() {
     // To allow logout for testing
     if (tab == Tabs.Friends) {
         val dataStore = LocalDataStore.current
-        LaunchedEffect(true) {
-            dataStore?.edit { it -= USER_SESSION }
-        }
+        LaunchedEffect(true) { dataStore.removePreference(USER_SESSION) }
     }
 
     Scaffold(
