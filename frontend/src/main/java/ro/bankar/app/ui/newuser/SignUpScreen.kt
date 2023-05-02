@@ -158,10 +158,8 @@ class SignUpModel : ViewModel() {
         }
 
         val result = ktorClient.safeGet<StatusResponse, StatusResponse> {
-            url { _ ->
-                path("signup/check_tag")
-                parameter("q", it)
-            }
+            url("signup/check_tag")
+            parameter("q", it)
         }
 
         when (result) {
@@ -226,8 +224,8 @@ class SignUpModel : ViewModel() {
 
                 // Check e-mail isn't taken
                 val result = ktorClient.safeGet<StatusResponse, StatusResponse> {
-                    parameter("q", email.value)
                     url("signup/check_email")
+                    parameter("q", email.value)
                 }
                 when (result) {
                     is SafeStatusResponse.InternalError -> {
