@@ -191,7 +191,9 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                 ThemeToggle(
                     isDarkMode = themeMode.isDarkMode,
                     onToggle = themeMode.toggleThemeMode,
-                    modifier = Modifier.padding(top = 10.dp, end = 10.dp)
+                    modifier = Modifier
+                        .padding(top = 10.dp, end = 10.dp)
+                        .align(Alignment.End)
                 )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -234,7 +236,9 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                     exit = scaleOut() + fadeOut(),
                 ) {
                     Column(
-                        modifier = Modifier.padding(bottom = 15.dp),
+                        modifier = Modifier
+                            .padding(bottom = 15.dp)
+                            .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
