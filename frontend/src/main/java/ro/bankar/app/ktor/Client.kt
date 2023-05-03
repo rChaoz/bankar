@@ -4,8 +4,8 @@ import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -21,7 +21,7 @@ import ro.bankar.app.R
 import ro.bankar.app.TAG
 
 val ktorClient = HttpClient(OkHttp) {
-    install(DefaultRequest) {
+    defaultRequest {
         configUrl()
         contentType(ContentType.Application.Json)
     }
@@ -64,7 +64,7 @@ suspend inline fun <reified Result, reified Fail> HttpClient.safeStatusRequest(
     }
 
 suspend inline fun <reified Result> HttpClient.safeRequest(
-    successCode: HttpStatusCode,
+    successCode: HttpStatusCode = HttpStatusCode.OK,
     crossinline request: suspend HttpClient.() -> HttpResponse
 ): SafeResponse<Result> =
     withContext(Dispatchers.IO) {
