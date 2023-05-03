@@ -1,21 +1,16 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.authentication
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.ktor.server.sessions.clear
-import io.ktor.server.sessions.get
-import io.ktor.server.sessions.sessions
-import io.ktor.server.sessions.set
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.server.sessions.*
+import io.ktor.util.pipeline.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -24,12 +19,7 @@ import ro.bankar.DEV_MODE
 import ro.bankar.api.SmsService
 import ro.bankar.database.User
 import ro.bankar.generateNumeric
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.SInitialLoginData
-import ro.bankar.model.SNewUser
-import ro.bankar.model.SSMSCodeData
-import ro.bankar.model.SUserValidation
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.*
 import ro.bankar.plugins.LoginSession
 import ro.bankar.plugins.SignupSession
 import ro.bankar.plugins.UserPrincipal
@@ -37,7 +27,7 @@ import kotlin.time.Duration.Companion.minutes
 
 private fun generateCode() = if (DEV_MODE) "123456" else generateNumeric(6)
 
-fun Route.configureUsers() {
+fun Route.configureUserAccounts() {
     suspend fun PipelineContext<Unit, ApplicationCall>.checkCode(code: String, expiration: Instant, correctCode: String) = when {
         expiration < Clock.System.now() -> {
             call.respond(HttpStatusCode.Forbidden, StatusResponse("session_expired"))
@@ -171,10 +161,9 @@ fun Route.configureUsers() {
 
     authenticate {
         get("signout") {
-            val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
-                call.respond(HttpStatusCode.InternalServerError); return@get
-            }
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            newSuspendedTransaction { user.clearSession() }
+            call.respond(HttpStatusCode.OK, StatusResponse.Success)
         }
     }
-
 }

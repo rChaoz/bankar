@@ -59,7 +59,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
             this.user = user
             type = data.type
             currency = data.currency
-            name = data.name
+            name = data.name.trim()
             color = data.color
             // TODO interest for credit accounts
         }

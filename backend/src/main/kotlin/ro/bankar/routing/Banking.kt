@@ -17,19 +17,13 @@ fun Route.configureBanking() {
     route("accounts") {
         // Get all accounts
         get {
-            val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
-                call.respond(HttpStatusCode.InternalServerError); return@get
-            }
-
-            val accounts = newSuspendedTransaction { user.bankAccounts.serializable() }
-            call.respond(HttpStatusCode.OK, accounts)
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            call.respond(HttpStatusCode.OK, newSuspendedTransaction { user.bankAccounts.serializable() })
         }
 
         // Open bank account
         post("new") {
-            val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
-                call.respond(HttpStatusCode.InternalServerError); return@post
-            }
+            val user = call.authentication.principal<UserPrincipal>()!!.user
 
             val newAccountData = call.receive<SNewAccount>()
             newAccountData.validate()?.let {
@@ -43,9 +37,7 @@ fun Route.configureBanking() {
         // Bank account by ID
         route("{id}") {
             get {
-                val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
-                    call.respond(HttpStatusCode.InternalServerError); return@get
-                }
+                val user = call.authentication.principal<UserPrincipal>()!!.user
 
                 val accountID = call.parameters["id"]?.toIntOrNull() ?: run {
                     call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "account_id")); return@get
@@ -60,9 +52,7 @@ fun Route.configureBanking() {
             }
             // Create new bank card
             post("new") {
-                val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
-                    call.respond(HttpStatusCode.InternalServerError); return@post
-                }
+                val user = call.authentication.principal<UserPrincipal>()!!.user
 
                 // Get new card data
                 val newCardData = call.receive<SNewCard>()
@@ -81,9 +71,7 @@ fun Route.configureBanking() {
             }
             // Get bank card data
             get("{cardID}") {
-                val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
-                    call.respond(HttpStatusCode.InternalServerError); return@get
-                }
+                val user = call.authentication.principal<UserPrincipal>()!!.user
 
                 val accountID = call.parameters["id"]?.toIntOrNull()
                 val cardID = call.parameters["cardID"]?.toIntOrNull()

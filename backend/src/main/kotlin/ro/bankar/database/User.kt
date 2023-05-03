@@ -44,7 +44,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
 
                 countryCode = userData.countryCode
                 state = userData.state
-                city = userData.city
+                city = userData.city.trim()
                 address = userData.address.trim()
             }
         }
@@ -135,6 +135,14 @@ class User(id: EntityID<Int>) : IntEntity(id) {
      */
     fun updateTokenExpiration() {
         sessionTokenExpiration = (Clock.System.now() + 90.days).toLocalDateTime(TimeZone.UTC)
+    }
+
+    /**
+     * Remove existing session token, used for signing out
+     */
+    fun clearSession() {
+        sessionToken = null
+        sessionTokenExpiration = Clock.System.now().toLocalDateTime(TimeZone.UTC)
     }
 
     /**

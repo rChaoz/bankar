@@ -1,21 +1,21 @@
 package ro.bankar.plugins
 
-import io.ktor.server.application.Application
-import io.ktor.server.auth.authenticate
-import io.ktor.server.http.content.resources
-import io.ktor.server.http.content.static
-import io.ktor.server.routing.route
-import io.ktor.server.routing.routing
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.http.content.*
+import io.ktor.server.routing.*
 import ro.bankar.routing.configureAPIs
 import ro.bankar.routing.configureBanking
-import ro.bankar.routing.configureUsers
+import ro.bankar.routing.configureUserAccounts
+import ro.bankar.routing.configureUserProfiles
 
 fun Application.configureRouting() {
     routing {
         route("api") {
-            configureUsers()
+            configureUserAccounts()
             configureAPIs()
             authenticate {
+                configureUserProfiles()
                 configureBanking()
             }
             static("data") {
