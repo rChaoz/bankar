@@ -3,17 +3,14 @@ package ro.bankar.app.ui.newuser
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -125,6 +122,7 @@ class LoginModel : ViewModel() {
         when (result) {
             is SafeStatusResponse.Success -> {
                 loginSession = result.r.headers["LoginSession"]
+                codeError = null
                 step = LoginStep.Final
             }
             is SafeStatusResponse.InternalError -> {
@@ -185,8 +183,7 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .padding(padding)
             ) {
                 ThemeToggle(
                     isDarkMode = themeMode.isDarkMode,
@@ -194,6 +191,11 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                     modifier = Modifier
                         .padding(top = 10.dp, end = 10.dp)
                         .align(Alignment.End)
+                )
+                Spacer(
+                    modifier = Modifier
+                        .weight(1f)
+                        .animateContentSize()
                 )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -230,12 +232,9 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                         }
                     }
                 }
-                AnimatedVisibility(
-                    visible = model.step == LoginStep.Initial,
-                    enter = scaleIn() + fadeIn(),
-                    exit = scaleOut() + fadeOut(),
-                ) {
-                    Column(
+                Spacer(modifier = Modifier.weight(1f))
+                AnimatedContent(targetState = model.step, label = "SignUpOptionVisibility") {
+                    if (it == LoginStep.Initial) Column(
                         modifier = Modifier
                             .padding(bottom = 15.dp)
                             .fillMaxWidth(),
@@ -354,6 +353,7 @@ private fun FinalLoginStep(model: LoginModel) {
             keyboardType = KeyboardType.NumberPassword,
             placeholder = "123456",
             isError = model.codeError != null,
+            supportingText = model.codeError,
             textStyle = MaterialTheme.typography.bodyLarge,
             onDone = {
                 if (model.code.length < 6) model.codeError = context.getString(R.string.code_has_6_digits)
