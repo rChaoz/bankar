@@ -8,85 +8,87 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.Serializable
 
-@Serializable
-class SUser(
-    val email: String,
-    val tag: String,
-    val phone: String,
+/**
+ * Object containing regexes & rules to validate user information
+ */
+object SUserValidation {
+    // Tag
+    val tagLengthRange = 4..25
+    val tagRegex = Regex("""^[a-z][a-z0-9._-]{${tagLengthRange.first - 1},${tagLengthRange.last - 1}}$""")
 
-    val firstName: String,
-    val middleName: String?,
-    val lastName: String,
+    // Name
+    val nameRegex = Regex("""^[\p{L}- ]{2,20}$""")
 
-    val joinDate: LocalDate,
-    val address: String,
-)
+    // E-mail
+    val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
+
+    // Phone number
+    val phoneRegex = Regex("""^\+\d{9,13}$""")
+
+    // Password: between 8 and 32 characters (inclusive), at least one uppercase letter, at least one
+    // lowercase letter, at least one digit, at least one special character
+    val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,32}$""")
+
+    // Valid age range (in years)
+    val ageRange = 13..110
+
+    // Valid lengths for city & address
+    val cityLengthRange = 2..30
+    val addressLengthRange = 5..300
+
+    // Max length for about field
+    const val aboutMaxLength = 300
+
+    // Avatar image size
+    const val avatarSize = 512
+}
 
 /**
- * Data sent by the client when signing up.
+ * Common data shared between all serializable User classes
  */
-@Serializable
-data class SNewUser (
-    val email: String,
-    val tag: String,
-    val phone: String,
-    val password: String,
+sealed class SPublicUserBase {
+    abstract val tag: String
 
-    val firstName: String,
-    val middleName: String? = null,
-    val lastName: String,
-    val dateOfBirth: LocalDate,
+    abstract val firstName: String
+    abstract val middleName: String?
+    abstract val lastName: String
 
-    val countryCode: String,
-    val state: String,
-    val city: String,
-    val address: String,
-) {
-    companion object {
-        // E-mail regex
-        val emailRegex = Regex("""^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$""")
-        // Phone number regex
-        val phoneRegex = Regex("""^\+\d{9,13}$""")
-        // Tag regex
-        val tagLengthRange = 4..25
-        val tagRegex = Regex("""^[a-z][a-z0-9._-]{${tagLengthRange.first - 1},${tagLengthRange.last - 1}}$""")
+    abstract val countryCode: String
 
-        // Regex for password: between 8 and 32 characters (inclusive), at least one uppercase letter, at least one
-        // lowercase letter, at least one digit, at least one special character
-        val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,32}$""")
-        // Regex for a valid name
-        val nameRegex = Regex("""^[\p{L}- ]{2,20}$""")
-
-        // Valid age range (in years)
-        val ageRange = 13..110
-
-        // Valid lengths for city & address
-        val cityLengthRange = 2..30
-        val addressLengthRange = 5..300
-    }
-
-    /**
-     * Validate all fields. In case of invalid field, returns the name of the field, as a String.
-     * Otherwise, if all fields are valid, return `null`.
-     */
-    fun validate(countryData: SCountries): String? {
-        val country = countryData.find { it.code == countryCode } ?: return "country"
-        if (state !in country.states) return "state"
-
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-
-        return when {
-            // Check login information
-            !emailRegex.matches(email) -> "email"
-            !phoneRegex.matches(phone) -> "phone"
+    open fun validate(data: SCountries) = with(SUserValidation) {
+        when {
             !tagRegex.matches(tag) -> "tag"
-            !passwordRegex.matches(password) -> "password"
-            // Check name & date of birth
+
             !nameRegex.matches(firstName) -> "firstName"
-            middleName != null && !nameRegex.matches(middleName.trim()) -> "middleName"
+            middleName.let { it != null && !nameRegex.matches(it.trim()) } -> "middleName"
             !nameRegex.matches(lastName) -> "lastName"
+
+            data.none { it.code == countryCode } -> "countryCode"
+            else -> null
+        }
+    }
+}
+
+/**
+ * Common data shared between SNewUser and SUser
+ */
+sealed class SUserBase : SPublicUserBase() {
+    abstract val email: String
+    abstract val phone: String
+
+    abstract val dateOfBirth: LocalDate
+
+    abstract val state: String
+    abstract val city: String
+    abstract val address: String
+
+    override fun validate(data: SCountries) = super.validate(data) ?: with(SUserValidation) {
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        when {
+            !email.matches(emailRegex) -> "email"
+            !phone.matches(phoneRegex) -> "phone"
             dateOfBirth !in (today - DatePeriod(ageRange.last))..(today - DatePeriod(ageRange.first)) -> "dateOfBirth"
-            // Check address
+            state !in data.first { it.code == countryCode }.states -> "state"
             city.length !in cityLengthRange -> "city"
             address.length !in addressLengthRange -> "address"
             else -> null
@@ -94,12 +96,108 @@ data class SNewUser (
     }
 }
 
+/**
+ * Data sent by the user when signing up or when updating their profile
+ */
 @Serializable
-class SInitialLoginData(
+class SNewUser(
+    override val email: String,
+    override val tag: String,
+    override val phone: String,
+    val password: String,
+
+    override val firstName: String,
+    override val middleName: String? = null,
+    override val lastName: String,
+    override val dateOfBirth: LocalDate,
+
+    override val countryCode: String,
+    override val state: String,
+    override val city: String,
+    override val address: String,
+) : SUserBase() {
+    override fun validate(data: SCountries) = super.validate(data) ?: if (!SUserValidation.passwordRegex.matches(password)) "password" else null
+}
+
+/**
+ * Profile data that the user can see on his own profile page
+ */
+@Serializable
+class SUser(
+    override val email: String,
+    override val tag: String,
+    override val phone: String,
+
+    override val firstName: String,
+    override val middleName: String?,
+    override val lastName: String,
+    override val dateOfBirth: LocalDate,
+
+    override val countryCode: String,
+    override val state: String,
+    override val city: String,
+    override val address: String,
+
+    val joinDate: LocalDate,
+    val about: String,
+    /**
+     * WEBP compressed image
+     */
+    val avatar: ByteArray?
+) : SUserBase() // No validate because this type is never sent by the client
+
+/**
+ * Verify that the given data is a valid WEBP image with the correct size (as specified by [SUserValidation.avatarSize])
+ */
+expect fun validateImage(imageData: ByteArray): Boolean
+
+/**
+ * Data sent by the client to update their about information/profile picture
+ */
+@Serializable
+class SUserProfileUpdate(
+    val about: String?,
+    val avatar: ByteArray?,
+) {
+    fun validate() = when {
+        about != null && about.length > SUserValidation.aboutMaxLength -> "about"
+        avatar != null && !validateImage(avatar) -> "avatar"
+        else -> null
+    }
+}
+
+/**
+ * Data a user receives about other users that have accepted being added as friends
+ */
+@Serializable
+class SPublicUser(
+    override val tag: String,
+
+    override val firstName: String,
+    override val middleName: String?,
+    override val lastName: String,
+
+    override val countryCode: String,
+    val joinDate: LocalDate,
+    val about: String,
+    /**
+     * WEBP compressed image
+     */
+    val avatar: ByteArray?
+) : SPublicUserBase() // No validate because this type is never sent by the client
+
+/**
+ * Data sent by client to login
+ */
+@Serializable
+data class SInitialLoginData(
     val id: String,
     val password: String,
 )
 
+/**
+ * Data sent by client to complete login/signup operation
+ */
 @Serializable
 data class SSMSCodeData(
     val smsCode: String,

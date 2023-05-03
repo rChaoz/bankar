@@ -1,10 +1,8 @@
 package ro.bankar.database
 
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -20,18 +18,10 @@ import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.model.SNewUser
+import ro.bankar.model.SPublicUser
 import ro.bankar.model.SUser
 import ro.bankar.sha256
 import kotlin.time.Duration.Companion.days
-
-@Serializable
-class SPublicUser(
-    val tag: String,
-    val firstName: String,
-    val middleName: String?,
-    val lastName: String,
-    val joinDate: LocalDate,
-)
 
 class User(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<User>(Users) {
@@ -150,13 +140,13 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Returns a serializable user
      */
-    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, joinDate, address)
+    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state, city, address, joinDate, about, avatar?.bytes)
 }
 
 /**
  * Converts a list of Users to a list of serializable objects containing only the public information about the user.
  */
-fun SizedIterable<User>.serializable() = map { SPublicUser(it.tag, it.firstName, it.middleName, it.lastName, it.joinDate) }
+fun SizedIterable<User>.serializable() = map { SPublicUser(it.tag, it.firstName, it.middleName, it.lastName, it.countryCode, it.joinDate, it.about, it.avatar?.bytes) }
 
 internal object Users : IntIdTable(columnName = "user_id") {
     val email = varchar("email", 50).uniqueIndex()

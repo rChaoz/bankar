@@ -3,6 +3,8 @@ package ro.bankar.routing
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.authentication
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -26,9 +28,11 @@ import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
+import ro.bankar.model.SUserValidation
 import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.LoginSession
 import ro.bankar.plugins.SignupSession
+import ro.bankar.plugins.UserPrincipal
 import kotlin.time.Duration.Companion.minutes
 
 private fun generateCode() = if (DEV_MODE) "123456" else generateNumeric(6)
@@ -98,7 +102,7 @@ fun Route.configureUsers() {
         // Check if tag is taken (or if it's invalid)
         get("check_tag") {
             val tag = call.request.queryParameters["q"]
-            if (tag.isNullOrEmpty() || !SNewUser.tagRegex.matches(tag)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_tag"))
+            if (tag.isNullOrEmpty() || !SUserValidation.tagRegex.matches(tag)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_tag"))
             else if (newSuspendedTransaction { User.isTagTaken(tag) }) call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
             else call.respond(HttpStatusCode.OK, StatusResponse("valid"))
         }
@@ -106,7 +110,7 @@ fun Route.configureUsers() {
         // Check if e-mail is taken (or invalid)
         get("check_email") {
             val email = call.request.queryParameters["q"]
-            if (email.isNullOrEmpty() || !SNewUser.emailRegex.matches(email)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_email"))
+            if (email.isNullOrEmpty() || !SUserValidation.emailRegex.matches(email)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_email"))
             else if (newSuspendedTransaction { User.isEmailTaken(email) }) call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
             else call.respond(HttpStatusCode.OK, StatusResponse("valid"))
         }
@@ -164,4 +168,13 @@ fun Route.configureUsers() {
             }
         }
     }
+
+    authenticate {
+        get("signout") {
+            val user = call.authentication.principal<UserPrincipal>()?.user ?: run {
+                call.respond(HttpStatusCode.InternalServerError); return@get
+            }
+        }
+    }
+
 }

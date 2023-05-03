@@ -130,6 +130,7 @@ import ro.bankar.model.SCountries
 import ro.bankar.model.SCountry
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
+import ro.bankar.model.SUserValidation
 import ro.bankar.model.StatusResponse
 
 enum class SignUpStep {
@@ -149,9 +150,9 @@ class SignUpModel : ViewModel() {
     val tag = verifiableSuspendingStateOf("", viewModelScope) {
         // Check that tag is valid
         when {
-            it.length < SNewUser.tagLengthRange.first -> getString(R.string.tag_too_short).format(SNewUser.tagLengthRange.first)
-            it.length > SNewUser.tagLengthRange.last -> getString(R.string.tag_too_long).format(SNewUser.tagLengthRange.last)
-            !SNewUser.tagRegex.matches(it) -> getString(R.string.invalid_tag)
+            it.length < SUserValidation.tagLengthRange.first -> getString(R.string.tag_too_short).format(SUserValidation.tagLengthRange.first)
+            it.length > SUserValidation.tagLengthRange.last -> getString(R.string.tag_too_long).format(SUserValidation.tagLengthRange.last)
+            !SUserValidation.tagRegex.matches(it) -> getString(R.string.invalid_tag)
             else -> null
         }?.let { error ->
             return@verifiableSuspendingStateOf error
@@ -172,32 +173,32 @@ class SignUpModel : ViewModel() {
             is SafeStatusResponse.Success -> null
         }
     }
-    val email = verifiableStateOf("", R.string.invalid_email) { SNewUser.emailRegex.matches(it.trim()) }
-    val password = verifiableStateOf("", R.string.password_doesnt_meet) { SNewUser.passwordRegex.matches(it) }
+    val email = verifiableStateOf("", R.string.invalid_email) { SUserValidation.emailRegex.matches(it.trim()) }
+    val password = verifiableStateOf("", R.string.password_doesnt_meet) { SUserValidation.passwordRegex.matches(it) }
     val confirmPassword = verifiableStateOf("", R.string.password_doesnt_meet) { it == password.value }
 
     // Second step
-    val firstName = verifiableStateOf("", R.string.invalid_name) { SNewUser.nameRegex.matches(it.trim()) }
-    val middleName = verifiableStateOf("", R.string.invalid_name) { it.isEmpty() || SNewUser.nameRegex.matches(it.trim()) }
-    val lastName = verifiableStateOf("", R.string.invalid_name) { SNewUser.nameRegex.matches(it.trim()) }
+    val firstName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
+    val middleName = verifiableStateOf("", R.string.invalid_name) { it.isEmpty() || SUserValidation.nameRegex.matches(it.trim()) }
+    val lastName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
     val dateOfBirth = verifiableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault()) - DatePeriod(18)) {
         val age = Clock.System.todayIn(TimeZone.currentSystemDefault()) - it
         when (age.years) {
-            in 0..SNewUser.ageRange.first -> getString(R.string.you_must_be_min_age)
-            in SNewUser.ageRange -> null
+            in 0..SUserValidation.ageRange.first -> getString(R.string.you_must_be_min_age)
+            in SUserValidation.ageRange -> null
             else -> getString(R.string.invalid_date_of_birth)
         }
     }
     val country = mutableStateOf(SCountry("null", "null", "null", emptyList()))
     val state = mutableStateOf("")
-    val city = verifiableStateOf("", R.string.invalid_city) { it.trim().length in SNewUser.cityLengthRange }
-    val address = verifiableStateOf("", R.string.invalid_address) { it.trim().length in SNewUser.addressLengthRange }
+    val city = verifiableStateOf("", R.string.invalid_city) { it.trim().length in SUserValidation.cityLengthRange }
+    val address = verifiableStateOf("", R.string.invalid_address) { it.trim().length in SUserValidation.addressLengthRange }
 
     // Final steps
     val phoneCountry = mutableStateOf<SCountry?>(null)
     val countryCode get() = (phoneCountry.value ?: country.value).dialCode
     val phone = verifiableStateOf("", R.string.invalid_phone) {
-        SNewUser.phoneRegex.matches(countryCode + it)
+        SUserValidation.phoneRegex.matches(countryCode + it)
     }
     var code by mutableStateOf("")
     var codeError by mutableStateOf("")
