@@ -17,13 +17,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import ro.bankar.app.ktor.EmptyRepository
+import ro.bankar.app.ktor.LocalRepository
+import ro.bankar.app.ktor.Repository
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.mainNavigation
 import ro.bankar.app.ui.newuser.NewUserNav
@@ -40,7 +45,7 @@ val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { Main(dataStore) }
+        setContent { Main(dataStore, lifecycleScope) }
     }
 }
 
@@ -50,7 +55,7 @@ enum class Nav(val route: String) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun Main(dataStore: DataStore<Preferences>) {
+private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineScope) {
     val scope = rememberCoroutineScope()
     val initialPrefs = remember { runBlocking { dataStore.data.first() } }
 
@@ -68,21 +73,36 @@ private fun Main(dataStore: DataStore<Preferences>) {
             // Setup navigation
             val controller = rememberAnimatedNavController()
 
-            AnimatedNavHost(
-                controller,
-                startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
-                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
-            ) {
-                navigation(controller)
+            // Server data repository
+            val sessionToken by dataStore.collectPreferenceAsState(USER_SESSION, defaultValue = null)
+            val repository = remember(sessionToken) {
+                sessionToken?.let {
+                    Repository(lifecycleScope, it) {
+                        controller.navigate(NewUserNav.route) {
+                            popUpTo(MainNav.route) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                } ?: EmptyRepository
+            }
+
+            CompositionLocalProvider(LocalRepository provides repository) {
+                AnimatedNavHost(
+                    controller,
+                    startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
+                    enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
+                ) {
+                    navigation(controller)
+                }
             }
         }
     }
 }
 
 
-@OptIn(ExperimentalAnimationApi::class)
 private fun NavGraphBuilder.navigation(controller: NavHostController) {
     newUserNavigation(controller, onSuccess = {
         controller.navigate(Nav.Main.route) {

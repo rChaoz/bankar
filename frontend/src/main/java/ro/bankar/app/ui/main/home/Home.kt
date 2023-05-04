@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -25,12 +27,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ro.bankar.app.ktor.LocalRepository
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.LocalCustomColors
 import ro.bankar.app.ui.theme.customColors
 
 @Composable
 fun Home() {
+    val repo = LocalRepository.current
+    LaunchedEffect(true) {
+        repo.accounts.requestRefresh()
+    }
+    val accounts = repo.accounts.collectAsState(null)
+
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier

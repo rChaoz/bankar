@@ -22,7 +22,7 @@ val USER_SESSION = stringPreferencesKey("userSession")
 val PREFERRED_CURRENCY = stringPreferencesKey("preferredCurrency")
 
 @Composable
-fun <T> DataStore<Preferences>.collectPreferenceAsState(key: Preferences.Key<T>, defaultValue: T) =
+fun <T> DataStore<Preferences>.collectPreferenceAsState(key: Preferences.Key<out T>, defaultValue: T) =
     remember { data.map { it[key] ?: defaultValue } }.collectAsState(defaultValue, Dispatchers.IO)
 
 suspend fun <T> DataStore<Preferences>.setPreference(key: Preferences.Key<T>, value: T) = withContext(Dispatchers.IO) { edit { it[key] = value } }
