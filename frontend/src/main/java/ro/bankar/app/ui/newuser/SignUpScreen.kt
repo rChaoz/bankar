@@ -118,7 +118,6 @@ import ro.bankar.app.ui.components.ButtonField
 import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
-import ro.bankar.app.ui.createRefsFor
 import ro.bankar.app.ui.monthStringResource
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme

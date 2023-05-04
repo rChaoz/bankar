@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -27,6 +28,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.valentinilk.shimmer.Shimmer
+import com.valentinilk.shimmer.ShimmerBounds
+import com.valentinilk.shimmer.rememberShimmer
+import com.valentinilk.shimmer.shimmer
 import ro.bankar.app.ktor.LocalRepository
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.LocalCustomColors
@@ -38,7 +43,9 @@ fun Home() {
     LaunchedEffect(true) {
         repo.accounts.requestRefresh()
     }
-    val accounts = repo.accounts.collectAsState(null)
+    val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
+
+    val accounts by repo.accounts.collectAsState(null)
 
     val scrollState = rememberScrollState()
     Column(
@@ -47,9 +54,15 @@ fun Home() {
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        RecentActivity()
-        BankAccount()
-        Assets()
+        if (accounts == null) {
+            RecentActivityShimmer(shimmer)
+            BankAccountShimmer(shimmer)
+            AssetsShimmer(shimmer)
+        } else {
+            RecentActivity()
+            for (account in accounts!!) BankAccount(data = account)
+            Assets()
+        }
     }
 }
 
@@ -83,42 +96,84 @@ private fun Modifier.topBorder(thickness: Dp, color: Color) = composed {
 }
 
 @Composable
-fun HomeCard(title: String, icon: @Composable () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+private fun HomeCardContent(
+    title: String,
+    icon: @Composable () -> Unit,
+    shimmer: Shimmer? = null,
+    color: Color? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = Modifier.topBorder(5.dp, color ?: MaterialTheme.colorScheme.inversePrimary)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            val mod = if (shimmer == null) Modifier else Modifier.shimmer(shimmer)
+            Text(text = title, style = MaterialTheme.typography.titleLarge, modifier = mod)
+//            else Box(modifier = Modifier
+//                .size(200.dp, 26.dp)
+//                .grayShimmer(shimmer))
+            icon()
+        }
+        content()
+    }
+}
+
+@Composable
+fun HomeCard(
+    title: String,
+    icon: @Composable () -> Unit,
+    shimmer: Shimmer? = null,
+    color: Color? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         tonalElevation = .5.dp,
         shadowElevation = 3.dp
     ) {
-        Column(
-            modifier = Modifier.topBorder(5.dp, MaterialTheme.colorScheme.inversePrimary)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = title, style = MaterialTheme.typography.titleLarge)
-                icon()
-            }
-            content()
-        }
+        HomeCardContent(title, icon, shimmer, color, content)
+    }
+}
+
+@Composable
+fun HomeCard(
+    onClick: () -> Unit,
+    title: String,
+    icon: @Composable () -> Unit,
+    shimmer: Shimmer? = null,
+    color: Color? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        tonalElevation = .5.dp,
+        shadowElevation = 3.dp
+    ) {
+        HomeCardContent(title, icon, shimmer, color, content)
     }
 }
 
 @Composable
 fun Amount(
-    amount: Float,
+    amount: Double,
     currency: String,
     modifier: Modifier = Modifier,
     withPlusSign: Boolean = false,
-    textStyle: TextStyle = MaterialTheme.typography.labelLarge
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    shimmer: Shimmer? = null,
 ) {
     Text(
         text = "%${if (withPlusSign) "+.2f" else ".2f"} %s".format(amount, currency),
-        modifier = modifier,
+        modifier = modifier.let { if (shimmer != null) it.shimmer(shimmer) else it },
         style = textStyle,
         color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
     )

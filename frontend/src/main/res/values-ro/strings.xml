@@ -101,4 +101,7 @@
     <string name="assets">Avere</string>
     <string name="account">Cont</string>
     <string name="clear">Golește</string>
+    <string name="cash">Cash</string>
+    <string name="stocks">Stocuri</string>
+    <string name="crypto">Crypto</string>
 </resources>

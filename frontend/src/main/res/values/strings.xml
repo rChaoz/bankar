@@ -101,4 +101,7 @@
     <string name="assets">Assets</string>
     <string name="account">Account</string>
     <string name="clear">Clear</string>
+    <string name="cash">Cash</string>
+    <string name="stocks">Stocks</string>
+    <string name="crypto">Crypto</string>
 </resources>

@@ -1,21 +1,25 @@
 package ro.bankar.app.ui
 
 import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.res.stringResource
-import androidx.constraintlayout.compose.ConstraintSetScope
+import com.valentinilk.shimmer.Shimmer
+import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
+import ro.bankar.app.ui.theme.customColors
 import java.time.Month
-
-fun ConstraintSetScope.createRefsFor(vararg ids: String) = ids.map { createRefFor(it) }
 
 @Composable
 fun monthStringResource(month: kotlinx.datetime.Month) = stringResource(
@@ -117,3 +121,5 @@ inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
 } catch (_: Exception) {
     null
 }
+
+fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }

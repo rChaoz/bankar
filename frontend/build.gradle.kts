@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.maxkeppeler.compose.calendar)
     implementation(libs.io.coil)
     implementation(libs.image.cropper)
+    implementation(libs.shimmer.compose)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)

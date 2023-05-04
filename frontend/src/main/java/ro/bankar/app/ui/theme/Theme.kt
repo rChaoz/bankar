@@ -77,10 +77,10 @@ private val darkColors = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
-class CustomColors(val accountDefault: Color, val red: Color, val green: Color)
+class CustomColors(val accountDefault: Color, val red: Color, val green: Color, val gray: Color, val shimmer: Color)
 
-private val lightCustomColors = CustomColors(accountDefault, light_red, light_green)
-private val darkCustomColors = CustomColors(accountDefault, dark_red, dark_green)
+private val lightCustomColors = CustomColors(accountDefault, light_red, light_green, light_gray, light_shimmer)
+private val darkCustomColors = CustomColors(accountDefault, dark_red, dark_green, dark_gray, dark_shimmer)
 
 val LocalCustomColors = compositionLocalOf { lightCustomColors }
 

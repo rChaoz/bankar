@@ -18,6 +18,7 @@ maxkeppeler-compose = "1.1.1"
 io-coil = "2.3.0"
 image-cropper = "4.5.0"
 material3 = "1.1.0-rc01"
+shimmer-compose = "1.0.4"
 
 [libraries]
 com-android-tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "com-android-tools-desugaring" }
@@ -47,6 +48,7 @@ maxkeppeler-compose-core = { group = "com.maxkeppeler.sheets-compose-dialogs", n
 maxkeppeler-compose-calendar = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "calendar", version.ref = "maxkeppeler-compose" }
 io-coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "io-coil" }
 image-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "image-cropper" }
+shimmer-compose = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version.ref = "shimmer-compose" }
 
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "com-android-application" }

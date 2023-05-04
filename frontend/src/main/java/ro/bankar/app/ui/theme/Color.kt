@@ -70,6 +70,10 @@ val seed = Color(0xFFC47131)
 val accountDefault = Color(0xFF6D95FE)
 val light_red = Color(0xFF9E0000)
 val light_green = Color(0xFF007C1B)
+val light_gray = Color.LightGray
+val light_shimmer = Color.Gray
 
 val dark_red = Color(0xFFD32727)
 val dark_green = Color(0xFF2BCC4E)
+val dark_gray = Color.DarkGray
+val dark_shimmer = Color.Gray
