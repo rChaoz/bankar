@@ -1,7 +1,6 @@
 package ro.bankar.database
 
 import kotlinx.datetime.*
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -10,32 +9,14 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import ro.bankar.amount
 import ro.bankar.generateNumeric
-
-@Serializable
-data class SBankCard(
-    val id: Int,
-    val name: String,
-    val number: String?,
-    val lastFour: String,
-    val pin: String?,
-    val expirationMonth: Int?,
-    val expirationYear: Int?,
-    val cvv: String?,
-    val limit: Double,
-    val limitCurrent: Double,
-    val transactions: List<SCardTransaction>,
-)
-
-@Serializable
-data class SNewCard(val name: String) {
-    fun validate() = if (name.length in 2..30) null else "name"
-}
+import ro.bankar.model.SBankCard
+import ro.bankar.model.SNewBankCard
 
 class BankCard(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankCard>(BankCards) {
         fun find(id: Int, accountID: Int) = find { (BankCards.id eq id) and (BankCards.bankAccount eq accountID) }.firstOrNull()
 
-        fun create(data: SNewCard, account: BankAccount) = BankCard.new {
+        fun create(data: SNewBankCard, account: BankAccount) = BankCard.new {
             name = data.name
             bankAccount = account
         }

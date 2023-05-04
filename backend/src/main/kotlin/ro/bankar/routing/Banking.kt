@@ -7,10 +7,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import ro.bankar.database.*
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
-import ro.bankar.model.StatusResponse
+import ro.bankar.database.BankAccount
+import ro.bankar.database.BankCard
+import ro.bankar.database.serializable
+import ro.bankar.model.*
 import ro.bankar.plugins.UserPrincipal
 
 fun Route.configureBanking() {
@@ -25,7 +25,7 @@ fun Route.configureBanking() {
         post("new") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
 
-            val newAccountData = call.receive<SNewAccount>()
+            val newAccountData = call.receive<SNewBankAccount>()
             newAccountData.validate()?.let {
                 call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it))
                 return@post
@@ -55,7 +55,7 @@ fun Route.configureBanking() {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
 
                 // Get new card data
-                val newCardData = call.receive<SNewCard>()
+                val newCardData = call.receive<SNewBankCard>()
                 newCardData.validate()?.let {
                     call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@post
                 }

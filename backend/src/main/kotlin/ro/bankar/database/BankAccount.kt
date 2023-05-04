@@ -1,7 +1,5 @@
 package ro.bankar.database
 
-import kotlinx.datetime.LocalDate
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -11,51 +9,16 @@ import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
-import ro.bankar.banking.Currencies
 import ro.bankar.currency
 import ro.bankar.generateNumeric
-
-@Serializable
-data class SBankAccount(
-    val id: Int,
-    val iban: String,
-    val type: BankAccount.Type,
-    val balance: Double,
-    val limit: Double,
-    val currency: String,
-    val name: String,
-    val color: Int,
-    val interest: Double,
-    val interestDate: LocalDate,
-)
-
-@Serializable
-data class SBankAccountData(
-    val cards: List<SBankCard>,
-    val transfers: List<SBankTransfer>,
-    val transactions: List<SCardTransaction>,
-)
-
-@Serializable
-data class SNewAccount(
-    val type: BankAccount.Type,
-    val name: String,
-    val color: Int,
-    val currency: String,
-) {
-    fun validate() = when {
-        name.length !in 2..30 -> "name"
-        Currencies.values().none { it.code == currency } -> "currency"
-        else -> null
-    }
-}
+import ro.bankar.model.SBankAccount
+import ro.bankar.model.SBankAccountData
+import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SNewBankAccount
 
 class BankAccount(id: EntityID<Int>) : IntEntity(id) {
-    @Serializable
-    enum class Type { DEBIT, SAVINGS, CREDIT }
-
     companion object : IntEntityClass<BankAccount>(BankAccounts) {
-        fun create(user: User, data: SNewAccount) = BankAccount.new {
+        fun create(user: User, data: SNewBankAccount) = BankAccount.new {
             this.user = user
             type = data.type
             currency = data.currency
@@ -108,7 +71,7 @@ internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
         "$countryCode$checkDigits$bankCode$accountNumber"
     }
     val userID = reference("user_id", Users)
-    val type = enumeration<BankAccount.Type>("type")
+    val type = enumeration<SBankAccountType>("type")
     val balance = amount("balance").default(0.0.toBigDecimal())
     val limit = amount("limit").default(0.0.toBigDecimal())
     val currency = currency("currency")

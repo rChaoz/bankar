@@ -1,7 +1,5 @@
 package ro.bankar.database
 
-import kotlinx.datetime.LocalDateTime
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -10,17 +8,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.amount
 import ro.bankar.currency
-
-@Serializable
-data class SBankTransfer(
-    val senderName: String,
-    val senderIban: String,
-    val recipientName: String,
-    val recipientIban: String,
-    val amount: Double,
-    val currency: String,
-    val date: LocalDateTime,
-)
+import ro.bankar.model.SBankTransfer
 
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankTransfer>(BankTransfers)

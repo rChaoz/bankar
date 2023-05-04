@@ -1,7 +1,5 @@
 package ro.bankar.database
 
-import kotlinx.datetime.LocalDateTime
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -11,17 +9,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.amount
 import ro.bankar.currency
-
-@Serializable
-data class SCardTransaction(
-    val reference: Long,
-    val cardID: Int,
-    val cardLastFour: String,
-    val amount: Double,
-    val currency: String,
-    val dateTime: LocalDateTime,
-    val details: String,
-)
+import ro.bankar.model.SCardTransaction
 
 class CardTransaction(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<CardTransaction>(CardTransactions)

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import ro.bankar.model.SBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SUser
 
@@ -51,4 +52,5 @@ class Repository(private val scope: CoroutineScope, private val sessionToken: St
     val profile = ktorGetFlow<SUser>("profile")
     val friends = ktorGetFlow<List<SPublicUser>>("friends")
     val friendsRequests = ktorGetFlow<List<SPublicUser>>("friendsRequests")
+    val accounts = ktorGetFlow<List<SBankAccount>>("accounts")
 }
