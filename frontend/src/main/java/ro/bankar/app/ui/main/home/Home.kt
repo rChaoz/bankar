@@ -35,7 +35,7 @@ fun Home() {
     Column(
         modifier = Modifier
             .verticalScroll(scrollState)
-            .padding(8.dp),
+            .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         RecentActivity()
@@ -68,6 +68,7 @@ private fun Modifier.topBorder(thickness: Dp, color: Color) = composed {
             lineTo(width, 0f)
             lineTo(width, t)
             lineTo(0f, t)
+            close()
         })
     }
 }

@@ -5,8 +5,8 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -30,8 +30,7 @@ fun ButtonField(
     trailingIcon: (@Composable () -> Unit)? = null,
     isError: Boolean = false,
     supportingText: String? = null,
-    singleLine: Boolean = true,
-    shape: Shape = TextFieldDefaults.outlinedShape
+    shape: Shape = OutlinedTextFieldDefaults.shape
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     LaunchedEffect(true) {
@@ -46,7 +45,7 @@ fun ButtonField(
         textStyle = textStyle, label = { Text(text = stringResource(label)) }, placeholder = null,
         leadingIcon = leadingIcon, trailingIcon = trailingIcon,
         supportingText = supportingText?.let { { Text(it) } }, isError = isError,
-        singleLine = singleLine,
+        singleLine = true,
         shape = shape,
         interactionSource = interactionSource,
     )

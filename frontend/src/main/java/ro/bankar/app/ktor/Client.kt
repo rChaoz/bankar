@@ -15,6 +15,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ro.bankar.app.R
@@ -57,6 +58,7 @@ suspend inline fun <reified Result, reified Fail> HttpClient.safeStatusRequest(
                 if (response.status == successCode) SafeStatusResponse.Success(response, response.body())
                 else SafeStatusResponse.Fail(response, response.body())
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "HttpRequest", e)
                 SafeStatusResponse.InternalError(R.string.invalid_server_response)
             }
@@ -78,6 +80,7 @@ suspend inline fun <reified Result> HttpClient.safeRequest(
                 if (response.status == successCode) SafeResponse.Success(response, response.body())
                 else SafeResponse.Fail(response, response.bodyAsText())
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "HttpRequest", e)
                 SafeResponse.InternalError(R.string.invalid_server_response)
             }

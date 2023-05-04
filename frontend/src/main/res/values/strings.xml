@@ -99,4 +99,6 @@
     <string name="bank_account">Bank account</string>
     <string name="new_payment">New payment</string>
     <string name="assets">Assets</string>
+    <string name="account">Account</string>
+    <string name="clear">Clear</string>
 </resources>

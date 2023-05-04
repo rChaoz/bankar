@@ -14,7 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalMinimumTouchTargetEnforcement
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -69,10 +69,9 @@ private fun RecentActivityPreviewDark() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subtitle: String, trailingContent: @Composable () -> Unit) {
-    Surface(onClick = {}, shape = RoundedCornerShape(8.dp)) {
+    Surface(onClick = {}) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -112,7 +111,7 @@ private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
         )
     }, title = stringResource(R.string.party_invite_from).format(fromName), subtitle = "${time.hour}:${time.minute} • $place") {
         Row {
-            CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+            CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                 FilledIconButton(
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.customColors.green,

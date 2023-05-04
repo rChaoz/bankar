@@ -1,7 +1,7 @@
 [versions]
 com-android-tools-desugaring = "2.0.3"
 com-android-application = "8.0.0"
-constraintlayout-compose = "1.0.1"
+constraintlayout-compose = "1.1.0-alpha09"
 accompanist-navigation-animation = "0.31.0-alpha"
 androidx-datastore-preferences = "1.0.0"
 org-jetbrains-kotlin-android = "1.8.10"
@@ -15,6 +15,9 @@ activity-compose = "1.7.1"
 compose-bom = "2023.04.01"
 io-ktor-client = "2.2.4"
 maxkeppeler-compose = "1.1.1"
+io-coil = "2.3.0"
+image-cropper = "4.5.0"
+material3 = "1.1.0-rc01"
 
 [libraries]
 com-android-tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "com-android-tools-desugaring" }
@@ -35,13 +38,15 @@ ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-material3 = { group = "androidx.compose.material3", name = "material3" }
+material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 io-ktor-client = { group = "io.ktor", name = "ktor-client-android", version.ref = "io-ktor-client" }
 io-ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "io-ktor-client" }
 io-ktor-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "io-ktor-client" }
 io-ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "io-ktor-client" }
 maxkeppeler-compose-core = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "core", version.ref = "maxkeppeler-compose" }
 maxkeppeler-compose-calendar = { group = "com.maxkeppeler.sheets-compose-dialogs", name = "calendar", version.ref = "maxkeppeler-compose" }
+io-coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "io-coil" }
+image-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "image-cropper" }
 
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "com-android-application" }

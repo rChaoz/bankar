@@ -1,5 +1,5 @@
 ktor:
-  development: false
+  development: true
   sms:
     reportURL: "https://rct33b.asuscomm.com/api/sms_report?status=%d"
   application:

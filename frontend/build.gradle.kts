@@ -62,6 +62,8 @@ dependencies {
     coreLibraryDesugaring(libs.com.android.tools.desugaring)
     implementation(libs.maxkeppeler.compose.core)
     implementation(libs.maxkeppeler.compose.calendar)
+    implementation(libs.io.coil)
+    implementation(libs.image.cropper)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)

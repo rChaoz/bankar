@@ -3,7 +3,11 @@ package ro.bankar.app.ui.newuser
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
@@ -192,11 +196,7 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                         .padding(top = 10.dp, end = 10.dp)
                         .align(Alignment.End)
                 )
-                Spacer(
-                    modifier = Modifier
-                        .weight(1f)
-                        .animateContentSize()
-                )
+                Spacer(modifier = Modifier.weight(.65f))
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier
@@ -233,8 +233,8 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                AnimatedContent(targetState = model.step, label = "SignUpOptionVisibility") {
-                    if (it == LoginStep.Initial) Column(
+                AnimatedVisibility(model.step == LoginStep.Initial, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                    Column(
                         modifier = Modifier
                             .padding(bottom = 15.dp)
                             .fillMaxWidth(),

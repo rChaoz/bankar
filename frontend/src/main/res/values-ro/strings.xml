@@ -99,4 +99,6 @@
     <string name="bank_account">Cont bancar</string>
     <string name="new_payment">Plată nouă</string>
     <string name="assets">Avere</string>
+    <string name="account">Cont</string>
+    <string name="clear">Golește</string>
 </resources>

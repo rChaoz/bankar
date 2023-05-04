@@ -26,7 +26,7 @@ lateinit var COUNTRY_DATA: SCountries
 @Suppress("unused")
 fun Application.module() {
     DEV_MODE = environment.developmentMode
-    SKIP_DELIVERY_CHECK = environment.config.propertyOrNull("ktor.skipDeliveryCheck")?.getString().toBoolean()
+    SKIP_DELIVERY_CHECK = environment.config.propertyOrNull("ktor.sms.skipDeliveryCheck")?.getString().toBoolean()
     COUNTRY_DATA = Json.decodeFromStream(object {}.javaClass.getResourceAsStream("/data/countries.json")!!)
     SmsService.configure(
         System.getenv("SENDSMS_USER"),
