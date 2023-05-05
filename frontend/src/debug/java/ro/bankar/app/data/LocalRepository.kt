@@ -10,6 +10,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
@@ -77,11 +78,11 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
     override val accounts = mockFlow(
         listOf(
             SBankAccount(
-                1, "RO24RBNK1921081333473500", SBankAccountType.DEBIT, 123.456, 0.0, "RON",
+                1, "RO24RBNK1921081333473500", SBankAccountType.DEBIT, 123.456, 0.0, Currency.ROMANIAN_LEU,
                 "Debit Account", 0, 0.0
             ),
             SBankAccount(
-                2, "RO24RBNK1921081333473500", SBankAccountType.CREDIT, -500.32, 0.0, "RON",
+                2, "RO56RBNK2342345546435657", SBankAccountType.CREDIT, -500.32, 0.0, Currency.EURO,
                 "Credit Account", 0, 20.0
             ),
         )

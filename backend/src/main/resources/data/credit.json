@@ -1,0 +1,14 @@
+[
+  {
+    "currency": "RON",
+    "interest": 20.0,
+    "minAmount": 3000,
+    "maxAmount": 15000
+  },
+  {
+    "currency": "EUR",
+    "interest": 22.0,
+    "minAmount": 500,
+    "maxAmount": 5000
+  }
+]

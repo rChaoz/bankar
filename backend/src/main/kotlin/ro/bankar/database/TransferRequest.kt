@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import ro.bankar.amount
+import ro.bankar.banking.Currency
 import ro.bankar.currency
 
 @Serializable
@@ -15,7 +16,7 @@ data class STransferRequest(
     val middleName: String?,
     val lastName: String,
     val amount: Double,
-    val currency: String,
+    val currency: Currency,
     val partyID: Int?,
 ) {
     @Serializable
@@ -31,7 +32,12 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     private val partyID by TransferRequests.party
     var party by Party optionalReferencedOn TransferRequests.party
     var amount by TransferRequests.amount
-    var currency by TransferRequests.currency
+    private var currencyString by TransferRequests.currency
+    var currency: Currency
+        get() = Currency.from(currencyString)
+        set(value) {
+            currencyString = value.code
+        }
 
     /**
      * Converts this TransferRequest to a serializable object.

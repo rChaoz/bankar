@@ -7,6 +7,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.amount
+import ro.bankar.banking.Currency
 import ro.bankar.currency
 import ro.bankar.model.SBankTransfer
 
@@ -22,7 +23,12 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var recipientIban by BankTransfers.recipientIban
 
     var amount by BankTransfers.amount
-    var currency by BankTransfers.currency
+    private var currencyString by BankTransfers.currency
+    var currency: Currency
+        get() = Currency.from(currencyString)
+        set(value) {
+            currencyString = value.code
+        }
     var dateTime by BankTransfers.dateTime
 
     fun serializable() = SBankTransfer(senderName, senderIban, recipientName, recipientIban, amount.toDouble(), currency, dateTime)

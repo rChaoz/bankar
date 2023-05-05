@@ -2,6 +2,7 @@ package ro.bankar.model
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
+import ro.bankar.banking.Currency
 
 @Serializable
 data class SBankTransfer(
@@ -10,6 +11,6 @@ data class SBankTransfer(
     val recipientName: String,
     val recipientIban: String,
     val amount: Double,
-    val currency: String,
+    val currency: Currency,
     val date: LocalDateTime,
 )

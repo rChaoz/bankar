@@ -36,6 +36,7 @@ import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 
@@ -47,7 +48,7 @@ fun BankAccount(data: SBankAccount) {
         icon = { Icon(painter = painterResource(R.drawable.bank_account), contentDescription = stringResource(R.string.bank_account)) },
         color = data.color.takeIf { it != 0 }?.let { Color(it) }
     ) {
-        Amount(amount = data.balance, currency = data.currency, textStyle = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(12.dp))
+        Amount(amount = data.balance, currency = data.currency.code, textStyle = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(12.dp))
         Divider(thickness = 2.dp, color = MaterialTheme.colorScheme.outline)
         Row(
             modifier = Modifier
@@ -96,7 +97,7 @@ private val sampleAccount = SBankAccount(
     type = SBankAccountType.DEBIT,
     balance = 1235.22,
     limit = 0.0,
-    currency = "RON",
+    currency = Currency.ROMANIAN_LEU,
     name = "Debit Account",
     color = 0,
     interest = 0.0,

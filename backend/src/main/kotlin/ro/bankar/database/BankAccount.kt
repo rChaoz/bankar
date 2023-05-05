@@ -7,6 +7,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
+import ro.bankar.banking.Currency
 import ro.bankar.currency
 import ro.bankar.generateNumeric
 import ro.bankar.model.SBankAccount
@@ -31,7 +32,12 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var type by BankAccounts.type
 
     var balance by BankAccounts.balance
-    var currency by BankAccounts.currency
+    var currencyString by BankAccounts.currency
+    var currency: Currency
+        get() = Currency.from(currencyString)
+        set(value) {
+            currencyString = value.code
+        }
     var limit by BankAccounts.limit
 
     var name by BankAccounts.name

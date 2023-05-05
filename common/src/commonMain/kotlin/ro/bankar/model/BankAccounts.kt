@@ -1,7 +1,7 @@
 package ro.bankar.model
 
 import kotlinx.serialization.Serializable
-import ro.bankar.banking.Currencies
+import ro.bankar.banking.Currency
 
 @Serializable
 enum class SBankAccountType { DEBIT, SAVINGS, CREDIT }
@@ -13,7 +13,7 @@ data class SBankAccount(
     val type: SBankAccountType,
     val balance: Double,
     val limit: Double,
-    val currency: String,
+    val currency: Currency,
     val name: String,
     val color: Int,
     val interest: Double,
@@ -31,11 +31,11 @@ data class SNewBankAccount(
     val type: SBankAccountType,
     val name: String,
     val color: Int,
-    val currency: String,
+    val currency: Currency,
 ) {
-    fun validate() = when {
-        name.length !in 2..30 -> "name"
-        Currencies.values().none { it.code == currency } -> "currency"
-        else -> null
+    companion object {
+        val nameLengthRange = 2..30
     }
+
+    fun validate() = if (name.trim().length !in nameLengthRange) "name" else null
 }
