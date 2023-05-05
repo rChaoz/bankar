@@ -1,6 +1,5 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import ro.bankar.banking.Currencies
 
@@ -18,7 +17,6 @@ data class SBankAccount(
     val name: String,
     val color: Int,
     val interest: Double,
-    val interestDate: LocalDate,
 )
 
 @Serializable

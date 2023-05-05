@@ -100,7 +100,6 @@ private val sampleAccount = SBankAccount(
     name = "Debit Account",
     color = 0,
     interest = 0.0,
-    interestDate = Clock.System.todayIn(TimeZone.UTC)
 )
 
 @Preview

@@ -5,8 +5,6 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
-import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.currency
@@ -40,7 +38,6 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var color by BankAccounts.color
 
     var interest by BankAccounts.interest
-    var interestDate by BankAccounts.interestDate
 
     val cards by BankCard referrersOn BankCards.bankAccount
     val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or (BankTransfers.recipient eq id) }
@@ -59,7 +56,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
  * Converts a list of BankAccounts to a list of serializable objects
  */
 fun SizedIterable<BankAccount>.serializable() = map {
-    SBankAccount(it.id.value, it.iban, it.type, it.balance.toDouble(), it.limit.toDouble(), it.currency, it.name, it.color, it.interest, it.interestDate)
+    SBankAccount(it.id.value, it.iban, it.type, it.balance.toDouble(), it.limit.toDouble(), it.currency, it.name, it.color, it.interest)
 }
 
 internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
@@ -79,5 +76,4 @@ internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     val name = varchar("name", 30)
     val color = integer("color")
     val interest = double("interest").default(0.0)
-    val interestDate = date("interest_date").defaultExpression(CurrentDate)
 }

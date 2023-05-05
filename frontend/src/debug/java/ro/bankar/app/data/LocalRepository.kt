@@ -9,7 +9,6 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
@@ -79,11 +78,11 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         listOf(
             SBankAccount(
                 1, "RO24RBNK1921081333473500", SBankAccountType.DEBIT, 123.456, 0.0, "RON",
-                "Debit Account", 0, 0.0, Clock.System.todayIn(TimeZone.UTC)
+                "Debit Account", 0, 0.0
             ),
             SBankAccount(
                 2, "RO24RBNK1921081333473500", SBankAccountType.CREDIT, -500.32, 0.0, "RON",
-                "Credit Account", 0, 20.0, Clock.System.todayIn(TimeZone.UTC) + DatePeriod(months = 1)
+                "Credit Account", 0, 20.0
             ),
         )
     )
