@@ -75,9 +75,9 @@ import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
 import ro.bankar.app.USER_SESSION
-import ro.bankar.app.ktor.SafeStatusResponse
-import ro.bankar.app.ktor.ktorClient
-import ro.bankar.app.ktor.safePost
+import ro.bankar.app.data.SafeStatusResponse
+import ro.bankar.app.data.ktorClient
+import ro.bankar.app.data.safePost
 import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle

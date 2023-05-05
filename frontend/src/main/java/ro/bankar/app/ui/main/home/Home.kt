@@ -32,7 +32,7 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
-import ro.bankar.app.ktor.LocalRepository
+import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.LocalCustomColors
 import ro.bankar.app.ui.theme.customColors
@@ -41,7 +41,7 @@ import ro.bankar.app.ui.theme.customColors
 fun Home() {
     val repo = LocalRepository.current
     LaunchedEffect(true) {
-        repo.accounts.requestRefresh()
+        repo.accounts.requestEmit()
     }
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
 

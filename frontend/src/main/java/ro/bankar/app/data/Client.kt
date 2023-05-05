@@ -1,4 +1,4 @@
-package ro.bankar.app.ktor
+package ro.bankar.app.data
 
 import android.util.Log
 import io.ktor.client.HttpClient

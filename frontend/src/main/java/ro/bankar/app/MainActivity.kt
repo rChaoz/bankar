@@ -26,9 +26,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import ro.bankar.app.ktor.EmptyRepository
-import ro.bankar.app.ktor.LocalRepository
-import ro.bankar.app.ktor.Repository
+import ro.bankar.app.data.EmptyRepository
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.repository
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.mainNavigation
 import ro.bankar.app.ui.newuser.NewUserNav
@@ -77,7 +77,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             val sessionToken by dataStore.collectPreferenceAsState(USER_SESSION, defaultValue = null)
             val repository = remember(sessionToken) {
                 sessionToken?.let {
-                    Repository(lifecycleScope, it) {
+                    repository(lifecycleScope, it) {
                         controller.navigate(NewUserNav.route) {
                             popUpTo(MainNav.route) {
                                 inclusive = true
@@ -90,7 +90,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             CompositionLocalProvider(LocalRepository provides repository) {
                 AnimatedNavHost(
                     controller,
-                    startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
+                    startDestination = if (sessionToken == null) Nav.NewUser.route else Nav.Main.route,
                     enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() },
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
