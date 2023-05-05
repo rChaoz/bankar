@@ -18,7 +18,7 @@ enum class MainNav(val route: String) {
 fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
     navigation(startDestination = MainNav.Home.route, route = MainNav.route) {
         composable(MainNav.Home.route) {
-            MainScreen()
+            MainScreen(controller)
         }
     }
 }

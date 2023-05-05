@@ -63,6 +63,7 @@ fun RecentActivity() {
         TextButton(onClick = { /*TODO*/ }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             Text(text = stringResource(R.string.see_more))
         }
+//        InfoCard(text = R.string.no_recent_activity, tonalElevation = 0.dp)
     }
 }
 

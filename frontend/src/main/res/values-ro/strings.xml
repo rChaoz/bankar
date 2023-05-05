@@ -91,7 +91,7 @@
     <string name="party_invite">Invitație party</string>
     <string name="accept">Acceptă</string>
     <string name="decline">Respinge</string>
-    <string name="party_invite_from">Invitație party de la %s</string>
+    <string name="party_invite_from">Invitație de la %s</string>
     <string name="payment">Plată</string>
     <string name="transfer">Transfer</string>
     <string name="from_s">De la %s</string>
@@ -104,4 +104,7 @@
     <string name="cash">Cash</string>
     <string name="stocks">Stocuri</string>
     <string name="crypto">Crypto</string>
+    <string name="no_bank_accounts">Nu ai un cont bancar încă.\nApasă aici să îți creezi unul acum!</string>
+    <string name="create">Creează</string>
+    <string name="no_recent_activity">Nu ai nicio tranzacție sau transfer recente</string>
 </resources>

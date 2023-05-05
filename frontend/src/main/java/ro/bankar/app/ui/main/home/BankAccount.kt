@@ -50,7 +50,9 @@ fun BankAccount(data: SBankAccount) {
         Amount(amount = data.balance, currency = data.currency, textStyle = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(12.dp))
         Divider(thickness = 2.dp, color = MaterialTheme.colorScheme.outline)
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {

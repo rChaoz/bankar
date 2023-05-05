@@ -60,10 +60,15 @@ val Typography = Typography(
         letterSpacing = .1.sp,
     ),
     titleMedium = TextStyle(
-        fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
-        lineHeight = 24.sp,
+        lineHeight = 22.sp,
         letterSpacing = .2.sp,
+    ),
+    titleSmall = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+        letterSpacing = .1.sp,
     ),
 
     labelLarge = TextStyle(

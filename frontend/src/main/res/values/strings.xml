@@ -91,7 +91,7 @@
     <string name="party_invite">Party invite</string>
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
-    <string name="party_invite_from">Party invite from %s</string>
+    <string name="party_invite_from">Invite from %s</string>
     <string name="payment">Payment</string>
     <string name="transfer">Transfer</string>
     <string name="from_s">From %s</string>
@@ -104,4 +104,7 @@
     <string name="cash">Cash</string>
     <string name="stocks">Stocks</string>
     <string name="crypto">Crypto</string>
+    <string name="no_bank_accounts">You don\'t have a bank account yet.\nClick here to create one now!</string>
+    <string name="create">Create</string>
+    <string name="no_recent_activity">You don\'t have any recent payments or transfers</string>
 </resources>

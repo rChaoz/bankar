@@ -3,6 +3,7 @@ package ro.bankar.app.ui.main.home
 import android.content.res.Configuration
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -32,22 +36,31 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
+import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.LocalCustomColors
 import ro.bankar.app.ui.theme.customColors
+import kotlin.math.abs
 
 @Composable
-fun Home() {
+fun Home(setShowFab: (Boolean) -> Unit) {
     val repo = LocalRepository.current
     LaunchedEffect(true) {
         repo.accounts.requestEmit()
     }
-    val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
-
     val accounts by repo.accounts.collectAsState(null)
-
+    // Hide FAB when scrolling down
     val scrollState = rememberScrollState()
+    var previousScrollAmount by remember { mutableStateOf(0) }
+    LaunchedEffect(scrollState.value) {
+        if (abs(scrollState.value - previousScrollAmount) < 10) return@LaunchedEffect
+        else if (scrollState.value > previousScrollAmount) setShowFab(false)
+        else setShowFab(true)
+        previousScrollAmount = scrollState.value
+    }
+
+    // TODO Pull to refresh?
     Column(
         modifier = Modifier
             .verticalScroll(scrollState)
@@ -55,12 +68,14 @@ fun Home() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (accounts == null) {
+            val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
             RecentActivityShimmer(shimmer)
             BankAccountShimmer(shimmer)
             AssetsShimmer(shimmer)
         } else {
             RecentActivity()
             for (account in accounts!!) BankAccount(data = account)
+            if (accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {})
             Assets()
         }
     }
@@ -70,7 +85,7 @@ fun Home() {
 @Composable
 private fun HomePreview() {
     AppTheme {
-        Home()
+        Home(setShowFab = {})
     }
 }
 
@@ -78,7 +93,7 @@ private fun HomePreview() {
 @Composable
 fun HomePreviewDark() {
     AppTheme {
-        Home()
+        Home(setShowFab = {})
     }
 }
 
@@ -113,12 +128,13 @@ private fun HomeCardContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            val mod = if (shimmer == null) Modifier else Modifier.shimmer(shimmer)
-            Text(text = title, style = MaterialTheme.typography.titleLarge, modifier = mod)
-//            else Box(modifier = Modifier
-//                .size(200.dp, 26.dp)
-//                .grayShimmer(shimmer))
-            icon()
+            Text(
+                text = title, style = MaterialTheme.typography.titleLarge,
+                modifier = if (shimmer == null) Modifier else Modifier.shimmer(shimmer)
+            )
+            Box(modifier = Modifier.padding(4.dp)) {
+                icon()
+            }
         }
         content()
     }

@@ -38,6 +38,18 @@ Authorization: Bearer {{auth_token}}
   "color": 0
 }
 
+### Create new credit account (valid)
+POST {{host}}/api/accounts/new
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "type": "CREDIT",
+  "name": "New Credit Account",
+  "currency": "EUR",
+  "color": 0
+}
+
 ### Get account information
 GET {{host}}/api/accounts/1
 Authorization: Bearer {{auth_token}}

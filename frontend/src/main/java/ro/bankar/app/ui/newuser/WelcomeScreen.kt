@@ -69,10 +69,10 @@ fun WelcomeScreen(onSignIn: () -> Unit, onSignUp: () -> Unit) {
                 }
                 Row(horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = {}) {
-                        Text(text = stringResource(R.string.help), style = MaterialTheme.typography.titleMedium)
+                        Text(text = stringResource(R.string.help), style = MaterialTheme.typography.titleSmall)
                     }
                     TextButton(onClick = {}) {
-                        Text(text = stringResource(R.string.contact_us), style = MaterialTheme.typography.titleMedium)
+                        Text(text = stringResource(R.string.contact_us), style = MaterialTheme.typography.titleSmall)
                     }
                 }
             }
