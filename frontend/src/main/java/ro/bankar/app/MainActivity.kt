@@ -74,7 +74,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             val controller = rememberAnimatedNavController()
 
             // Server data repository
-            val sessionToken by dataStore.collectPreferenceAsState(USER_SESSION, defaultValue = null)
+            val sessionToken by dataStore.collectPreferenceAsState(USER_SESSION, defaultValue = initialPrefs[USER_SESSION])
             val repository = remember(sessionToken) {
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
@@ -90,7 +90,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             CompositionLocalProvider(LocalRepository provides repository) {
                 AnimatedNavHost(
                     controller,
-                    startDestination = if (sessionToken == null) Nav.NewUser.route else Nav.Main.route,
+                    startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
                     enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up) + fadeIn() },
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down) + fadeOut() },
