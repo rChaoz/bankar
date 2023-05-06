@@ -94,7 +94,7 @@ fun BankAccountShimmer(shimmer: Shimmer) {
 private val sampleAccount = SBankAccount(
     id = 0,
     iban = "RO24RBNK1921081333473500",
-    type = SBankAccountType.DEBIT,
+    type = SBankAccountType.Debit,
     balance = 1235.22,
     limit = 0.0,
     currency = Currency.ROMANIAN_LEU,

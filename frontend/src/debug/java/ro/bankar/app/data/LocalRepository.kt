@@ -78,11 +78,11 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
     override val accounts = mockFlow(
         listOf(
             SBankAccount(
-                1, "RO24RBNK1921081333473500", SBankAccountType.DEBIT, 123.456, 0.0, Currency.ROMANIAN_LEU,
+                1, "RO24RBNK1921081333473500", SBankAccountType.Debit, 123.456, 0.0, Currency.ROMANIAN_LEU,
                 "Debit Account", 0, 0.0
             ),
             SBankAccount(
-                2, "RO56RBNK2342345546435657", SBankAccountType.CREDIT, -500.32, 0.0, Currency.EURO,
+                2, "RO56RBNK2342345546435657", SBankAccountType.Credit, -500.32, 0.0, Currency.EURO,
                 "Credit Account", 0, 20.0
             ),
         )

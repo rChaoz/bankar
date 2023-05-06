@@ -171,7 +171,7 @@ private fun PartyInvite(fromName: String, time: LocalTime, place: String) {
             contentDescription = null,
             color = MaterialTheme.colorScheme.secondary,
         )
-    }, title = stringResource(R.string.party_invite_from).format(fromName), subtitle = "${time.hour}:${time.minute} • $place") {
+    }, title = stringResource(R.string.party_invite_from, fromName), subtitle = "${time.hour}:${time.minute} • $place") {
         Row {
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                 FilledIconButton(
@@ -230,7 +230,7 @@ private fun Transfer(name: String, dateTime: LocalDateTime, amount: Double, curr
                 color = MaterialTheme.colorScheme.secondary,
             )
         },
-        title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s).format(name),
+        title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s, name),
         subtitle = with(dateTime) { "$hour:$minute • $dayOfMonth.$monthNumber.$year" }
     ) {
         Amount(amount, currency, withPlusSign = true)

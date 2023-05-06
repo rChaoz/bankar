@@ -8,4 +8,6 @@ data class SCreditData(
     val interest: Double,
     val minAmount: Double,
     val maxAmount: Double,
-)
+) {
+    val amountRange = minAmount..maxAmount
+}

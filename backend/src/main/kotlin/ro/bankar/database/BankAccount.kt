@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.Currency
+import ro.bankar.banking.SCreditData
 import ro.bankar.currency
 import ro.bankar.generateNumeric
 import ro.bankar.model.SBankAccount
@@ -17,13 +18,21 @@ import ro.bankar.model.SNewBankAccount
 
 class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankAccount>(BankAccounts) {
-        fun create(user: User, data: SNewBankAccount) = BankAccount.new {
-            this.user = user
-            type = data.type
-            currency = data.currency
-            name = data.name.trim()
-            color = data.color
-            // TODO interest for credit accounts
+        fun create(user: User, data: SNewBankAccount, creditData: SCreditData?): BankAccount {
+            if (data.type == SBankAccountType.Credit && creditData == null)
+                throw IllegalArgumentException("creditData cannot be null if account type is Credit")
+            else if (data.type != SBankAccountType.Credit && creditData != null)
+                throw IllegalArgumentException("creditData must be null if account type is not Credit")
+            return BankAccount.new {
+                this.user = user
+                type = data.type
+                currency = data.currency
+                name = data.name.trim()
+                color = data.color
+                if (creditData == null) return@new
+                interest = creditData.interest
+                limit = data.creditAmount.toBigDecimal()
+            }
         }
     }
 
@@ -32,7 +41,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var type by BankAccounts.type
 
     var balance by BankAccounts.balance
-    var currencyString by BankAccounts.currency
+    private var currencyString by BankAccounts.currency
     var currency: Currency
         get() = Currency.from(currencyString)
         set(value) {
