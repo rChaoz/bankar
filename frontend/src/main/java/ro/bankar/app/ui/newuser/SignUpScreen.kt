@@ -698,6 +698,7 @@ private fun PersonalInformationStep(model: SignUpModel) {
             items = model.countries!!,
             label = R.string.country,
             modifier = Modifier.layoutId("country"),
+            outlined = true,
             supportingText = "",
             dropdownItemGenerator = { item, onClick -> DropdownMenuItem(text = { Text(text = item.country) }, onClick) }
         )
@@ -707,6 +708,7 @@ private fun PersonalInformationStep(model: SignUpModel) {
             items = model.country.value.states,
             label = R.string.state_province,
             modifier = Modifier.layoutId("state"),
+            outlined = true,
             supportingText = "",
         )
         VerifiableField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city")
@@ -746,6 +748,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
                         }
                     }, onClick)
                 },
+                outlined = true,
                 isError = model.phone.hasError,
                 supportingText = ""
             )

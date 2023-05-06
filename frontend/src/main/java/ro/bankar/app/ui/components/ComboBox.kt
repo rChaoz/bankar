@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenuItem
@@ -9,6 +10,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +28,8 @@ fun <T> ComboBox(
     onSelectItem: (T) -> Unit,
     items: List<T>,
     modifier: Modifier = Modifier,
+    fillWidth: Boolean = false,
+    outlined: Boolean = false,
     enabled: Boolean = true,
     label: Int? = null,
     isError: Boolean = false,
@@ -39,7 +43,7 @@ fun <T> ComboBox(
         if (!enabled && expanded) expanded = false
     }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it && enabled }, modifier = modifier) {
-        OutlinedTextField(
+        if (outlined) OutlinedTextField(
             value = selectedItemText,
             onValueChange = {},
             singleLine = true, readOnly = true,
@@ -50,7 +54,27 @@ fun <T> ComboBox(
                     )
                 )
             },
-            modifier = Modifier.menuAnchor(),
+            modifier = Modifier
+                .let { if (fillWidth) it.fillMaxWidth() else it }
+                .menuAnchor(),
+            enabled = enabled,
+            label = label?.let { { Text(text = stringResource(label)) } },
+            isError = isError,
+            supportingText = supportingText?.let { { Text(text = it) } },
+        ) else TextField(
+            value = selectedItemText,
+            onValueChange = {},
+            singleLine = true, readOnly = true,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.rotate(
+                        animateFloatAsState(targetValue = if (expanded) 180f else 0f, label = "ComboBox icon rotation").value
+                    )
+                )
+            },
+            modifier = Modifier
+                .let { if (fillWidth) it.fillMaxWidth() else it }
+                .menuAnchor(),
             enabled = enabled,
             label = label?.let { { Text(text = stringResource(label)) } },
             isError = isError,
