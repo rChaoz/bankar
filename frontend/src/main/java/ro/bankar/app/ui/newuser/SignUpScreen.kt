@@ -60,17 +60,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -113,17 +109,17 @@ import ro.bankar.app.data.safeGet
 import ro.bankar.app.data.safePost
 import ro.bankar.app.data.safeRequest
 import ro.bankar.app.setPreference
-import ro.bankar.app.ui.VerifiableState
 import ro.bankar.app.ui.components.ButtonField
 import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
+import ro.bankar.app.ui.components.VerifiableField
+import ro.bankar.app.ui.components.verifiableStateOf
+import ro.bankar.app.ui.components.verifiableSuspendingStateOf
 import ro.bankar.app.ui.monthStringResource
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
-import ro.bankar.app.ui.verifiableStateOf
-import ro.bankar.app.ui.verifiableSuspendingStateOf
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SCountries
 import ro.bankar.model.SCountry
@@ -149,8 +145,8 @@ class SignUpModel : ViewModel() {
     val tag = verifiableSuspendingStateOf("", viewModelScope) {
         // Check that tag is valid
         when {
-            it.length < SUserValidation.tagLengthRange.first -> getString(R.string.tag_too_short).format(SUserValidation.tagLengthRange.first)
-            it.length > SUserValidation.tagLengthRange.last -> getString(R.string.tag_too_long).format(SUserValidation.tagLengthRange.last)
+            it.length < SUserValidation.tagLengthRange.first -> getString(R.string.tag_too_short, SUserValidation.tagLengthRange.first)
+            it.length > SUserValidation.tagLengthRange.last -> getString(R.string.tag_too_long, SUserValidation.tagLengthRange.last)
             !SUserValidation.tagRegex.matches(it) -> getString(R.string.invalid_tag)
             else -> null
         }?.let { error ->
@@ -215,7 +211,7 @@ class SignUpModel : ViewModel() {
             SignUpStep.LoginInformation -> {
                 email.check(c)
                 password.check(c)
-                confirmPassword.check(c)
+                confirmPassword.check(c, true)
                 tag.checkSuspending(c)
                 if (!tag.verified || !email.verified || !password.verified || !confirmPassword.verified) {
                     isLoading = false
@@ -295,8 +291,8 @@ class SignUpModel : ViewModel() {
                                     if (result.s.param == "phone") {
                                         phone.setError(c.getString(R.string.already_registered))
                                         snackBar.showSnackbar(c.getString(R.string.number_already_in_use), withDismissAction = true)
-                                    } else snackBar.showSnackbar(c.getString(R.string.user_already_exists).format(result.s.param), withDismissAction = true)
-                                } else snackBar.showSnackbar(c.getString(R.string.invalid_field).format(result.s.param), withDismissAction = true)
+                                    } else snackBar.showSnackbar(c.getString(R.string.user_already_exists, result.s.param), withDismissAction = true)
+                                } else snackBar.showSnackbar(c.getString(R.string.invalid_field, result.s.param), withDismissAction = true)
                             is SafeStatusResponse.Success -> {
                                 code = ""
                                 signupSession = result.r.headers["SignupSession"]
@@ -336,7 +332,7 @@ class SignUpModel : ViewModel() {
                                 }
                                 sessionStatus?.status == "invalid_code" -> codeError = c.getString(R.string.incorrect_code)
                                 existsStatus?.status == "already_exists" ->
-                                    snackBar.showSnackbar(c.getString(R.string.user_already_exists).format(existsStatus.param), withDismissAction = true)
+                                    snackBar.showSnackbar(c.getString(R.string.user_already_exists, existsStatus.param), withDismissAction = true)
                                 else -> snackBar.showSnackbar(c.getString(R.string.invalid_server_response), withDismissAction = true)
                             }
                         }
@@ -467,7 +463,6 @@ fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginInformationStep(model: SignUpModel) {
     val constraints = remember {
@@ -529,7 +524,7 @@ private fun LoginInformationStep(model: SignUpModel) {
         Icon(Icons.Default.Lock, stringResource(R.string.password), Modifier.layoutId("passwordIcon"))
 
         // Text fields
-        SignUpField(model.tag, label = R.string.tag, type = KeyboardType.Email, id = "tag",
+        VerifiableField(model.tag, label = R.string.tag, type = KeyboardType.Email, id = "tag",
             trailingIcon = if (model.tag.verifying) {
                 { CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp) }
             } else if (model.tag.verified) {
@@ -543,9 +538,9 @@ private fun LoginInformationStep(model: SignUpModel) {
             } else null
         )
         val (showPassword, setShowPassword) = remember { mutableStateOf(false) }
-        SignUpField(model.email, label = R.string.email, type = KeyboardType.Email, id = "email")
-        SignUpField(model.password, label = R.string.password, type = KeyboardType.Password, id = "password", showPassword = showPassword)
-        SignUpField(
+        VerifiableField(model.email, label = R.string.email, type = KeyboardType.Email, id = "email")
+        VerifiableField(model.password, label = R.string.password, type = KeyboardType.Password, id = "password", showPassword = showPassword)
+        VerifiableField(
             model.confirmPassword, label = R.string.confirm_password,
             type = KeyboardType.Password, id = "confirmPassword", showPassword = showPassword, isLast = true
         )
@@ -682,9 +677,9 @@ private fun PersonalInformationStep(model: SignUpModel) {
         Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.layoutId("iconAddress"))
 
         // Fields
-        SignUpField(model.firstName, label = R.string.first_name, type = KeyboardType.Text, id = "firstName")
-        SignUpField(model.middleName, label = R.string.middle_name, type = KeyboardType.Text, id = "middleName")
-        SignUpField(model.lastName, label = R.string.last_name, type = KeyboardType.Text, id = "lastName")
+        VerifiableField(model.firstName, label = R.string.first_name, type = KeyboardType.Text, id = "firstName")
+        VerifiableField(model.middleName, label = R.string.middle_name, type = KeyboardType.Text, id = "middleName")
+        VerifiableField(model.lastName, label = R.string.last_name, type = KeyboardType.Text, id = "lastName")
         ButtonField(
             value = with(model.dateOfBirth.value) { "$dayOfMonth ${monthStringResource(month)} $year" },
             onClick = { datePickerDialog.show() },
@@ -714,8 +709,8 @@ private fun PersonalInformationStep(model: SignUpModel) {
             modifier = Modifier.layoutId("state"),
             supportingText = "",
         )
-        SignUpField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city")
-        SignUpField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address", multiLine = true)
+        VerifiableField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city")
+        VerifiableField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address", multiLine = true)
 
         // Button
         val focusManager = LocalFocusManager.current
@@ -725,7 +720,6 @@ private fun PersonalInformationStep(model: SignUpModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PhoneNumberStep(model: SignUpModel) {
     val context = LocalContext.current
@@ -755,7 +749,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
                 isError = model.phone.hasError,
                 supportingText = ""
             )
-            SignUpField(
+            VerifiableField(
                 model.phone, label = R.string.phone, type = KeyboardType.Phone,
                 enabled = model.step == SignUpStep.PhoneNumber, filter = { it.all(Char::isDigit) },
                 modifier = Modifier.weight(1f), isLast = true
@@ -766,7 +760,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
                 Text(text = stringResource(R.string.next))
             }
         } else {
-            Text(text = stringResource(R.string.code_was_sent).format(model.countryCode + model.phone.value))
+            Text(text = stringResource(R.string.code_was_sent, model.countryCode + model.phone.value))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(imageVector = Icons.Default.Lock, contentDescription = null, modifier = Modifier.padding(bottom = 12.dp))
                 OutlinedTextField(
@@ -790,42 +784,6 @@ private fun PhoneNumberStep(model: SignUpModel) {
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SignUpField(
-    verifiableState: VerifiableState<String>,
-    label: Int,
-    type: KeyboardType,
-    modifier: Modifier = Modifier,
-    filter: (String) -> Boolean = { true },
-    id: String? = null,
-    enabled: Boolean = true,
-    showPassword: Boolean = true,
-    isLast: Boolean = false,
-    trailingIcon: (@Composable () -> Unit)? = null,
-    multiLine: Boolean = false,
-) {
-    val context = LocalContext.current
-    var mod = modifier.onFocusChanged {
-        if (it.isFocused) verifiableState.clearError()
-        else if (verifiableState.value.isNotEmpty()) verifiableState.check(context)
-    }
-    if (id != null) mod = mod.layoutId(id)
-    OutlinedTextField(
-        value = verifiableState.value,
-        onValueChange = { if (filter(it)) verifiableState.value = it },
-        modifier = mod,
-        enabled = enabled,
-        singleLine = !multiLine,
-        trailingIcon = trailingIcon,
-        label = { Text(text = stringResource(label)) },
-        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(imeAction = if (isLast) ImeAction.Done else ImeAction.Next, keyboardType = type),
-        isError = verifiableState.hasError,
-        supportingText = { Text(text = verifiableState.error ?: "") }
-    )
 }
 
 @Preview
