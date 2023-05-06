@@ -107,4 +107,21 @@
     <string name="no_bank_accounts">Nu ai un cont bancar încă.\nApasă aici să îți creezi unul acum!</string>
     <string name="create">Creează</string>
     <string name="no_recent_activity">Nu ai nicio tranzacție sau transfer recente</string>
+    <string name="what_account_type">Ce tip de cont bancar ți-ai dori să îți deschizi?</string>
+    <string name="account_debit">Debit</string>
+    <string name="account_credit">Credit</string>
+    <string name="account_savings">Economii</string>
+    <string name="personalize_new_account">Personalizează-ți noul cont:</string>
+    <string name="account_name">Numele contului</string>
+    <string name="currency">Valută</string>
+    <string name="retry">Reîncearcă</string>
+    <string name="no_credit_for_currency">Ne pare rău, nu există opțiuni de credit pentru această valută</string>
+    <string name="invalid_bank_account_name">Nume de cont bancar invalid, trebuie să fie între %d..%d caractere</string>
+    <string name="open_account">Deschide cont</string>
+    <string name="credit_amount_range">Valoarea credtului pentru această valută trebuie să fie între %s și %s %s.</string>
+    <string name="invalid_amount">Valoare invalidă</string>
+    <string name="credit_amount">Valoarea creditului</string>
+    <string name="credit_interest_is">Dobânda la credit este de %.2f%%.</string>
+    <string name="open_bank_account">Deschidere cont bancar</string>
+    <string name="unable_new_bank_account">Nu s-a putut deschide contul: %s invalid</string>
 </resources>

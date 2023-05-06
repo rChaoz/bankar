@@ -21,7 +21,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,11 +29,9 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.app.ui.theme.accountColors
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
@@ -46,7 +43,7 @@ fun BankAccount(data: SBankAccount) {
         onClick = {}, // TODO
         title = data.name,
         icon = { Icon(painter = painterResource(R.drawable.bank_account), contentDescription = stringResource(R.string.bank_account)) },
-        color = data.color.takeIf { it != 0 }?.let { Color(it) }
+        color = if (data.color in accountColors.indices) accountColors[data.color] else accountColors[0]
     ) {
         Amount(amount = data.balance, currency = data.currency.code, textStyle = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(12.dp))
         Divider(thickness = 2.dp, color = MaterialTheme.colorScheme.outline)

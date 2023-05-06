@@ -67,7 +67,14 @@ val md_theme_dark_scrim = Color(0xFF000000)
 val seed = Color(0xFFC47131)
 
 
-val accountDefault = Color(0xFF6D95FE)
+val accountColors = listOf(
+    Color(0xFF6186E7),
+    Color(0xFF7A51C7),
+    Color(0xFFCA5667),
+    Color(0xFFC46B50),
+    Color(0xFF60B84C),
+    Color(0xFF43A07F),
+)
 val light_red = Color(0xFF9E0000)
 val light_green = Color(0xFF007C1B)
 val light_gray = Color.LightGray

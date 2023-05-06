@@ -7,7 +7,7 @@ import androidx.navigation.navigation
 import com.google.accompanist.navigation.animation.composable
 
 enum class MainNav(val route: String) {
-    Home("home");
+    Home("home"), NewBankAccount("createAccount");
 
     companion object {
         const val route = "main"
@@ -19,6 +19,9 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
     navigation(startDestination = MainNav.Home.route, route = MainNav.route) {
         composable(MainNav.Home.route) {
             MainScreen(controller)
+        }
+        composable(MainNav.NewBankAccount.route) {
+            NewBankAccountScreen(onDismiss = { controller.popBackStack() })
         }
     }
 }

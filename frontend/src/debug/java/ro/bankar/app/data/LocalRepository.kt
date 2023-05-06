@@ -10,12 +10,16 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
+import ro.bankar.app.R
 import ro.bankar.banking.Currency
+import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SUser
+import ro.bankar.model.StatusResponse
 import kotlin.time.Duration.Companion.seconds
 
 val LocalRepository = compositionLocalOf<Repository> { MockRepository }
@@ -91,4 +95,8 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
     override fun account(id: Int) = mockFlow(
         SBankAccountData(emptyList(), emptyList(), emptyList()) // TODO
     )
+
+    override suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse> {
+        return SafeStatusResponse.InternalError(R.string.connection_error)
+    }
 }
