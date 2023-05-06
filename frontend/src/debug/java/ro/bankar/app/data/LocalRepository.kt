@@ -27,7 +27,7 @@ val EmptyRepository: Repository = MockRepository
 @OptIn(DelicateCoroutinesApi::class)
 private object MockRepository : Repository(GlobalScope, "", {}) {
     fun <T> mockFlow(value: T) = object : RequestFlow<T>(scope) {
-        override suspend fun onEmitRequest() {
+        override suspend fun onEmissionRequest(mustRetry: Boolean) {
             delay(2.seconds)
             flow.emit(value)
         }

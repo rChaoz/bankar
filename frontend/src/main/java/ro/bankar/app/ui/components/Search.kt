@@ -1,4 +1,4 @@
-package ro.bankar.app.ui.main
+package ro.bankar.app.ui.components
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -7,14 +7,19 @@ import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOut
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -33,15 +38,42 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import ro.bankar.app.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchEverything(isSearchOpen: Boolean, onSearchOpenChange: (Boolean) -> Unit, modifier: Modifier) {
+fun Search(
+    topBar: @Composable (isSearchOpen: Boolean, searchField: @Composable () -> Unit) -> Unit,
+    searchResults: @Composable () -> Unit,
+    content: @Composable () -> Unit
+) {
+    var isSearchOpen by remember { mutableStateOf(false) }
+
+    Column {
+        topBar(isSearchOpen) { SearchField(isSearchOpen, onSearchOpenChange = { isSearchOpen = it }) }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            content()
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isSearchOpen,
+                modifier = Modifier.fillMaxSize(),
+                enter = slideInVertically { it / 2 } + fadeIn(),
+                exit = slideOutVertically { it / 2 } + fadeOut()
+            ) {
+                searchResults()
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchField(isSearchOpen: Boolean, onSearchOpenChange: (Boolean) -> Unit) {
     var searchValue by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     TextField(
         value = searchValue,
         onValueChange = { searchValue = it },
-        modifier = modifier.onFocusChanged {
+        modifier = Modifier.onFocusChanged {
             if (it.isFocused && !isSearchOpen) onSearchOpenChange(true)
         },
         singleLine = true,
