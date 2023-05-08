@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +36,7 @@ fun PopupScreen(
     bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
+    fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     LocalRepository.current.errorFlow.handleWithSnackBar(snackBar)
@@ -57,7 +60,8 @@ fun PopupScreen(
                 }
             }
         },
-        bottomBar = bottomBar
+        bottomBar = bottomBar,
+        floatingActionButton = fabContent
     ) { contentPadding ->
         LoadingOverlay(isLoading, modifier = Modifier.padding(contentPadding)) {
             content()
@@ -74,23 +78,27 @@ fun PopupScreen(
     onConfirm: () -> Unit,
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
+    fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     PopupScreen(onDismiss, title, bottomBar = {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp), horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(android.R.string.cancel))
-            }
-            Button(
-                onClick = onConfirm,
-                enabled = confirmEnabled
+        Column {
+            Divider()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp), horizontalArrangement = Arrangement.SpaceAround
             ) {
-                Text(text = stringResource(confirmText))
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
+                Button(
+                    onClick = onConfirm,
+                    enabled = confirmEnabled
+                ) {
+                    Text(text = stringResource(confirmText))
+                }
             }
         }
-    }, snackBar, isLoading, content)
+    }, snackBar, isLoading, fabContent, content)
 }

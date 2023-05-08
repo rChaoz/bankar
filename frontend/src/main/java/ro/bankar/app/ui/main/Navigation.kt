@@ -37,7 +37,7 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         }
 
         composable(MainNav.Profile.route) {
-            Profile(onDismiss = { controller.popBackStack() })
+            ProfileScreen(onDismiss = { controller.popBackStack() })
         }
     }
 }
