@@ -171,11 +171,10 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                 progress = animateFloatAsState(if (isSearchOpen) 1f else 0f, label = "MotionLayout progress").value,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-
                 Box(modifier = Modifier.layoutId("search"), propagateMinConstraints = true) {
                     searchField()
                 }
-                ProfileRibbon(modifier = Modifier.layoutId("profile"))
+                ProfileRibbon(modifier = Modifier.layoutId("profile"), onClick = { navigation.navigate(MainNav.Profile.route) })
                 Text(text = "Overview", style = MaterialTheme.typography.displayMedium, modifier = Modifier.layoutId("title"))
             }
         }

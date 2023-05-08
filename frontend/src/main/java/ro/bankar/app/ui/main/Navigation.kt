@@ -12,7 +12,9 @@ import ro.bankar.app.ui.main.home.HomeTab
 private const val mainTabRoutePrefix = "mainTab"
 
 enum class MainNav(val route: String) {
-    Home("$mainTabRoutePrefix/${HomeTab.name}"), NewBankAccount("createAccount");
+    Home("$mainTabRoutePrefix/${HomeTab.name}"),
+    NewBankAccount("createAccount"),
+    Profile("profile");
 
     companion object {
         const val route = "main"
@@ -29,8 +31,13 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         composable(MainNav.tabsRoute, arguments = MainNav.tabArguments) { navEntry ->
             MainScreen(MainTabs.first { it.name == navEntry.arguments?.getString("tab") }, controller)
         }
+
         composable(MainNav.NewBankAccount.route) {
             NewBankAccountScreen(onDismiss = { controller.popBackStack() })
+        }
+
+        composable(MainNav.Profile.route) {
+            Profile(onDismiss = { controller.popBackStack() })
         }
     }
 }

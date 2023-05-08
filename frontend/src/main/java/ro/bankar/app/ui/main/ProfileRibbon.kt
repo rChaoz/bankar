@@ -26,9 +26,9 @@ private val ribbonShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun ProfileRibbon(modifier: Modifier) {
+fun ProfileRibbon(modifier: Modifier, onClick: () -> Unit) {
     Surface(
-        onClick = {},
+        onClick,
         modifier = modifier,
         shape = ribbonShape,
         color = MaterialTheme.colorScheme.primary,

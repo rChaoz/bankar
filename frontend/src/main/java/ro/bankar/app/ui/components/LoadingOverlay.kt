@@ -22,7 +22,7 @@ fun LoadingOverlay(
         content()
         if (isLoading) {
             Surface(
-                modifier = modifier
+                modifier = Modifier
                     .matchParentSize()
                     .alpha(.5f)
             ) {}
