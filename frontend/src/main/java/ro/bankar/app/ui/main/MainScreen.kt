@@ -33,10 +33,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
@@ -65,6 +69,18 @@ import ro.bankar.app.ui.theme.AppTheme
 val MainTabs = listOf(HomeTab)
 
 abstract class MainTab<T : MainTab.MainTabModel>(val index: Int, val name: String, val title: Int) {
+    companion object {
+        val stateSaver = object : Saver<MutableState<MainTab<*>>, String> {
+            override fun restore(value: String): MutableState<MainTab<*>>? = when (value) {
+                FriendsTab.name -> mutableStateOf(FriendsTab)
+                HomeTab.name -> mutableStateOf(HomeTab)
+                else -> null
+            }
+
+            override fun SaverScope.save(value: MutableState<MainTab<*>>) = value.value.name
+        }
+    }
+
     abstract class MainTabModel : ViewModel() {
         abstract val showFAB: State<Boolean>
     }
@@ -83,7 +99,7 @@ val LocalSnackBar = compositionLocalOf { SnackbarHostState() }
 
 @Composable
 fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
-    val (tab, setTab) = remember { mutableStateOf(initialTab) }
+    val (tab, setTab) = rememberSaveable(saver = MainTab.stateSaver) { mutableStateOf(initialTab) }
     // Separating this code into a different function is required to be able to tell the compiler that
     // tab.viewModel() is a valid parameter for tab.Content(), tab.FABContent()
     MainScreen(tab, setTab, navigation)
