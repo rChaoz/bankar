@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.main
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +62,7 @@ import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
+import ro.bankar.app.ui.rString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.accountColors
 import ro.bankar.banking.Currency
@@ -174,13 +176,7 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
                             .padding(vertical = 6.dp)
                     ) {
                         Text(
-                            text = stringResource(
-                                when (it) {
-                                    SBankAccountType.Debit -> R.string.account_debit
-                                    SBankAccountType.Credit -> R.string.account_credit
-                                    SBankAccountType.Savings -> R.string.account_savings
-                                }
-                            )
+                            text = stringResource(it.rString)
                         )
                     }
                     ComboBox(
@@ -196,18 +192,18 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
                     }
                     // Display credit data and options
                     val data = model.currencyCreditData
-                    if (model.accountType == SBankAccountType.Credit && data != null) {
+                    AnimatedVisibility(visible = model.accountType == SBankAccountType.Credit && data != null) {
                         val decimalFormat = remember { DecimalFormat("#.##") }
                         Text(
                             text = stringResource(
                                 R.string.credit_amount_range,
-                                decimalFormat.format(data.minAmount),
-                                decimalFormat.format(data.maxAmount),
+                                decimalFormat.format(data?.minAmount),
+                                decimalFormat.format(data?.maxAmount),
                                 model.currency.value.code
                             )
                         )
                         VerifiableField(model.creditAmount, label = R.string.credit_amount, type = KeyboardType.Decimal, modifier = Modifier.fillMaxWidth())
-                        Text(text = stringResource(R.string.credit_interest_is, data.interest), style = MaterialTheme.typography.labelSmall)
+                        Text(text = stringResource(R.string.credit_interest_is, data?.interest ?: 0.0), style = MaterialTheme.typography.labelSmall)
                     }
                     Text(text = stringResource(R.string.personalize_new_account))
                     VerifiableField(model.name, R.string.account_name, KeyboardType.Text, modifier = Modifier.fillMaxWidth(), isLast = true)

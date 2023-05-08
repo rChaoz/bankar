@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import ro.bankar.app.R
+import ro.bankar.app.ui.rString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.accountColors
 import ro.bankar.app.ui.theme.customColors
@@ -45,7 +47,23 @@ fun BankAccount(data: SBankAccount) {
         icon = { Icon(painter = painterResource(R.drawable.bank_account), contentDescription = stringResource(R.string.bank_account)) },
         color = if (data.color in accountColors.indices) accountColors[data.color] else accountColors[0]
     ) {
-        Amount(amount = data.balance, currency = data.currency.code, textStyle = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(12.dp))
+        Text(
+            text = stringResource(data.type.rString),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.padding(horizontal = 12.dp)
+        )
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp)) {
+            Amount(amount = data.balance, currency = data.currency.code, textStyle = MaterialTheme.typography.headlineMedium)
+            if (data.type == SBankAccountType.Credit) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = stringResource(R.string.limit_is), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
+                    Text(text = "${data.limit} ${data.currency.code}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.customColors.red)
+                }
+            }
+        }
         Divider(thickness = 2.dp, color = MaterialTheme.colorScheme.outline)
         Row(
             modifier = Modifier

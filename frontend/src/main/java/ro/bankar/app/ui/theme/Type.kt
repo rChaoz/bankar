@@ -65,7 +65,6 @@ val Typography = Typography(
         letterSpacing = .2.sp,
     ),
     titleSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
         fontSize = 15.sp,
         lineHeight = 22.sp,
         letterSpacing = .1.sp,
@@ -78,7 +77,6 @@ val Typography = Typography(
         letterSpacing = .1.sp,
     ),
     labelMedium = TextStyle(
-        fontWeight = FontWeight.Medium,
         fontSize = 13.sp,
         lineHeight = 18.sp,
         letterSpacing = .5.sp,

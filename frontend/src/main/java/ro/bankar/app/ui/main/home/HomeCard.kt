@@ -20,6 +20,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.Shimmer
@@ -115,12 +116,14 @@ fun Amount(
     modifier: Modifier = Modifier,
     withPlusSign: Boolean = false,
     textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    fontWeight: FontWeight = FontWeight.Medium,
     shimmer: Shimmer? = null,
 ) {
     Text(
         text = "%${if (withPlusSign) "+.2f" else ".2f"} %s".format(amount, currency),
         modifier = modifier.let { if (shimmer != null) it.shimmer(shimmer) else it },
         style = textStyle,
+        fontWeight = fontWeight,
         color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
     )
 }

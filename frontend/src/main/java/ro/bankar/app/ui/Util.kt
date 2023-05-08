@@ -12,6 +12,7 @@ import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.model.SBankAccountType
 import java.time.Month
 
 @Composable
@@ -39,3 +40,9 @@ inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
 }
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
+
+val SBankAccountType.rString get() = when(this) {
+    SBankAccountType.Debit -> R.string.account_debit
+    SBankAccountType.Savings -> R.string.account_savings
+    SBankAccountType.Credit -> R.string.account_credit
+}

@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
@@ -69,10 +70,10 @@ fun WelcomeScreen(onSignIn: () -> Unit, onSignUp: () -> Unit) {
                 }
                 Row(horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = {}) {
-                        Text(text = stringResource(R.string.help), style = MaterialTheme.typography.titleSmall)
+                        Text(text = stringResource(R.string.help), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                     }
                     TextButton(onClick = {}) {
-                        Text(text = stringResource(R.string.contact_us), style = MaterialTheme.typography.titleSmall)
+                        Text(text = stringResource(R.string.contact_us), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                     }
                 }
             }
