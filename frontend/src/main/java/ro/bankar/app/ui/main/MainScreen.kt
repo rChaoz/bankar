@@ -29,12 +29,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -67,6 +65,7 @@ import com.canhub.cropper.CropImageView
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.Search
+import ro.bankar.app.ui.handleWithSnackBar
 import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SUserValidation
@@ -112,17 +111,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
     val snackBar = remember { SnackbarHostState() }
     // Show connection errors using SnackBar
     val repository = LocalRepository.current
-    val context = LocalContext.current
-    LaunchedEffect(true) {
-        repository.errorFlow.collect {
-            if (it.message == 0 || !it.mustRetry) return@collect
-            val result = snackBar.showSnackbar(
-                message = context.getString(it.message),
-                actionLabel = context.getString(R.string.retry)
-            )
-            if (result == SnackbarResult.ActionPerformed) it.retry(true)
-        }
-    }
+    repository.errorFlow.handleWithSnackBar(snackBar)
 
     Search(topBar = { isSearchOpen, searchField ->
         Surface(color = MaterialTheme.colorScheme.secondary) {

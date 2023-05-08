@@ -1,16 +1,23 @@
 package ro.bankar.app.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
+import ro.bankar.app.data.Repository
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.SBankAccountType
 import java.time.Month
@@ -45,4 +52,20 @@ val SBankAccountType.rString get() = when(this) {
     SBankAccountType.Debit -> R.string.account_debit
     SBankAccountType.Savings -> R.string.account_savings
     SBankAccountType.Credit -> R.string.account_credit
+}
+
+@SuppressLint("ComposableNaming")
+@Composable
+fun SharedFlow<Repository.Error>.handleWithSnackBar(snackBar: SnackbarHostState) {
+    val context = LocalContext.current
+    LaunchedEffect(true) {
+        collect {
+            if (it.message == 0 || !it.mustRetry) return@collect
+            val result = snackBar.showSnackbar(
+                message = context.getString(it.message),
+                actionLabel = context.getString(R.string.retry)
+            )
+            if (result == SnackbarResult.ActionPerformed) it.retry(true)
+        }
+    }
 }
