@@ -16,7 +16,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,21 +29,21 @@ import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SRecentActivity
-import kotlin.math.abs
 
 object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
     class Model : MainTabModel() {
-        var scrollShowFAB by mutableStateOf(true)
+        val scrollShowFAB = mutableStateOf(true)
         var accounts by mutableStateOf<List<SBankAccount>?>(null)
         var recentActivity by mutableStateOf<SRecentActivity?>(null)
 
         // Only show FAB after data has loaded
-        override val showFAB = derivedStateOf { scrollShowFAB && accounts != null && recentActivity != null }
+        override val showFAB = derivedStateOf { scrollShowFAB.value && accounts != null && recentActivity != null }
     }
 
     @Composable
@@ -64,12 +63,7 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
 
         // Hide FAB when scrolling down
         val scrollState = rememberScrollState()
-        var previousScrollAmount by rememberSaveable { mutableStateOf(0) }
-        LaunchedEffect(scrollState.value) {
-            if (abs(scrollState.value - previousScrollAmount) < 10) return@LaunchedEffect
-            else model.scrollShowFAB = scrollState.value <= previousScrollAmount
-            previousScrollAmount = scrollState.value
-        }
+        HideFABOnScroll(state = scrollState, setFABShown = model.scrollShowFAB.component2())
 
         // TODO Pull to refresh?
         Column(

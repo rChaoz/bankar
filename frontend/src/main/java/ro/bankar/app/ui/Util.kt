@@ -1,12 +1,17 @@
 package ro.bankar.app.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalContext
@@ -21,6 +26,7 @@ import ro.bankar.app.data.Repository
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.SBankAccountType
 import java.time.Month
+import kotlin.math.abs
 
 @Composable
 fun monthStringResource(month: kotlinx.datetime.Month) = stringResource(
@@ -67,5 +73,15 @@ fun SharedFlow<Repository.Error>.handleWithSnackBar(snackBar: SnackbarHostState)
             )
             if (result == SnackbarResult.ActionPerformed) it.retry(true)
         }
+    }
+}
+
+@Composable
+fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
+    var previousScrollAmount by rememberSaveable { mutableStateOf(0) }
+    LaunchedEffect(state.value) {
+        if (abs(state.value - previousScrollAmount) < 10) return@LaunchedEffect
+        else setFABShown(state.value <= previousScrollAmount)
+        previousScrollAmount = state.value
     }
 }

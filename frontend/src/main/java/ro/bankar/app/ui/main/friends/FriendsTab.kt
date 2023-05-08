@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -28,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.theme.AppTheme
 import kotlin.math.absoluteValue
@@ -35,7 +41,7 @@ import kotlin.math.sign
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
-        override val showFAB = mutableStateOf(false)
+        override val showFAB = mutableStateOf(true)
 
     }
 
@@ -91,7 +97,11 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
     @Composable
     override fun FABContent(model: Model, navigation: NavHostController) {
-
+        ExtendedFloatingActionButton(
+            onClick = { /*TODO*/ },
+            text = { Text(text = stringResource(R.string.add_friend)) },
+            icon = { Icon(imageVector = Icons.Default.Add, null) }
+        )
     }
 }
 
@@ -104,6 +114,8 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
     object Friends : FriendsTabs(0, R.string.friends) {
         @Composable
         override fun Content(model: FriendsTab.Model) {
+            val scrollState = rememberScrollState()
+            HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
             Text(text = "Content 1")
         }
     }
@@ -111,6 +123,8 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
     object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
         @Composable
         override fun Content(model: FriendsTab.Model) {
+            val scrollState = rememberScrollState()
+            HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
             Text(text = "Content 2")
         }
     }
