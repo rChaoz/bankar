@@ -36,7 +36,7 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SBankAccount
 import kotlin.math.abs
 
-object HomeTab : MainTab<HomeTab.Model>() {
+object HomeTab : MainTab<HomeTab.Model>("home") {
     class Model : MainTabModel() {
         var scrollShowFAB by mutableStateOf(true)
         var accounts by mutableStateOf<List<SBankAccount>?>(null)

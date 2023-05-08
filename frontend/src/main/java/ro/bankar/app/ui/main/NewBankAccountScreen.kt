@@ -106,6 +106,7 @@ class NewBankAccountModel : ViewModel() {
         creditAmount.check(context)
         if (!name.verified || !currency.verified || (accountType == SBankAccountType.Credit && !creditAmount.verified)) return
 
+        isLoading = true
         viewModelScope.launch {
             val result = repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value, color, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)

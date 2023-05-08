@@ -21,16 +21,14 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
         fun create(user: User, data: SNewBankAccount, creditData: SCreditData?): BankAccount {
             if (data.type == SBankAccountType.Credit && creditData == null)
                 throw IllegalArgumentException("creditData cannot be null if account type is Credit")
-            else if (data.type != SBankAccountType.Credit && creditData != null)
-                throw IllegalArgumentException("creditData must be null if account type is not Credit")
             return BankAccount.new {
                 this.user = user
                 type = data.type
                 currency = data.currency
                 name = data.name.trim()
                 color = data.color
-                if (creditData == null) return@new
-                interest = creditData.interest
+                if (data.type != SBankAccountType.Credit) return@new
+                interest = creditData!!.interest
                 limit = data.creditAmount.toBigDecimal()
             }
         }

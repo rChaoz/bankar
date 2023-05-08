@@ -71,7 +71,9 @@ import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SUserValidation
 
-abstract class MainTab<T : MainTab.MainTabModel> {
+val MainTabs = listOf(HomeTab)
+
+abstract class MainTab<T : MainTab.MainTabModel>(val name: String) {
     abstract class MainTabModel : ViewModel() {
         abstract val showFAB: State<Boolean>
     }
@@ -88,10 +90,17 @@ abstract class MainTab<T : MainTab.MainTabModel> {
 
 val LocalSnackBar = compositionLocalOf { SnackbarHostState() }
 
+@Composable
+fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
+    val (tab, setTab) = remember { mutableStateOf(initialTab) }
+    // Separating this code into a different function is required to be able to tell the compiler that
+    // tab.viewModel() is a valid parameter for tab.Content(), tab.FABContent()
+    MainScreen(tab, setTab, navigation)
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMotionApi::class)
 @Composable
-fun MainScreen(navigation: NavHostController) {
-    var tab by remember { mutableStateOf<MainTab<*>>(HomeTab) }
+private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (MainTab<*>) -> Unit, navigation: NavHostController) {
     val tabModel = tab.viewModel()
 
     // TODO Just for testing the image picker
@@ -205,7 +214,7 @@ fun MainScreen(navigation: NavHostController) {
                     }, label = {
                         Text(text = stringResource(R.string.friends))
                     })
-                    NavigationBarItem(selected = tab == HomeTab, onClick = { tab = HomeTab }, icon = {
+                    NavigationBarItem(selected = tab == HomeTab, onClick = { setTab(HomeTab) }, icon = {
                         Icon(
                             imageVector = Icons.Default.Home,
                             contentDescription = stringResource(R.string.home)
@@ -225,16 +234,18 @@ fun MainScreen(navigation: NavHostController) {
             },
             floatingActionButtonPosition = FabPosition.End,
             floatingActionButton = {
-                AnimatedVisibility(visible = tabModel.showFAB.value, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
-                    @Suppress("UNCHECKED_CAST")
-                    (tab as MainTab<MainTab.MainTabModel>).FABContent(tabModel, navigation)
+                AnimatedVisibility(
+                    visible = snackBar.currentSnackbarData == null && tabModel.showFAB.value,
+                    enter = scaleIn() + fadeIn(),
+                    exit = scaleOut() + fadeOut()
+                ) {
+                    tab.FABContent(tabModel, navigation)
                 }
             }
         ) { contentPadding ->
             CompositionLocalProvider(LocalSnackBar provides snackBar) {
                 Box(modifier = Modifier.padding(contentPadding)) {
-                    @Suppress("UNCHECKED_CAST")
-                    (tab as MainTab<MainTab.MainTabModel>).Content(tabModel, navigation)
+                    tab.Content(tabModel, navigation)
                     Button(
                         onClick = {
                             @Suppress("DEPRECATION") // for Bitmap.CompressFormat.WEBP which is needed due to API level
@@ -276,7 +287,7 @@ private fun rememberMockNavController(): NavHostController {
 @Composable
 private fun MainScreenPreview() {
     AppTheme {
-        MainScreen(rememberMockNavController())
+        MainScreen(HomeTab, rememberMockNavController())
     }
 }
 
@@ -284,6 +295,6 @@ private fun MainScreenPreview() {
 @Composable
 fun MainScreenPreviewDark() {
     AppTheme {
-        MainScreen(rememberMockNavController())
+        MainScreen(HomeTab, rememberMockNavController())
     }
 }

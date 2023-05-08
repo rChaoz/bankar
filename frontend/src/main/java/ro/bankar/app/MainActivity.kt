@@ -79,7 +79,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
                         controller.navigate(NewUserNav.route) {
-                            popUpTo(MainNav.route) {
+                            popUpTo(MainNav.tabsRoute) {
                                 inclusive = true
                             }
                         }

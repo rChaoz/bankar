@@ -292,7 +292,8 @@ class SignUpModel : ViewModel() {
                                         phone.setError(c.getString(R.string.already_registered))
                                         snackBar.showSnackbar(c.getString(R.string.number_already_in_use), withDismissAction = true)
                                     } else snackBar.showSnackbar(c.getString(R.string.user_already_exists, result.s.param), withDismissAction = true)
-                                } else snackBar.showSnackbar(c.getString(R.string.invalid_field, result.s.param), withDismissAction = true)
+                                } else if (result.s.param == "phone") phone.setError(c.getString(R.string.invalid_phone))
+                                else snackBar.showSnackbar(c.getString(R.string.invalid_field, result.s.param), withDismissAction = true)
                             is SafeStatusResponse.Success -> {
                                 code = ""
                                 signupSession = result.r.headers["SignupSession"]
