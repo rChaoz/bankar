@@ -3,10 +3,9 @@ package ro.bankar.model
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.todayIn
 import kotlinx.serialization.Serializable
+import ro.bankar.util.todayHere
 
 /**
  * Object containing regexes & rules to validate user information
@@ -83,7 +82,7 @@ sealed class SUserBase : SPublicUserBase() {
     abstract val address: String
 
     override fun validate(data: SCountries) = super.validate(data) ?: with(SUserValidation) {
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val today = Clock.System.todayHere()
         when {
             !email.matches(emailRegex) -> "email"
             !phone.matches(phoneRegex) -> "phone"

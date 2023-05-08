@@ -58,9 +58,9 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Returns a serializable object containing the data for this bank account
      */
-    fun serializable() = SBankAccountData(
+    fun serializable(user: User) = SBankAccountData(
         cards.map(BankCard::serializable),
-        transfers.map(BankTransfer::serializable),
+        transfers.serializable(user),
         cards.flatMap { it.transactions.serializable() }
     )
 }

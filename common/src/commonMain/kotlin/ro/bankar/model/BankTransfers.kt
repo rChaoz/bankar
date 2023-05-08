@@ -16,6 +16,7 @@ data class SBankTransfer(
 
     val amount: Double,
     val currency: Currency,
+    val note: String,
 
     val dateTime: LocalDateTime,
 )
@@ -30,6 +31,7 @@ data class STransferRequest(
 
     val amount: Double,
     val currency: Currency,
+    val note: String,
 
     val partyID: Int?,
     val dateTime: LocalDateTime,

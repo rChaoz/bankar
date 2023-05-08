@@ -39,13 +39,14 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
         set(value) {
             currencyString = value.code
         }
+    var note by BankTransfers.note
     var dateTime by BankTransfers.dateTime
 
     fun serializable(direction: TransferDirection) = SBankTransfer(
         direction,
         if (direction == TransferDirection.Sent) recipientName else senderName,
         if (direction == TransferDirection.Sent) recipientIban else senderIban,
-        amount.toDouble(), currency, dateTime
+        amount.toDouble(), currency, note, dateTime
     )
 
     fun serializable(user: User) =
@@ -65,5 +66,6 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
 
     val amount = amount("amount")
     val currency = currency("currency")
+    val note = varchar("note", 200)
     val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)
 }

@@ -25,6 +25,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     var sourceUser by User referencedOn TransferRequests.sourceUser
     var targetUser by User referencedOn TransferRequests.targetUser
 
+    var note by TransferRequests.note
     private val partyID by TransferRequests.party
     var party by Party optionalReferencedOn TransferRequests.party
     var amount by TransferRequests.amount
@@ -43,7 +44,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     fun serializable(direction: TransferDirection) = when (direction) {
         TransferDirection.Sent -> targetUser
         TransferDirection.Received -> sourceUser
-    }.let { STransferRequest(direction, it.firstName, it.middleName, it.lastName, amount.toDouble(), currency, partyID?.value, dateTime) }
+    }.let { STransferRequest(direction, it.firstName, it.middleName, it.lastName, amount.toDouble(), currency, note, partyID?.value, dateTime) }
 
     /**
      * Converts this TransferRequest to a serializable object.
@@ -59,6 +60,7 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val sourceUser = reference("source_user_id", Users)
     val targetUser = reference("target_user_id", Users)
 
+    val note = varchar("note", 100)
     val party = reference("party", Parties).nullable()
     val amount = amount("amount")
     val currency = currency("currency")
