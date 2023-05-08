@@ -1,21 +1,15 @@
 package ro.bankar.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,22 +24,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.ui.handleWithSnackBar
 
 @Composable
 fun PopupScreen(
     onDismiss: () -> Unit,
     title: Int,
-    buttons: @Composable () -> Unit,
+    bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable () -> Unit
 ) {
+    LocalRepository.current.errorFlow.handleWithSnackBar(snackBar)
     Scaffold(
-        snackbarHost = { SnackbarHost(snackBar) }
-    ) { contentPadding ->
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding)) {
+        snackbarHost = { SnackbarHost(snackBar) },
+        topBar = {
             Surface(color = MaterialTheme.colorScheme.secondary) {
                 Row(
                     modifier = Modifier
@@ -62,18 +56,11 @@ fun PopupScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
             }
-            LoadingOverlay(isLoading) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    content()
-                }
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Divider()
-            buttons()
+        },
+        bottomBar = bottomBar
+    ) { contentPadding ->
+        LoadingOverlay(isLoading, modifier = Modifier.padding(contentPadding)) {
+            content()
         }
     }
 }
@@ -87,9 +74,9 @@ fun PopupScreen(
     onConfirm: () -> Unit,
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable () -> Unit
 ) {
-    PopupScreen(onDismiss, title, buttons = {
+    PopupScreen(onDismiss, title, bottomBar = {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
