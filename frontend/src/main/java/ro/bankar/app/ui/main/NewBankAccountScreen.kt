@@ -8,31 +8,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconToggleButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -59,7 +45,7 @@ import ro.bankar.app.data.ktorClient
 import ro.bankar.app.data.safeGet
 import ro.bankar.app.ui.components.ButtonRow
 import ro.bankar.app.ui.components.ComboBox
-import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.PopupScreen
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.rString
@@ -133,119 +119,87 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
 
     // Load credit data on composition
     val context = LocalContext.current
+    val repository = LocalRepository.current
     LaunchedEffect(true) {
         model.name.value = context.getString(R.string.bank_account)
         model.loadCreditData(snackBar, context)
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackBar) }
-    ) { contentPadding ->
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding)) {
-            Surface(color = MaterialTheme.colorScheme.secondary) {
-                Row(
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.ArrowBack, stringResource(R.string.back), modifier = Modifier.size(32.dp))
-                    }
-                    Text(
-                        text = stringResource(R.string.open_bank_account),
-                        style = MaterialTheme.typography.displaySmall,
+    PopupScreen(
+        onDismiss,
+        title = R.string.open_bank_account,
+        snackBar = snackBar,
+        isLoading = model.creditData == null || model.isLoading,
+        confirmText = R.string.open_account,
+        confirmEnabled = model.accountType != SBankAccountType.Credit || model.currencyCreditData != null,
+        onConfirm = {
+            model.onCreate(context, repository, snackBar, onDismiss)
+        }
+    ) {
+        Text(text = stringResource(R.string.what_account_type))
+        ButtonRow(
+            currentValue = model.accountType,
+            onValueChange = { model.accountType = it; model.currency.check(context, true) },
+            values = SBankAccountType.values().toList(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp)
+        ) {
+            Text(
+                text = stringResource(it.rString)
+            )
+        }
+        ComboBox(
+            selectedItemText = model.currency.value.code,
+            onSelectItem = { model.currency.value = it; model.currency.check(context) },
+            label = R.string.currency,
+            items = Currency.values().toList(),
+            fillWidth = true,
+            isError = model.currency.hasError,
+            supportingText = model.currency.error ?: ""
+        ) { item, onClick ->
+            DropdownMenuItem(text = { Text(text = item.code) }, onClick)
+        }
+        // Display credit data and options
+        val data = model.currencyCreditData
+        AnimatedVisibility(visible = model.accountType == SBankAccountType.Credit && data != null) {
+            val decimalFormat = remember { DecimalFormat("#.##") }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(
+                        R.string.credit_amount_range,
+                        decimalFormat.format(data?.minAmount),
+                        decimalFormat.format(data?.maxAmount),
+                        model.currency.value.code
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
+                )
+                VerifiableField(model.creditAmount, label = R.string.credit_amount, type = KeyboardType.Decimal, modifier = Modifier.fillMaxWidth())
+                Text(
+                    text = stringResource(R.string.credit_interest_is, data?.interest ?: 0.0),
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
-            LoadingOverlay(isLoading = model.creditData == null || model.isLoading) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
+        }
+        Text(text = stringResource(R.string.personalize_new_account))
+        VerifiableField(model.name, R.string.account_name, KeyboardType.Text, modifier = Modifier.fillMaxWidth(), isLast = true)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            for ((index, color) in accountColors.withIndex()) {
+                OutlinedIconToggleButton(
+                    checked = index == model.color,
+                    onCheckedChange = { model.color = index },
+                    colors = IconButtonDefaults.outlinedIconToggleButtonColors(checkedContainerColor = color.copy(alpha = .4f)),
+                    border = null
                 ) {
-                    Text(text = stringResource(R.string.what_account_type))
-                    ButtonRow(
-                        currentValue = model.accountType,
-                        onValueChange = { model.accountType = it; model.currency.check(context, true) },
-                        values = SBankAccountType.values().toList(),
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = stringResource(it.rString)
-                        )
-                    }
-                    ComboBox(
-                        selectedItemText = model.currency.value.code,
-                        onSelectItem = { model.currency.value = it; model.currency.check(context) },
-                        label = R.string.currency,
-                        items = Currency.values().toList(),
-                        fillWidth = true,
-                        isError = model.currency.hasError,
-                        supportingText = model.currency.error ?: ""
-                    ) { item, onClick ->
-                        DropdownMenuItem(text = { Text(text = item.code) }, onClick)
-                    }
-                    // Display credit data and options
-                    val data = model.currencyCreditData
-                    AnimatedVisibility(visible = model.accountType == SBankAccountType.Credit && data != null) {
-                        val decimalFormat = remember { DecimalFormat("#.##") }
-                        Text(
-                            text = stringResource(
-                                R.string.credit_amount_range,
-                                decimalFormat.format(data?.minAmount),
-                                decimalFormat.format(data?.maxAmount),
-                                model.currency.value.code
-                            )
-                        )
-                        VerifiableField(model.creditAmount, label = R.string.credit_amount, type = KeyboardType.Decimal, modifier = Modifier.fillMaxWidth())
-                        Text(text = stringResource(R.string.credit_interest_is, data?.interest ?: 0.0), style = MaterialTheme.typography.labelSmall)
-                    }
-                    Text(text = stringResource(R.string.personalize_new_account))
-                    VerifiableField(model.name, R.string.account_name, KeyboardType.Text, modifier = Modifier.fillMaxWidth(), isLast = true)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        for ((index, color) in accountColors.withIndex()) {
-                            OutlinedIconToggleButton(
-                                checked = index == model.color,
-                                onCheckedChange = { model.color = index },
-                                colors = IconButtonDefaults.outlinedIconToggleButtonColors(checkedContainerColor = color.copy(alpha = .4f)),
-                                border = null
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .background(color, CircleShape)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Divider()
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp), horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(android.R.string.cancel))
-                }
-                val repository = LocalRepository.current
-                Button(
-                    onClick = { model.onCreate(context, repository, snackBar, onDismiss) },
-                    enabled = model.accountType != SBankAccountType.Credit || model.currencyCreditData != null
-                ) {
-                    Text(text = stringResource(R.string.open_account))
+                            .size(24.dp)
+                            .background(color, CircleShape)
+                    )
                 }
             }
         }
