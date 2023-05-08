@@ -256,7 +256,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
 @Composable
 private fun ProfilePreview() {
     AppTheme {
-        ProfileScreen({})
+        ProfileScreen(onDismiss = {})
     }
 }
 
@@ -264,6 +264,6 @@ private fun ProfilePreview() {
 @Composable
 private fun WelcomeScreenPreviewDark() {
     AppTheme {
-        ProfileScreen({})
+        ProfileScreen(onDismiss = {})
     }
 }

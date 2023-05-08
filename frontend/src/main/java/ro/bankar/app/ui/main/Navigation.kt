@@ -6,13 +6,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.google.accompanist.navigation.animation.composable
+import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
 
 @Suppress("ConstPropertyName")
 private const val mainTabRoutePrefix = "mainTab"
 
 enum class MainNav(val route: String) {
-    Home("$mainTabRoutePrefix/${HomeTab.name}"),
+    Friends("$mainTabRoutePrefix/${FriendsTab.name}"), Home("$mainTabRoutePrefix/${HomeTab.name}"),
     NewBankAccount("createAccount"),
     Profile("profile");
 

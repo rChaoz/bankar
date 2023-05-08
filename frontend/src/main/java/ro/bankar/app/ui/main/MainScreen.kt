@@ -1,15 +1,16 @@
 package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
@@ -35,11 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
@@ -57,22 +54,17 @@ import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
-import coil.compose.AsyncImage
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.handleWithSnackBar
+import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.SUserValidation
 
 val MainTabs = listOf(HomeTab)
 
-abstract class MainTab<T : MainTab.MainTabModel>(val name: String) {
+abstract class MainTab<T : MainTab.MainTabModel>(val index: Int, val name: String, val title: Int) {
     abstract class MainTabModel : ViewModel() {
         abstract val showFAB: State<Boolean>
     }
@@ -102,12 +94,6 @@ fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
 private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (MainTab<*>) -> Unit, navigation: NavHostController) {
     val tabModel = tab.viewModel()
 
-    // TODO Just for testing the image picker
-    var imageURI by remember { mutableStateOf<Uri?>(null) }
-    val imagePicker = rememberLauncherForActivityResult(contract = CropImageContract()) {
-        if (it.isSuccessful) imageURI = it.uriContent
-    }
-
     val snackBar = remember { SnackbarHostState() }
     // Show connection errors using SnackBar
     val repository = LocalRepository.current
@@ -130,8 +116,8 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     }
                     constrain(title) {
                         top.linkTo(search.bottom, 16.dp)
-                        linkTo(parent.start, profile.start, startMargin = 12.dp, endMargin = 8.dp, bias = 0f)
-                        width = Dimension.preferredWrapContent
+                        linkTo(parent.start, profile.start, startMargin = 12.dp, endMargin = 8.dp)
+                        width = Dimension.fillToConstraints
                     }
                 }
             }
@@ -164,7 +150,14 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     searchField()
                 }
                 ProfileRibbon(modifier = Modifier.layoutId("profile"), onClick = { navigation.navigate(MainNav.Profile.route) })
-                Text(text = "Overview", style = MaterialTheme.typography.displayMedium, modifier = Modifier.layoutId("title"))
+                AnimatedContent(
+                    targetState = tab,
+                    label = "TopBar title change",
+                    modifier = Modifier.layoutId("title"),
+                    transitionSpec = { fadeIn() with fadeOut() }
+                ) {
+                    Text(text = stringResource(it.title), style = MaterialTheme.typography.displayMedium)
+                }
             }
         }
     }, searchResults = {
@@ -194,7 +187,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
             snackbarHost = { SnackbarHost(snackBar) },
             bottomBar = {
                 NavigationBar {
-                    NavigationBarItem(selected = false, onClick = {}, icon = {
+                    NavigationBarItem(selected = tab == FriendsTab, onClick = { setTab(FriendsTab) }, icon = {
                         Icon(
                             painter = painterResource(id = R.drawable.baseline_people_24),
                             contentDescription = stringResource(R.string.friends)
@@ -232,27 +225,18 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
             }
         ) { contentPadding ->
             CompositionLocalProvider(LocalSnackBar provides snackBar) {
-                Box(modifier = Modifier.padding(contentPadding)) {
-                    tab.Content(tabModel, navigation)
-                    Button(
-                        onClick = {
-                            @Suppress("DEPRECATION") // for Bitmap.CompressFormat.WEBP which is needed due to API level
-                            imagePicker.launch(
-                                CropImageContractOptions(
-                                    null, CropImageOptions(
-                                        aspectRatioX = 1, aspectRatioY = 1, fixAspectRatio = true,
-                                        minCropResultWidth = 150, minCropResultHeight = 150, cropShape = CropImageView.CropShape.OVAL,
-                                        outputRequestWidth = SUserValidation.avatarSize, outputRequestHeight = SUserValidation.avatarSize,
-                                        outputCompressFormat = Bitmap.CompressFormat.WEBP
-                                    )
-                                )
-                            )
-                        },
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                    ) {
-                        Text(text = "hehe")
+                AnimatedContent(
+                    targetState = tab,
+                    modifier = Modifier.padding(contentPadding),
+                    label = "Main Tab",
+                    transitionSpec = {
+                        if (targetState.index > initialState.index)
+                            slideInHorizontally { it / 3 } + fadeIn() with slideOutHorizontally { -it / 3 } + fadeOut()
+                        else
+                            slideInHorizontally { -it / 3 } + fadeIn() with slideOutHorizontally { it / 3 } + fadeOut()
                     }
-                    AsyncImage(model = imageURI, contentDescription = null)
+                ) {
+                    it.Content(it.viewModel(), navigation)
                 }
             }
         }

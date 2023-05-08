@@ -126,5 +126,6 @@
     <string name="unable_new_bank_account">Unable to open account: invalid %s</string>
     <string name="date_time_at_place">%s at %s</string>
     <string name="limit_is">Limit:</string>
+    <string name="friend_requests">Friend Requests</string>
     <string name="edit">Edit</string>
 </resources>

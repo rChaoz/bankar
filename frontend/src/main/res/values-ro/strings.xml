@@ -126,5 +126,6 @@
     <string name="unable_new_bank_account">Nu s-a putut deschide contul: %s invalid</string>
     <string name="date_time_at_place">%s la %s</string>
     <string name="limit_is">Limită:</string>
+    <string name="friend_requests">Cereri de prietenie</string>
     <string name="edit">Modifică</string>
 </resources>
