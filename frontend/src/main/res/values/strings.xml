@@ -124,4 +124,5 @@
     <string name="credit_interest_is">Credit interest is %.2f%%.</string>
     <string name="open_bank_account">Open bank account</string>
     <string name="unable_new_bank_account">Unable to open account: invalid %s</string>
+    <string name="date_time_at_place">%s at %s</string>
 </resources>

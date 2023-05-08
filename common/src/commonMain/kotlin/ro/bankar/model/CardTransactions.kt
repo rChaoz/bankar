@@ -9,8 +9,11 @@ data class SCardTransaction(
     val reference: Long,
     val cardID: Int,
     val cardLastFour: String,
+
     val amount: Double,
     val currency: Currency,
     val dateTime: LocalDateTime,
+
+    val title: String,
     val details: String,
 )

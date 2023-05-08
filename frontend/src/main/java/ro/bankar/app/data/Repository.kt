@@ -15,6 +15,7 @@ import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
+import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SUser
 import ro.bankar.model.StatusResponse
 
@@ -50,6 +51,10 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     abstract val friends: RequestFlow<List<SPublicUser>>
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
 
+    // Recent activity
+    abstract val recentActivity: RequestFlow<SRecentActivity>
+    abstract val allRecentActivity: RequestFlow<SRecentActivity>
+
     // Bank accounts
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
@@ -61,6 +66,10 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
     override val profile = createFlow<SUser>("profile")
     override val friends = createFlow<List<SPublicUser>>("friends")
     override val friendRequests = createFlow<List<SPublicUser>>("friend_requests")
+
+    // Recent activity
+    override val recentActivity = createFlow<SRecentActivity>("recent")
+    override val allRecentActivity = createFlow<SRecentActivity>("recent?count=100000")
 
     // Bank accounts
     override val accounts = createFlow<List<SBankAccount>>("accounts")

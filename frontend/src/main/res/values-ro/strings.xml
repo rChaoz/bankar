@@ -124,4 +124,5 @@
     <string name="credit_interest_is">Dobânda la credit este de %.2f%%.</string>
     <string name="open_bank_account">Deschidere cont bancar</string>
     <string name="unable_new_bank_account">Nu s-a putut deschide contul: %s invalid</string>
+    <string name="date_time_at_place">%s la %s</string>
 </resources>

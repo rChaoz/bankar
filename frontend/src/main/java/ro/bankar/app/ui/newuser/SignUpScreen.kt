@@ -92,11 +92,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
-import kotlinx.datetime.todayIn
 import kotlinx.serialization.json.Json
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
@@ -127,6 +125,7 @@ import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation
 import ro.bankar.model.StatusResponse
+import ro.bankar.util.todayHere
 
 enum class SignUpStep {
     LoginInformation, PersonalInformation, PhoneNumber, SmsCode
@@ -176,8 +175,8 @@ class SignUpModel : ViewModel() {
     val firstName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
     val middleName = verifiableStateOf("", R.string.invalid_name) { it.isEmpty() || SUserValidation.nameRegex.matches(it.trim()) }
     val lastName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
-    val dateOfBirth = verifiableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault()) - DatePeriod(18)) {
-        val age = Clock.System.todayIn(TimeZone.currentSystemDefault()) - it
+    val dateOfBirth = verifiableStateOf(Clock.System.todayHere() - DatePeriod(18)) {
+        val age = Clock.System.todayHere() - it
         when (age.years) {
             in 0..SUserValidation.ageRange.first -> getString(R.string.you_must_be_min_age)
             in SUserValidation.ageRange -> null
@@ -597,7 +596,7 @@ private fun PersonalInformationStep(model: SignUpModel) {
     CompositionLocalProvider(LocalAbsoluteTonalElevation provides LocalAbsoluteTonalElevation.current + 1.dp) {
         CalendarDialog(
             state = datePickerDialog, selection = selectedDate,
-            config = CalendarConfig(yearSelection = true, monthSelection = true, boundary = Clock.System.todayIn(TimeZone.currentSystemDefault()).let {
+            config = CalendarConfig(yearSelection = true, monthSelection = true, boundary = Clock.System.todayHere().let {
                 (it - DatePeriod(110)).toJavaLocalDate()..(it - DatePeriod(10)).toJavaLocalDate()
             }),
         )
