@@ -4,10 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.http.content.*
 import io.ktor.server.routing.*
-import ro.bankar.routing.configureAPIs
-import ro.bankar.routing.configureBanking
-import ro.bankar.routing.configureUserAccounts
-import ro.bankar.routing.configureUserProfiles
+import ro.bankar.routing.*
 
 fun Application.configureRouting() {
     routing {
@@ -17,6 +14,7 @@ fun Application.configureRouting() {
             authenticate {
                 configureUserProfiles()
                 configureBanking()
+                configureRecentActivity()
             }
             static("data") {
                 resources("data")

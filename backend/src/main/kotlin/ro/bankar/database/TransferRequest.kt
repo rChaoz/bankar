@@ -1,30 +1,26 @@
 package ro.bankar.database
 
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
+import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.Currency
 import ro.bankar.currency
-
-@Serializable
-data class STransferRequest(
-    val direction: Direction,
-    val firstName: String,
-    val middleName: String?,
-    val lastName: String,
-    val amount: Double,
-    val currency: Currency,
-    val partyID: Int?,
-) {
-    @Serializable
-    enum class Direction { SENT, RECEIVED }
-}
+import ro.bankar.model.STransferRequest
+import ro.bankar.model.TransferDirection
 
 class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<TransferRequest>(TransferRequests)
+    companion object : IntEntityClass<TransferRequest>(TransferRequests) {
+        fun findRecent(user: User, count: Int) =
+            find { (TransferRequests.sourceUser eq user.id) or (TransferRequests.targetUser eq user.id) }
+                .orderBy(TransferRequests.dateTime to SortOrder.DESC).limit(count)
+    }
 
     var sourceUser by User referencedOn TransferRequests.sourceUser
     var targetUser by User referencedOn TransferRequests.targetUser
@@ -38,16 +34,26 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
         set(value) {
             currencyString = value.code
         }
+    var dateTime by TransferRequests.dateTime
 
     /**
      * Converts this TransferRequest to a serializable object.
      * @param direction Whether this transfer request was sent/received by the user
      */
-    fun serializable(direction: STransferRequest.Direction) = when (direction) {
-        STransferRequest.Direction.SENT -> targetUser
-        STransferRequest.Direction.RECEIVED -> sourceUser
-    }.let { STransferRequest(direction, it.firstName, it.middleName, it.lastName, amount.toDouble(), currency, partyID?.value) }
+    fun serializable(direction: TransferDirection) = when (direction) {
+        TransferDirection.Sent -> targetUser
+        TransferDirection.Received -> sourceUser
+    }.let { STransferRequest(direction, it.firstName, it.middleName, it.lastName, amount.toDouble(), currency, partyID?.value, dateTime) }
+
+    /**
+     * Converts this TransferRequest to a serializable object.
+     * @param user The user this transfer data will be given to, used to deduce whether this is sent/received transfer
+     */
+    fun serializable(user: User) =
+        serializable(if (sourceUser.id == user.id) TransferDirection.Received else  TransferDirection.Sent)
 }
+
+fun SizedIterable<TransferRequest>.serializable(user: User) = map { it.serializable(user) }
 
 internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val sourceUser = reference("source_user_id", Users)
@@ -56,4 +62,5 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val party = reference("party", Parties).nullable()
     val amount = amount("amount")
     val currency = currency("currency")
+    val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)
 }

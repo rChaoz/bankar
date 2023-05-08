@@ -5,12 +5,32 @@ import kotlinx.serialization.Serializable
 import ro.bankar.banking.Currency
 
 @Serializable
+enum class TransferDirection { Sent, Received }
+
+@Serializable
 data class SBankTransfer(
-    val senderName: String,
-    val senderIban: String,
-    val recipientName: String,
-    val recipientIban: String,
+    val direction: TransferDirection,
+
+    val fullName: String,
+    val iban: String,
+
     val amount: Double,
     val currency: Currency,
-    val date: LocalDateTime,
+
+    val dateTime: LocalDateTime,
+)
+
+@Serializable
+data class STransferRequest(
+    val direction: TransferDirection,
+
+    val firstName: String,
+    val middleName: String?,
+    val lastName: String,
+
+    val amount: Double,
+    val currency: Currency,
+
+    val partyID: Int?,
+    val dateTime: LocalDateTime,
 )

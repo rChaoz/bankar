@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.amount
@@ -13,7 +14,11 @@ import ro.bankar.currency
 import ro.bankar.model.SCardTransaction
 
 class CardTransaction(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<CardTransaction>(CardTransactions)
+    companion object : IntEntityClass<CardTransaction>(CardTransactions) {
+        fun findRecent(cards: Iterable<BankCard>, count: Int) = cards.map { it.id }.let { ids ->
+            find { CardTransactions.card inList ids }.orderBy(CardTransactions.dateTime to SortOrder.DESC).limit(count)
+        }
+    }
 
     var reference by CardTransactions.reference
     var card by BankCard referencedOn CardTransactions.card
