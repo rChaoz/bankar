@@ -74,8 +74,8 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
             setBody(data)
         }
     }
-    override val friends = createFlow<List<SPublicUser>>("friends")
-    override val friendRequests = createFlow<List<SPublicUser>>("friend_requests")
+    override val friends = createFlow<List<SPublicUser>>("profile/friends")
+    override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")
 
     // Recent activity
     override val recentActivity = createFlow<SRecentActivity>("recent")

@@ -47,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -257,6 +259,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         var aboutValue by rememberSaveable { mutableStateOf("") }
                         val aboutError = editingAbout == true && aboutValue.trim().length > SUserValidation.aboutMaxLength
                         val focusManager = LocalFocusManager.current
+                        val focusRequester = remember { FocusRequester() }
                         val onDone: () -> Unit = {
                             focusManager.clearFocus()
                             editingAbout = null
@@ -278,7 +281,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         TextField(
                             value = if (editingAbout != false) aboutValue else data.about,
                             onValueChange = { aboutValue = it },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                             readOnly = editingAbout != true,
                             singleLine = true,
                             isError = aboutError,
@@ -289,15 +292,18 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                             leadingIcon = { Icon(imageVector = Icons.Default.Info, contentDescription = null) },
                             trailingIcon = {
                                 AnimatedContent(targetState = editingAbout, label = "About Edit Icon") {
-                                    if (it == false) IconButton(onClick = {
-                                        aboutValue = data.about
-                                        editingAbout = true
-                                    }) {
-                                        Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
-                                    } else if (it == true) IconButton(onClick = onDone) {
-                                        Icon(imageVector = Icons.Default.Done, contentDescription = stringResource(R.string.done))
-                                    } else {
-                                        CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+                                    when (it) {
+                                        false -> IconButton(onClick = {
+                                            aboutValue = data.about
+                                            editingAbout = true
+                                            focusRequester.requestFocus()
+                                        }) {
+                                            Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
+                                        }
+                                        true -> IconButton(onClick = onDone) {
+                                            Icon(imageVector = Icons.Default.Done, contentDescription = stringResource(R.string.done))
+                                        }
+                                        null -> CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
                                     }
                                 }
 

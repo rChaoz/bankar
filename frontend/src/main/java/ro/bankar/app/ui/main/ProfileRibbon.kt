@@ -1,8 +1,10 @@
 package ro.bankar.app.ui.main
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -12,8 +14,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import ro.bankar.app.R
 
 private val ribbonShape = GenericShape { size, _ ->
@@ -26,7 +30,7 @@ private val ribbonShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun ProfileRibbon(modifier: Modifier, onClick: () -> Unit) {
+fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
     Surface(
         onClick,
         modifier = modifier,
@@ -40,7 +44,19 @@ fun ProfileRibbon(modifier: Modifier, onClick: () -> Unit) {
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            Icon(Icons.Default.AccountCircle, stringResource(R.string.account), modifier = Modifier.size(65.dp))
+            if (image == null) Icon(
+                imageVector = Icons.Default.AccountCircle,
+                contentDescription = stringResource(R.string.profile_picture),
+                modifier = Modifier.size(65.dp)
+            )
+            else AsyncImage(
+                model = image,
+                contentDescription = stringResource(R.string.profile_picture),
+                modifier = Modifier
+                    .size(65.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+            )
         }
     }
 }

@@ -33,9 +33,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
@@ -58,6 +61,7 @@ import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
+import kotlinx.coroutines.flow.map
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.Search
@@ -113,6 +117,8 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
     val snackBar = remember { SnackbarHostState() }
     // Show connection errors using SnackBar
     val repository = LocalRepository.current
+    LaunchedEffect(true) { repository.profile.requestEmit(false) }
+    val profileImage by remember { repository.profile.map { it.avatar } }.collectAsState(initial = null)
     repository.errorFlow.handleWithSnackBar(snackBar)
 
     Search(topBar = { isSearchOpen, searchField ->
@@ -165,7 +171,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                 Box(modifier = Modifier.layoutId("search"), propagateMinConstraints = true) {
                     searchField()
                 }
-                ProfileRibbon(modifier = Modifier.layoutId("profile"), onClick = { navigation.navigate(MainNav.Profile.route) })
+                ProfileRibbon(image = profileImage, modifier = Modifier.layoutId("profile"), onClick = { navigation.navigate(MainNav.Profile.route) })
                 AnimatedContent(
                     targetState = tab,
                     label = "TopBar title change",

@@ -52,9 +52,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     @Composable
     override fun Content(model: Model, navigation: NavHostController) {
         val repository = LocalRepository.current
-        LaunchedEffect(true) {
-            repository.friends.requestEmit(true)
-        }
+        LaunchedEffect(true) { repository.friends.requestEmit(true) }
 
         val pagerState = rememberPagerState(0)
         Column(modifier = Modifier.fillMaxSize()) {

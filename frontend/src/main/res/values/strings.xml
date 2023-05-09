@@ -138,4 +138,5 @@
     <string name="too_long">Too long</string>
     <string name="done">Done</string>
     <string name="invalid_about">Invalid about</string>
+    <string name="profile_picture">Profile picture</string>
 </resources>
