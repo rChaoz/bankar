@@ -2,7 +2,6 @@ package ro.bankar.app.data
 
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
-import io.ktor.client.request.parameter
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
@@ -56,6 +55,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     abstract suspend fun sendAddFriend(id: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract val friends: RequestFlow<List<SPublicUser>>
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
+    abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): SafeStatusResponse<StatusResponse, StatusResponse>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -83,6 +83,10 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
     }
     override val friends = createFlow<List<SPublicUser>>("profile/friends")
     override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")
+    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = ktorClient.safeGet<StatusResponse, StatusResponse> {
+        url("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
+        bearerAuth(sessionToken)
+    }
 
     // Recent activity
     override val recentActivity = createFlow<SRecentActivity>("recent")

@@ -1,5 +1,7 @@
 package ro.bankar.app.ui.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,9 +33,15 @@ fun BottomDialog(
     content: @Composable () -> Unit
 ) {
     if (visible) Dialog(onDismissRequest, properties) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(remember { MutableInteractionSource() }, null, onClick = onDismissRequest),
+            contentAlignment = Alignment.BottomCenter
+        ) {
             Surface(
                 shadowElevation = 3.dp,
+                tonalElevation = 1.dp,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 36.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {

@@ -11,21 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,11 +35,11 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
+import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
@@ -220,38 +212,7 @@ private fun PartyInvite(fromName: String, time: Instant, place: String) {
             color = MaterialTheme.colorScheme.secondary,
         )
     }, title = stringResource(R.string.party_invite_from, fromName), subtitle = stringResource(R.string.date_time_at_place, time.here().format(), place)) {
-        Row {
-            CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                FilledIconButton(
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.customColors.green,
-                        contentColor = MaterialTheme.colorScheme.background,
-                    ),
-                    onClick = {},
-                    shape = RoundedCornerShape(topStartPercent = 50, bottomStartPercent = 50),
-                ) {
-                    Icon(
-                        modifier = Modifier.padding(start = 2.dp),
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.accept)
-                    )
-                }
-                FilledIconButton(
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.customColors.red,
-                        contentColor = MaterialTheme.colorScheme.background,
-                    ),
-                    onClick = {},
-                    shape = RoundedCornerShape(topEndPercent = 50, bottomEndPercent = 50),
-                ) {
-                    Icon(
-                        modifier = Modifier.padding(end = 2.dp),
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = stringResource(R.string.decline)
-                    )
-                }
-            }
-        }
+        AcceptDeclineButtons(onAccept = {}, onDecline = {})
     }
 }
 

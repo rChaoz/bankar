@@ -23,7 +23,7 @@ var SKIP_DELIVERY_CHECK = false
 @Suppress("unused")
 fun Application.module() {
     DEV_MODE = environment.developmentMode
-    SKIP_DELIVERY_CHECK = environment.config.propertyOrNull("ktor.sms.skipDeliveryCheck")?.getString().toBoolean()
+    SKIP_DELIVERY_CHECK = true//environment.config.propertyOrNull("ktor.sms.skipDeliveryCheck")?.getString().toBoolean()
     SmsService.configure(
         System.getenv("SENDSMS_USER"),
         System.getenv("SENDSMS_KEY"),

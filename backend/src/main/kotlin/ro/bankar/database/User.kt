@@ -7,11 +7,15 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.model.SNewUser
@@ -148,6 +152,14 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     fun addFriendRequest(from: User) = FriendRequests.insert {
         it[sourceUser] = from.id
         it[targetUser] = this@User.id
+    }
+
+    /**
+     * Adds another user as a friend
+     */
+    fun addFriend(other: User) = FriendPairs.insert {
+        it[sourceUser] = this@User.id
+        it[targetUser] = other.id
     }
 
     /**

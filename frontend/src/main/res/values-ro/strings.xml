@@ -142,4 +142,11 @@
     <string name="user_not_found">Nu a fost găsit niciun utilizator. Te rugăm să verifici tag-ul/e-mail-ul/numărul de telefon</string>
     <string name="friend_request_sent">Cerere de prietenie trimisă</string>
     <string name="add_friend_by">Adaugă un prieten după tag, e-mail sau număr de telefon:</string>
+    <string name="no_friends">Nu ai niciun prieten în listă. Apasă aici ca să adaugi un prieten acum!</string>
+    <string name="no_friend_requests">Nu ai nicio cerere de prietenie nouă.</string>
+    <string name="user_already_friend">Utilizatorul se află deja în lista ta de prieteni</string>
+    <string name="friend_request_already_sent">Deja ai trimis o cerere de prietenie către acest utilizator</string>
+    <string name="cant_friend_self">Nu te poți adăuga pe tine însuți ca prieten</string>
+    <string name="friend">Prieten</string>
+    <string name="welcome">Bine ai venit</string>
 </resources>

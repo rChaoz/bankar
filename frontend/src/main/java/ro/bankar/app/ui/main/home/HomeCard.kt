@@ -42,7 +42,7 @@ fun HomeCard(
         tonalElevation = .5.dp,
         shadowElevation = 3.dp
     ) {
-        HomeCardContent(title, icon, shimmer, color, content)
+        HomeCardContent(title, icon, shimmer, color, 5.dp, content)
     }
 }
 
@@ -62,7 +62,7 @@ fun HomeCard(
         tonalElevation = .5.dp,
         shadowElevation = 3.dp
     ) {
-        HomeCardContent(title, icon, shimmer, color, content)
+        HomeCardContent(title, icon, shimmer, color, 10.dp, content)
     }
 }
 
@@ -72,10 +72,11 @@ private fun HomeCardContent(
     icon: @Composable () -> Unit,
     shimmer: Shimmer? = null,
     color: Color? = null,
+    borderThickness: Dp = 5.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = Modifier.topBorder(5.dp, color ?: MaterialTheme.colorScheme.inversePrimary)
+        modifier = Modifier.topBorder(borderThickness, color ?: MaterialTheme.colorScheme.inversePrimary)
     ) {
         Row(
             modifier = Modifier

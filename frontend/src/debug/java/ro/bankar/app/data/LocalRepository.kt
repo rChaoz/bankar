@@ -44,7 +44,8 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
             flow.emit(value)
         }
     }
-    private fun <Result, Fail> mockResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)
+    private fun <Result, Fail> mockStatusResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)
+    private fun <Result> mockResponse() = SafeResponse.InternalError<Result>(R.string.connection_error)
 
     override val profile = mockFlow(
         SUser(
@@ -65,7 +66,7 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         )
     )
 
-    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockResponse<StatusResponse, InvalidParamResponse>()
+    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
     override val friends = mockFlow(
         listOf(
             SPublicUser(
@@ -83,7 +84,7 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         )
     )
 
-    override suspend fun sendAddFriend(id: String) = mockResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendAddFriend(id: String) = mockStatusResponse<StatusResponse, StatusResponse>()
     override val friendRequests = mockFlow(
         listOf(
             SPublicUser(
@@ -92,7 +93,9 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
             )
         )
     )
-    private val mockRecentActivity = SRecentActivity(
+    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockStatusResponse<StatusResponse, StatusResponse>()
+
+        private val mockRecentActivity = SRecentActivity(
         listOf(
             SBankTransfer(TransferDirection.Received, "Koleci 1", "testIBAN",
                 25.215, Currency.EURO, "ia bani", Clock.System.nowHere()),
@@ -127,5 +130,5 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         SBankAccountData(emptyList(), emptyList(), emptyList()) // TODO
     )
 
-    override suspend fun sendCreateAccount(account: SNewBankAccount) = mockResponse<StatusResponse, InvalidParamResponse>()
+    override suspend fun sendCreateAccount(account: SNewBankAccount) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
 }

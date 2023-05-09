@@ -142,4 +142,11 @@
     <string name="user_not_found">No user was found. Please check tag/e-mail/phone number</string>
     <string name="friend_request_sent">Friend request sent</string>
     <string name="add_friend_by">Add a friend by their tag, e-mail or phone number:</string>
+    <string name="no_friends">You don\'t have any friends yet. Click here to add a friend now!</string>
+    <string name="no_friend_requests">You don\'t have any new friend requests.</string>
+    <string name="user_already_friend">User is already in your friend list</string>
+    <string name="friend_request_already_sent">You have already sent a friend request to this user</string>
+    <string name="cant_friend_self">You cannot add yourself as a friend</string>
+    <string name="friend">Friend</string>
+    <string name="welcome">Welcome</string>
 </resources>

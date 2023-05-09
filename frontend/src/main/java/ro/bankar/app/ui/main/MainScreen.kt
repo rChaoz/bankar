@@ -12,7 +12,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,7 +21,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -41,6 +39,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,9 +61,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import ro.bankar.app.LocalDataStore
+import ro.bankar.app.Nav
 import ro.bankar.app.R
+import ro.bankar.app.USER_SESSION
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.removePreference
 import ro.bankar.app.ui.components.Search
+import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.handleWithSnackBar
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
@@ -184,23 +189,21 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
         }
     }, searchResults = {
         Surface {
-            Column(modifier = Modifier.fillMaxSize()) {
-                CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                    Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "Search item", modifier = Modifier.padding(16.dp))
-                    }
-                    Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "Search item", modifier = Modifier.padding(16.dp))
-                    }
-                    Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "Search item", modifier = Modifier.padding(16.dp))
-                    }
-                    Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "Search item", modifier = Modifier.padding(16.dp))
-                    }
-                    Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "Search item", modifier = Modifier.padding(16.dp))
-                    }
+            SurfaceList(modifier = Modifier.fillMaxSize()) {
+                Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Search item", modifier = Modifier.padding(16.dp))
+                }
+                Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Search item", modifier = Modifier.padding(16.dp))
+                }
+                Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Search item", modifier = Modifier.padding(16.dp))
+                }
+                Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Search item", modifier = Modifier.padding(16.dp))
+                }
+                Surface(onClick = { /*TODO*/ }, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Search item", modifier = Modifier.padding(16.dp))
                 }
             }
         }
@@ -225,7 +228,17 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     }, label = {
                         Text(text = stringResource(R.string.home))
                     })
-                    NavigationBarItem(selected = false, onClick = {}, icon = {
+                    // TODO Debug Only: Click Settings to sign out
+                    val dataStore = LocalDataStore.current
+                    val scope = rememberCoroutineScope()
+                    NavigationBarItem(selected = false, onClick = {
+                        scope.launch {
+                            dataStore.removePreference(USER_SESSION)
+                            navigation.navigate(Nav.NewUser.route) {
+                                popUpTo(Nav.Main.route) { inclusive = true }
+                            }
+                        }
+                    }, icon = {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(R.string.settings)

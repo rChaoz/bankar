@@ -5,22 +5,28 @@ import android.content.res.Configuration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -28,39 +34,38 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import io.ktor.client.request.parameter
-import io.ktor.client.request.url
-import io.ktor.http.HttpStatusCode
+import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
 import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.ktorClient
-import ro.bankar.app.data.repository
-import ro.bankar.app.data.safeGet
 import ro.bankar.app.ui.HideFABOnScroll
+import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.BottomDialog
-import ro.bankar.app.ui.components.verifiableStateOf
+import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.main.LocalSnackBar
 import ro.bankar.app.ui.main.MainTab
+import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.StatusResponse
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -86,11 +91,29 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             addFriendLoading = false
             when (result) {
                 is SafeStatusResponse.InternalError -> addFriendError = result.message
-                is SafeStatusResponse.Fail -> addFriendError = R.string.user_not_found
+                is SafeStatusResponse.Fail -> addFriendError = when (result.s.status) {
+                    "user_not_found" -> R.string.user_not_found
+                    "user_is_friend" -> R.string.user_already_friend
+                    "cant_friend_self" -> R.string.cant_friend_self
+                    else -> R.string.unknown_error
+                }
                 is SafeStatusResponse.Success -> {
                     showAddFriendDialog = false
                     snackBar.showSnackbar(c.getString(R.string.friend_request_sent), withDismissAction = true)
                 }
+            }
+        }
+
+        fun onRespondToRequest(c: Context, fromTag: String, accepted: Boolean, repository: Repository) = viewModelScope.launch {
+            when (val result = repository.sendFriendRequestResponse(fromTag, accepted)) {
+                is SafeStatusResponse.Success -> {
+                    repository.friends.requestEmit(false)
+                    repository.friendRequests.requestEmit(false)
+                }
+                is SafeStatusResponse.InternalError ->
+                    snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
+                is SafeStatusResponse.Fail ->
+                    snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
             }
         }
     }
@@ -103,7 +126,10 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     override fun Content(model: Model, navigation: NavHostController) {
         model.snackBar = LocalSnackBar.current
         val repository = LocalRepository.current
-        LaunchedEffect(true) { repository.friends.requestEmit(true) }
+        LaunchedEffect(true) {
+            repository.friends.requestEmit(true)
+            repository.friendRequests.requestEmit(true)
+        }
 
         // Add friend dialog
         val context = LocalContext.current
@@ -114,17 +140,20 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             confirmButtonEnabled = model.addFriendInput.isNotBlank(),
             onConfirmButtonClick = { model.onAddFriend(context, repository) }
         ) {
-            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(text = stringResource(R.string.add_friend_by))
-                TextField(
-                    value = model.addFriendInput,
-                    onValueChange = { model.addFriendInput = it; model.addFriendError = null },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = model.addFriendError != null,
-                    supportingText = { Text(text = model.addFriendError?.let { context.getString(it) } ?: "") },
-                    leadingIcon = { Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null) }
-                )
+            LoadingOverlay(isLoading = model.addFriendLoading) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(text = stringResource(R.string.add_friend_by))
+                    TextField(
+                        value = model.addFriendInput,
+                        onValueChange = { model.addFriendInput = it; model.addFriendError = null },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text(text = stringResource(R.string.friend)) },
+                        isError = model.addFriendError != null,
+                        supportingText = { Text(text = model.addFriendError?.let { context.getString(it) } ?: "") },
+                        leadingIcon = { Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null) }
+                    )
+                }
             }
         }
 
@@ -140,10 +169,12 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                 val targetP = offset.absoluteValue
                 val currentP = 1f - targetP
 
-                TabRowDefaults.Indicator(modifier = Modifier
-                    .wrapContentSize(Alignment.BottomStart)
-                    .width(tab.width + targetTab.width * targetP)
-                    .offset(x = tab.left * currentP + targetTab.left * targetP - tab.width * targetP / 2))
+                TabRowDefaults.Indicator(
+                    modifier = Modifier
+                        .wrapContentSize(Alignment.BottomStart)
+                        .width(tab.width + targetTab.width * targetP)
+                        .offset(x = tab.left * currentP + targetTab.left * targetP - tab.width * targetP / 2)
+                )
             }) {
                 val scope = rememberCoroutineScope()
                 for (tab in tabs) {
@@ -162,7 +193,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                 modifier = Modifier.fillMaxSize(),
                 flingBehavior = PagerDefaults.flingBehavior(state = pagerState)
             ) {
-                tabs[it].Content(model)
+                tabs[it].Content(model, repository)
             }
         }
     }
@@ -181,23 +212,101 @@ private val tabs = listOf(FriendsTabs.Friends, FriendsTabs.FriendRequests)
 
 private sealed class FriendsTabs(val index: Int, val title: Int) {
     @Composable
-    abstract fun Content(model: FriendsTab.Model)
+    abstract fun Content(model: FriendsTab.Model, repository: Repository)
 
     object Friends : FriendsTabs(0, R.string.friends) {
         @Composable
-        override fun Content(model: FriendsTab.Model) {
+        override fun Content(model: FriendsTab.Model, repository: Repository) {
+            val friendsState = repository.friends.collectAsState(initial = null)
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
-            Text(text = "Content 1")
+
+            SurfaceList(modifier = Modifier.fillMaxSize()) {
+                val friends = friendsState.value
+                if (friends != null) {
+                    if (friends.isEmpty()) InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
+                    else for (req in friends) Surface(onClick = { /*TODO*/ }) {
+                        Row(
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (req.avatar == null) Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = stringResource(R.string.avatar),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            else AsyncImage(
+                                model = req.avatar,
+                                contentDescription = stringResource(R.string.avatar),
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                            )
+                            Column {
+                                Text(
+                                    text = with(req) { "$firstName ${if (middleName != null) "$middleName " else ""}$lastName" },
+                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
+                                )
+                                Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
         @Composable
-        override fun Content(model: FriendsTab.Model) {
+        override fun Content(model: FriendsTab.Model, repository: Repository) {
+            val friendRequests = repository.friendRequests.collectAsState(initial = null)
+
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
-            Text(text = "Content 2")
+            SurfaceList(modifier = Modifier.fillMaxSize()) {
+                val requests = friendRequests.value
+                if (requests != null) {
+                    if (requests.isEmpty()) InfoCard(text = R.string.no_friend_requests)
+                    else for (req in requests) Surface(onClick = { /*TODO*/ }) {
+                        Row(
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (req.avatar == null) Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = stringResource(R.string.avatar),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            else AsyncImage(
+                                model = req.avatar,
+                                contentDescription = stringResource(R.string.avatar),
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                            )
+                            Column {
+                                Text(
+                                    text = with(req) { "$firstName ${if (middleName != null) "$middleName " else ""}$lastName" },
+                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
+                                )
+                                Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            val context = LocalContext.current
+                            AcceptDeclineButtons(
+                                onAccept = { model.onRespondToRequest(context, req.tag, true, repository) },
+                                onDecline = { model.onRespondToRequest(context, req.tag, false, repository) }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
