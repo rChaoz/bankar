@@ -174,8 +174,8 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
                     Text(
                         text = stringResource(
                             R.string.credit_amount_range,
-                            decimalFormat.format(data?.minAmount),
-                            decimalFormat.format(data?.maxAmount),
+                            decimalFormat.format(data?.minAmount ?: 0.0),
+                            decimalFormat.format(data?.maxAmount ?: 0.0),
                             model.currency.value.code
                         )
                     )
