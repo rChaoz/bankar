@@ -13,7 +13,7 @@ import ro.bankar.amount
 import ro.bankar.banking.Currency
 import ro.bankar.currency
 import ro.bankar.model.SBankTransfer
-import ro.bankar.model.TransferDirection
+import ro.bankar.model.SDirection
 
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankTransfer>(BankTransfers) {
@@ -42,15 +42,15 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var note by BankTransfers.note
     var dateTime by BankTransfers.dateTime
 
-    fun serializable(direction: TransferDirection) = SBankTransfer(
+    fun serializable(direction: SDirection) = SBankTransfer(
         direction,
-        if (direction == TransferDirection.Sent) recipientName else senderName,
-        if (direction == TransferDirection.Sent) recipientIban else senderIban,
+        if (direction == SDirection.Sent) recipientName else senderName,
+        if (direction == SDirection.Sent) recipientIban else senderIban,
         amount.toDouble(), currency, note, dateTime
     )
 
     fun serializable(user: User) =
-        serializable(if (sender?.user?.id == user.id) ro.bankar.model.TransferDirection.Sent else TransferDirection.Received)
+        serializable(if (sender?.user?.id == user.id) ro.bankar.model.SDirection.Sent else SDirection.Received)
 }
 
 fun SizedIterable<BankTransfer>.serializable(user: User) = map { it.serializable(user) }

@@ -62,7 +62,7 @@ fun HomeCard(
         tonalElevation = .5.dp,
         shadowElevation = 3.dp
     ) {
-        HomeCardContent(title, icon, shimmer, color, 10.dp, content)
+        HomeCardContent(title, icon, shimmer, color, 8.dp, content)
     }
 }
 

@@ -43,9 +43,9 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
+import ro.bankar.model.SDirection
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
-import ro.bankar.model.TransferDirection
 import ro.bankar.util.here
 import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
@@ -73,7 +73,7 @@ fun RecentActivity(recentActivity: SRecentActivity) {
             while (transferI < transfers.size && transactionI < transactions.size) {
                 if (transfers[transferI].dateTime < transactions[transactionI].dateTime) {
                     val transfer = transfers[transferI++]
-                    val amount = if (transfer.direction == TransferDirection.Sent) -transfer.amount else transfer.amount
+                    val amount = if (transfer.direction == SDirection.Sent) -transfer.amount else transfer.amount
                     Transfer(name = transfer.fullName, time = transfer.dateTime.toInstant(TimeZone.UTC), amount = amount, currency = transfer.currency.code)
                 } else {
                     val transaction = transactions[transactionI++]
@@ -95,16 +95,16 @@ private fun RecentActivityPreview() {
         RecentActivity(
             SRecentActivity(
                 listOf(
-                    SBankTransfer(TransferDirection.Received, "Koleci 1", "testIBAN",
+                    SBankTransfer(SDirection.Received, "Koleci 1", "testIBAN",
                         25.215, Currency.EURO, "middd", Clock.System.nowHere()),
-                    SBankTransfer(TransferDirection.Sent, "Koleci 2", "testIBAN!!",
+                    SBankTransfer(SDirection.Sent, "Koleci 2", "testIBAN!!",
                         15.0, Currency.US_DOLLAR, ":/", Clock.System.nowHere()),
                 ),
                 listOf(SCardTransaction(1L, 2, "1373",
                     23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "1234 idk")),
                 listOf(
                     STransferRequest(
-                        TransferDirection.Received, "Big", null, "Boy",
+                        SDirection.Received, "Big", null, "Boy",
                         50.25, Currency.ROMANIAN_LEU, "Tesla Dealer", 5, Clock.System.nowUTC()
                     )
                 ),

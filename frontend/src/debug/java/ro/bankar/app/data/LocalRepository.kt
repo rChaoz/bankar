@@ -18,6 +18,7 @@ import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
+import ro.bankar.model.SDirection
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
@@ -25,7 +26,6 @@ import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
-import ro.bankar.model.TransferDirection
 import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
 import kotlin.time.Duration.Companion.seconds
@@ -97,16 +97,16 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
 
         private val mockRecentActivity = SRecentActivity(
         listOf(
-            SBankTransfer(TransferDirection.Received, "Koleci 1", "testIBAN",
+            SBankTransfer(SDirection.Received, "Koleci 1", "testIBAN",
                 25.215, Currency.EURO, "ia bani", Clock.System.nowHere()),
-            SBankTransfer(TransferDirection.Sent, "Koleci 2", "testIBAN!!",
+            SBankTransfer(SDirection.Sent, "Koleci 2", "testIBAN!!",
                 15.0, Currency.US_DOLLAR, "nu, ia tu bani :3", Clock.System.nowHere()),
         ),
         listOf(SCardTransaction(1L, 2, "1373",
             23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun")),
         listOf(
             STransferRequest(
-                TransferDirection.Received, "Big", null, "Boy",
+                SDirection.Received, "Big", null, "Boy",
                 50.25, Currency.ROMANIAN_LEU, "Tesla Dealer", 5, Clock.System.nowUTC()
             )
         ),

@@ -19,6 +19,8 @@ import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
@@ -97,6 +99,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                     "cant_friend_self" -> R.string.cant_friend_self
                     else -> R.string.unknown_error
                 }
+
                 is SafeStatusResponse.Success -> {
                     showAddFriendDialog = false
                     snackBar.showSnackbar(c.getString(R.string.friend_request_sent), withDismissAction = true)
@@ -110,8 +113,10 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                     repository.friends.requestEmit(false)
                     repository.friendRequests.requestEmit(false)
                 }
+
                 is SafeStatusResponse.InternalError ->
                     snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
+
                 is SafeStatusResponse.Fail ->
                     snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
             }
@@ -221,7 +226,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
 
-            SurfaceList(modifier = Modifier.fillMaxSize()) {
+            SurfaceList(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(12.dp))
+            ) {
                 val friends = friendsState.value
                 if (friends != null) {
                     if (friends.isEmpty()) InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
@@ -266,7 +275,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
 
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
-            SurfaceList(modifier = Modifier.fillMaxSize()) {
+            SurfaceList(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            ) {
                 val requests = friendRequests.value
                 if (requests != null) {
                     if (requests.isEmpty()) InfoCard(text = R.string.no_friend_requests)

@@ -12,8 +12,8 @@ import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.Currency
 import ro.bankar.currency
+import ro.bankar.model.SDirection
 import ro.bankar.model.STransferRequest
-import ro.bankar.model.TransferDirection
 
 class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<TransferRequest>(TransferRequests) {
@@ -41,9 +41,9 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      * Converts this TransferRequest to a serializable object.
      * @param direction Whether this transfer request was sent/received by the user
      */
-    fun serializable(direction: TransferDirection) = when (direction) {
-        TransferDirection.Sent -> targetUser
-        TransferDirection.Received -> sourceUser
+    fun serializable(direction: SDirection) = when (direction) {
+        SDirection.Sent -> targetUser
+        SDirection.Received -> sourceUser
     }.let { STransferRequest(direction, it.firstName, it.middleName, it.lastName, amount.toDouble(), currency, note, partyID?.value, dateTime) }
 
     /**
@@ -51,7 +51,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      * @param user The user this transfer data will be given to, used to deduce whether this is sent/received transfer
      */
     fun serializable(user: User) =
-        serializable(if (sourceUser.id == user.id) TransferDirection.Received else  TransferDirection.Sent)
+        serializable(if (sourceUser.id == user.id) SDirection.Received else  SDirection.Sent)
 }
 
 fun SizedIterable<TransferRequest>.serializable(user: User) = map { it.serializable(user) }
