@@ -294,9 +294,14 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                                 AnimatedContent(targetState = editingAbout, label = "About Edit Icon") {
                                     when (it) {
                                         false -> IconButton(onClick = {
+                                            focusManager.clearFocus()
                                             aboutValue = data.about
                                             editingAbout = true
-                                            focusRequester.requestFocus()
+                                            scope.launch {
+                                                delay(50)
+                                                // Wait until the TextField is no longer readonly, otherwise keyboard won't display
+                                                focusRequester.requestFocus()
+                                            }
                                         }) {
                                             Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
                                         }
