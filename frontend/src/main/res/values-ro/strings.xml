@@ -139,4 +139,7 @@
     <string name="done">Gata</string>
     <string name="invalid_about">Câmp \"Despre\" invalid</string>
     <string name="profile_picture">Poză de profil</string>
+    <string name="user_not_found">Nu a fost găsit niciun utilizator. Te rugăm să verifici tag-ul/e-mail-ul/numărul de telefon</string>
+    <string name="friend_request_sent">Cerere de prietenie trimisă</string>
+    <string name="add_friend_by">Adaugă un prieten după tag, e-mail sau număr de telefon:</string>
 </resources>

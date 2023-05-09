@@ -82,6 +82,8 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
             )
         )
     )
+
+    override suspend fun sendAddFriend(id: String) = mockResponse<StatusResponse, StatusResponse>()
     override val friendRequests = mockFlow(
         listOf(
             SPublicUser(

@@ -2,6 +2,7 @@ package ro.bankar.app.data
 
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
@@ -52,6 +53,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
+    abstract suspend fun sendAddFriend(id: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract val friends: RequestFlow<List<SPublicUser>>
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
 
@@ -73,6 +75,11 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
             bearerAuth(sessionToken)
             setBody(data)
         }
+    }
+
+    override suspend fun sendAddFriend(id: String) = ktorClient.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {
+        url("profile/friends/add/$id")
+        bearerAuth(sessionToken)
     }
     override val friends = createFlow<List<SPublicUser>>("profile/friends")
     override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")

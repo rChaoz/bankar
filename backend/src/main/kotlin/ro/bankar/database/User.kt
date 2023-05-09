@@ -7,14 +7,11 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
-import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.model.SNewUser
@@ -111,7 +108,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     val assetAccounts by AssetAccount referrersOn AssetAccounts.user
 
     var friends by User.via(FriendPairs.sourceUser, FriendPairs.targetUser)
-    var friendRequests by User.via(FriendRequests.sourceUser, FriendRequests.targetUser)
+    var friendRequests by User.via(FriendRequests.targetUser, FriendRequests.sourceUser)
 
     val sendTransferRequests by TransferRequest referrersOn TransferRequests.sourceUser
     val receivedTransferRequests by TransferRequest referrersOn TransferRequests.targetUser
@@ -143,6 +140,14 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     fun clearSession() {
         sessionToken = null
         sessionTokenExpiration = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+    }
+
+    /**
+     * Adds an incoming friends request for this user, from target user
+     */
+    fun addFriendRequest(from: User) = FriendRequests.insert {
+        it[sourceUser] = from.id
+        it[targetUser] = this@User.id
     }
 
     /**
@@ -186,7 +191,7 @@ internal object Users : IntIdTable(columnName = "user_id") {
 internal object FriendRequests : Table() {
     val sourceUser = reference("source_user_id", Users)
     val targetUser = reference("target_user_id", Users)
-    override val primaryKey = PrimaryKey(FriendPairs.sourceUser, FriendPairs.targetUser)
+    override val primaryKey = PrimaryKey(sourceUser, targetUser)
 }
 
 internal object FriendPairs : Table() {

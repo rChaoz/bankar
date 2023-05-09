@@ -1,0 +1,74 @@
+package ro.bankar.app.ui.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+
+@Composable
+fun BottomDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
+    buttonBar: @Composable () -> Unit,
+    content: @Composable () -> Unit
+) {
+    if (visible) Dialog(onDismissRequest, properties) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            Surface(
+                shadowElevation = 3.dp,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 36.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column {
+                    content()
+                    Divider()
+                    buttonBar()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomDialog(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
+    confirmButtonText: Int,
+    confirmButtonEnabled: Boolean = true,
+    onConfirmButtonClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    BottomDialog(visible, onDismissRequest, properties, buttonBar = {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(android.R.string.cancel))
+            }
+            Button(onClick = onConfirmButtonClick, enabled = confirmButtonEnabled) {
+                Text(text = stringResource(confirmButtonText))
+            }
+        }
+    }, content)
+}

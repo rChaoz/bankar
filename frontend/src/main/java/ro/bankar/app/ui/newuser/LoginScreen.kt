@@ -174,7 +174,6 @@ class LoginModel : ViewModel() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
     val model: LoginModel = viewModel()
