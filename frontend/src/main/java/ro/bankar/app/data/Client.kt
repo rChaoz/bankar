@@ -80,7 +80,7 @@ suspend inline fun <reified Result> HttpClient.safeRequest(
                 if (response.status == successCode) SafeResponse.Success(response, response.body())
                 else {
                     val body = response.bodyAsText()
-                    Log.w(TAG, "HttpRequest failed: $body")
+                    Log.w(TAG, "HttpRequest failed: $response\n$body")
                     SafeResponse.Fail(response, body)
                 }
             } catch (e: Exception) {

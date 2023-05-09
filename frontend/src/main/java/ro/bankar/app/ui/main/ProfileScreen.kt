@@ -115,7 +115,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                 snackBar.showSnackbar(context.getString(R.string.error_loading_image), withDismissAction = true)
                 return@launch
             }
-            // Compress bitmap into memory as WEBP
+            // Compress bitmap into memory
             val bytes = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bytes)
             // Send image to server
@@ -218,7 +218,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         } else {
                             Text(text = "@${data.tag}", style = MaterialTheme.typography.titleLarge)
                             Text(
-                                text = with(data) { "$firstName ${if (middleName != null) "$middleName " else ""}$lastName" },
+                                text = data.fullName,
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Spacer(modifier = Modifier.height(12.dp))

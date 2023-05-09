@@ -18,6 +18,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
+import ro.bankar.model.SDirection
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SUser
@@ -72,6 +73,11 @@ class User(id: EntityID<Int>) : IntEntity(id) {
          * Checks if email is taken
          */
         fun isEmailTaken(email: String) = !find { Users.email eq email }.empty()
+
+        /**
+         * Gets a user by tag
+         */
+        fun findByTag(tag: String) = find { Users.tag eq tag }.singleOrNull()
 
         /**
          * Get a user by tag, e-mail or phone
@@ -167,12 +173,29 @@ class User(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state,
         city, address, joinDate, about, avatar?.inputStream?.readBytes())
+
+    /**
+     * Returns this user's public data as serializable
+     */
+    fun publicSerializable(direction: SDirection) = SPublicUser(
+        tag,
+        firstName,
+        middleName,
+        lastName,
+        countryCode,
+        joinDate,
+        about,
+        direction,
+        avatar?.inputStream?.readBytes()
+    )
 }
 
 /**
  * Converts a list of Users to a list of serializable objects containing only the public information about the user.
  */
-fun SizedIterable<User>.serializable() = map { SPublicUser(it.tag, it.firstName, it.middleName, it.lastName, it.countryCode, it.joinDate, it.about, it.avatar?.bytes) }
+fun SizedIterable<User>.serializable() = map {
+    SPublicUser(it.tag, it.firstName, it.middleName, it.lastName, it.countryCode, it.joinDate, it.about, SDirection.Sent, it.avatar?.inputStream?.readBytes())
+}
 
 internal object Users : IntIdTable(columnName = "user_id") {
     val email = varchar("email", 50).uniqueIndex()

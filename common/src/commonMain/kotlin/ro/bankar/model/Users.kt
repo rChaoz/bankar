@@ -66,6 +66,8 @@ sealed class SPublicUserBase {
             else -> null
         }
     }
+
+    val fullName get() = "$firstName ${middleName?.let { "$middleName " } ?: ""}$lastName"
 }
 
 /**
@@ -140,13 +142,13 @@ class SUser(
     val joinDate: LocalDate,
     val about: String,
     /**
-     * WEBP compressed image
+     * JPEG compressed image
      */
     val avatar: ByteArray?
 ) : SUserBase() // No validate because this type is never sent by the client
 
 /**
- * Verify that the given data is a valid WEBP image with the correct size (as specified by [SUserValidation.avatarSize])
+ * Verify that the given data is a valid JPEG image with the correct size (as specified by [SUserValidation.avatarSize])
  */
 expect fun validateImage(imageData: ByteArray): Boolean
 
@@ -166,7 +168,8 @@ class SUserProfileUpdate(
 }
 
 /**
- * Data a user receives about other users that have accepted being added as friends
+ * Data a user receives about other users that have accepted being added as friends,
+ * as well as about users that have sent friend requests to them
  */
 @Serializable
 class SPublicUser(
@@ -180,7 +183,11 @@ class SPublicUser(
     val joinDate: LocalDate,
     val about: String,
     /**
-     * WEBP compressed image
+     * Only makes sense for friend requests; whether this is an outbound/inbound request
+     */
+    val requestDirection: SDirection,
+    /**
+     * JPEG compressed image
      */
     val avatar: ByteArray?
 ) : SPublicUserBase() // No validate because this type is never sent by the client

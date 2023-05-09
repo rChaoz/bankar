@@ -149,4 +149,7 @@
     <string name="cant_friend_self">You cannot add yourself as a friend</string>
     <string name="friend">Friend</string>
     <string name="welcome">Welcome</string>
+    <string name="sent_requests">Sent requests</string>
+    <string name="received_requests">Received Requests</string>
+    <string name="options">Options</string>
 </resources>

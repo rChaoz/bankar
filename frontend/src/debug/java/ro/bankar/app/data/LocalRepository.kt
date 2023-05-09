@@ -71,15 +71,15 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         listOf(
             SPublicUser(
                 "bombasticus", "Bomba", "Maximus", "Extremus", "RO",
-                LocalDate(1969, 6, 9), "straight up dead ngl", null
+                LocalDate(1969, 6, 9), "straight up dead ngl", SDirection.Sent, null
             ),
             SPublicUser(
                 "koleci.alexandru", "Andi", null, "Koleci", "AL",
-                LocalDate(2001, 2, 15), "", null
+                LocalDate(2001, 2, 15), "", SDirection.Sent, null
             ),
             SPublicUser(
                 "chad.gpt", "Chad", "Thundercock", "GPT", "DE",
-                Clock.System.todayIn(TimeZone.UTC), "not your business", null
+                Clock.System.todayIn(TimeZone.UTC), "not your business", SDirection.Sent, null
             )
         )
     )
@@ -89,7 +89,7 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         listOf(
             SPublicUser(
                 "not.a.scammer", "Your", "Computer", "Virus", "NL",
-                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "hello your computer has wirus", null,
+                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "hello your computer has wirus", SDirection.Received, null
             )
         )
     )
@@ -111,6 +111,10 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
             )
         ),
     )
+
+    override suspend fun sendCancelFriendRequest(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
+
+
     override val recentActivity = mockFlow(mockRecentActivity)
     override val allRecentActivity = mockFlow(mockRecentActivity)
     override val accounts = mockFlow(

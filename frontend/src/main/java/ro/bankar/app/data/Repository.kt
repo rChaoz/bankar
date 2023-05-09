@@ -56,6 +56,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     abstract val friends: RequestFlow<List<SPublicUser>>
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
     abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendCancelFriendRequest(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -85,6 +86,10 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
     override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = ktorClient.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
+        bearerAuth(sessionToken)
+    }
+    override suspend fun sendCancelFriendRequest(tag: String) = ktorClient.safeGet<StatusResponse, StatusResponse> {
+        url("profile/friend_requests/cancel/$tag")
         bearerAuth(sessionToken)
     }
 

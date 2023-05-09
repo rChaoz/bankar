@@ -149,4 +149,7 @@
     <string name="cant_friend_self">Nu te poți adăuga pe tine însuți ca prieten</string>
     <string name="friend">Prieten</string>
     <string name="welcome">Bine ai venit</string>
+    <string name="sent_requests">Cereri trimise</string>
+    <string name="received_requests">Cereri primite</string>
+    <string name="options">Opțiuni</string>
 </resources>
