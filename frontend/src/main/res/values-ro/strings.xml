@@ -135,4 +135,7 @@
     <string name="avatar">Avatar</string>
     <string name="joined_on">Membru din %s</string>
     <string name="about">Despre</string>
+    <string name="too_long">Prea lung</string>
+    <string name="done">Gata</string>
+    <string name="invalid_about">Câmp \"Despre\" invalid</string>
 </resources>

@@ -135,4 +135,7 @@
     <string name="avatar">Avatar</string>
     <string name="joined_on">Joined on %s</string>
     <string name="about">About</string>
+    <string name="too_long">Too long</string>
+    <string name="done">Done</string>
+    <string name="invalid_about">Invalid about</string>
 </resources>

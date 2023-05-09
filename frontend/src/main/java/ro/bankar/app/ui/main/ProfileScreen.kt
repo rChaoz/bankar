@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,13 +18,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -36,11 +42,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -212,8 +220,10 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text(text = stringResource(R.string.joined_on, data.joinDate.format()),
-                                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.outline)
+                            Text(
+                                text = stringResource(R.string.joined_on, data.joinDate.format()),
+                                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.outline
+                            )
                         }
                     }
                 }
@@ -231,21 +241,69 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(text = stringResource(R.string.about), style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold, modifier = textMod)
+                    Text(
+                        text = stringResource(R.string.about), style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, modifier = textMod
+                    )
                     if (data == null) Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(40.dp)
                             .grayShimmer(shimmer)
                     )
-                    else TextField(
-                        value = data.about,
-                        onValueChange = {},
-                        modifier = Modifier.fillMaxWidth(),
-                        readOnly = true,
-                        singleLine = true
-                    )
+                    else {
+                        // null means submitting (loading)
+                        var editingAbout by rememberSaveable { mutableStateOf<Boolean?>(false) }
+                        var aboutValue by rememberSaveable { mutableStateOf("") }
+                        val aboutError = editingAbout == true && aboutValue.trim().length > SUserValidation.aboutMaxLength
+                        val focusManager = LocalFocusManager.current
+                        val onDone: () -> Unit = {
+                            focusManager.clearFocus()
+                            editingAbout = null
+                            scope.launch {
+                                when (val result = repository.sendAboutOrPicture(SUserProfileUpdate(aboutValue.trim(), null))) {
+                                    is SafeStatusResponse.InternalError ->
+                                        launch { snackBar.showSnackbar(context.getString(result.message), withDismissAction = true) }
+                                    is SafeStatusResponse.Fail ->
+                                        launch { snackBar.showSnackbar(context.getString(R.string.invalid_about), withDismissAction = true) }
+                                    is SafeStatusResponse.Success -> {
+                                        repository.profile.requestEmit(true)
+                                        delay(1.seconds)
+                                        editingAbout = false
+                                    }
+                                }
+                                if (editingAbout == null) editingAbout = true
+                            }
+                        }
+                        TextField(
+                            value = if (editingAbout != false) aboutValue else data.about,
+                            onValueChange = { aboutValue = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            readOnly = editingAbout != true,
+                            singleLine = true,
+                            isError = aboutError,
+                            supportingText = if (aboutError) {
+                                { Text(text = stringResource(R.string.too_long)) }
+                            } else null,
+                            keyboardActions = KeyboardActions(onDone = { onDone() }),
+                            leadingIcon = { Icon(imageVector = Icons.Default.Info, contentDescription = null) },
+                            trailingIcon = {
+                                AnimatedContent(targetState = editingAbout, label = "About Edit Icon") {
+                                    if (it == false) IconButton(onClick = {
+                                        aboutValue = data.about
+                                        editingAbout = true
+                                    }) {
+                                        Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
+                                    } else if (it == true) IconButton(onClick = onDone) {
+                                        Icon(imageVector = Icons.Default.Done, contentDescription = stringResource(R.string.done))
+                                    } else {
+                                        CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+                                    }
+                                }
+
+                            }
+                        )
+                    }
                 }
             }
             Surface(
@@ -258,11 +316,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                     modifier = Modifier
                         .padding(12.dp)
                 ) {
-                    Text(text = stringResource(R.string.email), style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold, modifier = textMod)
-                    if (data == null) Box(modifier = Modifier
-                        .size(200.dp, 16.dp)
-                        .grayShimmer(shimmer))
+                    Text(
+                        text = stringResource(R.string.email), style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, modifier = textMod
+                    )
+                    if (data == null) Box(
+                        modifier = Modifier
+                            .size(200.dp, 16.dp)
+                            .grayShimmer(shimmer)
+                    )
                     else Text(text = data.email)
                 }
             }
@@ -274,11 +336,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                 Column(
                     modifier = Modifier.padding(12.dp)
                 ) {
-                    Text(text = stringResource(R.string.phone), style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold, modifier = textMod)
-                    if (data == null) Box(modifier = Modifier
-                        .size(120.dp, 16.dp)
-                        .grayShimmer(shimmer))
+                    Text(
+                        text = stringResource(R.string.phone), style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, modifier = textMod
+                    )
+                    if (data == null) Box(
+                        modifier = Modifier
+                            .size(120.dp, 16.dp)
+                            .grayShimmer(shimmer)
+                    )
                     else Text(text = data.phone)
                 }
             }
@@ -293,11 +359,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         modifier = Modifier
                             .padding(12.dp)
                     ) {
-                        Text(text = stringResource(R.string.first_name), style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold, modifier = textMod)
-                        if (data == null) Box(modifier = Modifier
-                            .size(100.dp, 16.dp)
-                            .grayShimmer(shimmer))
+                        Text(
+                            text = stringResource(R.string.first_name), style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold, modifier = textMod
+                        )
+                        if (data == null) Box(
+                            modifier = Modifier
+                                .size(100.dp, 16.dp)
+                                .grayShimmer(shimmer)
+                        )
                         else Text(text = data.firstName)
                     }
                 }
@@ -311,11 +381,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         modifier = Modifier
                             .padding(12.dp)
                     ) {
-                        Text(text = stringResource(R.string.middle_name), style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold, modifier = textMod)
-                        if (data == null) Box(modifier = Modifier
-                            .size(100.dp, 16.dp)
-                            .grayShimmer(shimmer))
+                        Text(
+                            text = stringResource(R.string.middle_name), style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold, modifier = textMod
+                        )
+                        if (data == null) Box(
+                            modifier = Modifier
+                                .size(100.dp, 16.dp)
+                                .grayShimmer(shimmer)
+                        )
                         else Text(text = data.middleName ?: "")
                     }
                 }
@@ -330,11 +404,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                     modifier = Modifier
                         .padding(12.dp)
                 ) {
-                    Text(text = stringResource(R.string.last_name), style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold, modifier = textMod)
-                    if (data == null) Box(modifier = Modifier
-                        .size(100.dp, 16.dp)
-                        .grayShimmer(shimmer))
+                    Text(
+                        text = stringResource(R.string.last_name), style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, modifier = textMod
+                    )
+                    if (data == null) Box(
+                        modifier = Modifier
+                            .size(100.dp, 16.dp)
+                            .grayShimmer(shimmer)
+                    )
                     else Text(text = data.lastName)
                 }
             }
@@ -348,11 +426,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                     modifier = Modifier
                         .padding(12.dp)
                 ) {
-                    Text(text = stringResource(R.string.date_of_birth), style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold, modifier = textMod)
-                    if (data == null) Box(modifier = Modifier
-                        .size(100.dp, 16.dp)
-                        .grayShimmer(shimmer))
+                    Text(
+                        text = stringResource(R.string.date_of_birth), style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold, modifier = textMod
+                    )
+                    if (data == null) Box(
+                        modifier = Modifier
+                            .size(100.dp, 16.dp)
+                            .grayShimmer(shimmer)
+                    )
                     else Text(text = data.dateOfBirth.toString())
                 }
             }
@@ -367,11 +449,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         modifier = Modifier
                             .padding(12.dp)
                     ) {
-                        Text(text = stringResource(R.string.country), style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold, modifier = textMod)
-                        if (data == null) Box(modifier = Modifier
-                            .size(100.dp, 16.dp)
-                            .grayShimmer(shimmer))
+                        Text(
+                            text = stringResource(R.string.country), style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold, modifier = textMod
+                        )
+                        if (data == null) Box(
+                            modifier = Modifier
+                                .size(100.dp, 16.dp)
+                                .grayShimmer(shimmer)
+                        )
                         else Text(text = data.countryCode)
                     }
                 }
@@ -385,11 +471,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         modifier = Modifier
                             .padding(12.dp)
                     ) {
-                        Text(text = stringResource(R.string.city), style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold, modifier = textMod)
-                        if (data == null) Box(modifier = Modifier
-                            .size(100.dp, 16.dp)
-                            .grayShimmer(shimmer))
+                        Text(
+                            text = stringResource(R.string.city), style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold, modifier = textMod
+                        )
+                        if (data == null) Box(
+                            modifier = Modifier
+                                .size(100.dp, 16.dp)
+                                .grayShimmer(shimmer)
+                        )
                         else Text(text = data.city)
                     }
                 }
