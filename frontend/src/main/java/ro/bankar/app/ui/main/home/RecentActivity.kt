@@ -40,11 +40,11 @@ import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.FilledIcon
+import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
@@ -57,7 +57,6 @@ import ro.bankar.model.TransferDirection
 import ro.bankar.util.here
 import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
-import ro.bankar.util.todayHere
 
 @Composable
 fun RecentActivity(recentActivity: SRecentActivity) {
@@ -83,7 +82,7 @@ fun RecentActivity(recentActivity: SRecentActivity) {
                 if (transfers[transferI].dateTime < transactions[transactionI].dateTime) {
                     val transfer = transfers[transferI++]
                     val amount = if (transfer.direction == TransferDirection.Sent) -transfer.amount else transfer.amount
-                    Transfer(name = transfer.fullName, dateTime = transfer.dateTime, amount = amount, currency = transfer.currency.code)
+                    Transfer(name = transfer.fullName, time = transfer.dateTime.toInstant(TimeZone.UTC), amount = amount, currency = transfer.currency.code)
                 } else {
                     val transaction = transactions[transactionI++]
                     Payment(title = transaction.title, time = transaction.dateTime.toInstant(TimeZone.UTC),
@@ -211,11 +210,6 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
     }
 }
 
-private fun Instant.format() = with(here()) {
-    if (date == Clock.System.todayHere()) "$hour:$minute"
-    else "$dayOfMonth.$monthNumber.$year • $hour:$minute"
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PartyInvite(fromName: String, time: Instant, place: String) {
@@ -225,7 +219,7 @@ private fun PartyInvite(fromName: String, time: Instant, place: String) {
             contentDescription = null,
             color = MaterialTheme.colorScheme.secondary,
         )
-    }, title = stringResource(R.string.party_invite_from, fromName), subtitle = stringResource(R.string.date_time_at_place, time.format(), place)) {
+    }, title = stringResource(R.string.party_invite_from, fromName), subtitle = stringResource(R.string.date_time_at_place, time.here().format(), place)) {
         Row {
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                 FilledIconButton(
@@ -269,13 +263,13 @@ private fun Payment(title: String, time: Instant, amount: Double, currency: Stri
             contentDescription = stringResource(R.string.payment),
             color = MaterialTheme.colorScheme.secondary,
         )
-    }, title = title, subtitle = time.format()) {
+    }, title = title, subtitle = time.here().format()) {
         Amount(-amount, currency)
     }
 }
 
 @Composable
-private fun Transfer(name: String, dateTime: LocalDateTime, amount: Double, currency: String) {
+private fun Transfer(name: String, time: Instant, amount: Double, currency: String) {
     RecentActivityRow(
         icon = {
             FilledIcon(
@@ -285,7 +279,7 @@ private fun Transfer(name: String, dateTime: LocalDateTime, amount: Double, curr
             )
         },
         title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s, name),
-        subtitle = with(dateTime) { "$hour:$minute • $dayOfMonth.$monthNumber.$year" }
+        subtitle = time.here().format()
     ) {
         Amount(amount, currency, withPlusSign = true)
     }

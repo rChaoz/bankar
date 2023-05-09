@@ -1,5 +1,10 @@
 package ro.bankar.app.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +41,7 @@ fun PopupScreen(
     bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
+    isFABVisible: Boolean = true,
     fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -61,7 +67,11 @@ fun PopupScreen(
             }
         },
         bottomBar = bottomBar,
-        floatingActionButton = fabContent
+        floatingActionButton = {
+            AnimatedVisibility(visible = isFABVisible, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
+                fabContent()
+            }
+        }
     ) { contentPadding ->
         LoadingOverlay(isLoading, modifier = Modifier.padding(contentPadding)) {
             content()
@@ -78,6 +88,7 @@ fun PopupScreen(
     onConfirm: () -> Unit,
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
+    isFABVisible: Boolean = true,
     fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -100,5 +111,5 @@ fun PopupScreen(
                 }
             }
         }
-    }, snackBar, isLoading, fabContent, content)
+    }, snackBar, isLoading, isFABVisible, fabContent, content)
 }

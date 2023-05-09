@@ -15,36 +15,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.toJavaLocalDate
+import kotlinx.datetime.toJavaLocalTime
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
 import ro.bankar.app.data.Repository
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.SBankAccountType
-import java.time.Month
+import ro.bankar.util.todayHere
+import java.time.format.DateTimeFormatter
 import kotlin.math.abs
-
-@Composable
-fun monthStringResource(month: kotlinx.datetime.Month) = stringResource(
-    id = when (month) {
-        Month.JANUARY -> R.string.january
-        Month.FEBRUARY -> R.string.february
-        Month.MARCH -> R.string.march
-        Month.APRIL -> R.string.april
-        Month.MAY -> R.string.may
-        Month.JUNE -> R.string.june
-        Month.JULY -> R.string.july
-        Month.AUGUST -> R.string.august
-        Month.SEPTEMBER -> R.string.september
-        Month.OCTOBER -> R.string.october
-        Month.NOVEMBER -> R.string.november
-        Month.DECEMBER -> R.string.december
-    }
-)
 
 inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
     decodeFromString<T>(string)
@@ -66,10 +54,10 @@ fun SharedFlow<Repository.Error>.handleWithSnackBar(snackBar: SnackbarHostState)
     val context = LocalContext.current
     LaunchedEffect(true) {
         collect {
-            if (it.message == 0 || !it.mustRetry) return@collect
             val result = snackBar.showSnackbar(
                 message = context.getString(it.message),
-                actionLabel = context.getString(R.string.retry)
+                actionLabel = if (it.mustRetry) context.getString(R.string.retry) else null,
+                withDismissAction = !it.mustRetry
             )
             if (result == SnackbarResult.ActionPerformed) it.retry(true)
         }
@@ -85,3 +73,13 @@ fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
         previousScrollAmount = state.value
     }
 }
+
+private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!
+private val longDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")!!
+private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")!!
+
+fun LocalDate.format(long: Boolean = false) = toJavaLocalDate().format(if (long) longDateFormatter else dateFormatter)!!
+fun LocalTime.format() = toJavaLocalTime().format(timeFormatter)!!
+
+fun LocalDateTime.format(long: Boolean = false) = if (date == Clock.System.todayHere()) time.format()
+else "${date.format(long)} • ${time.format()}"

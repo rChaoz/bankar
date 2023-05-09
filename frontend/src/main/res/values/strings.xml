@@ -129,4 +129,10 @@
     <string name="friend_requests">Friend Requests</string>
     <string name="edit">Edit</string>
     <string name="add_friend">Add friend</string>
+    <string name="image_crop">Image crop</string>
+    <string name="error_loading_image">Error while loading image</string>
+    <string name="profile_picture_problem">There was a problem setting your profile picture, please choose a different image</string>
+    <string name="avatar">Avatar</string>
+    <string name="joined_on">Joined on %s</string>
+    <string name="about">About</string>
 </resources>

@@ -114,7 +114,7 @@ import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
-import ro.bankar.app.ui.monthStringResource
+import ro.bankar.app.ui.format
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
@@ -681,7 +681,7 @@ private fun PersonalInformationStep(model: SignUpModel) {
         VerifiableField(model.middleName, label = R.string.middle_name, type = KeyboardType.Text, id = "middleName")
         VerifiableField(model.lastName, label = R.string.last_name, type = KeyboardType.Text, id = "lastName")
         ButtonField(
-            value = with(model.dateOfBirth.value) { "$dayOfMonth ${monthStringResource(month)} $year" },
+            value = model.dateOfBirth.value.format(true),
             onClick = { datePickerDialog.show() },
             label = R.string.date_of_birth,
             supportingText = "",

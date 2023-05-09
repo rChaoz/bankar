@@ -148,7 +148,8 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Returns a serializable user
      */
-    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state, city, address, joinDate, about, avatar?.bytes)
+    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state,
+        city, address, joinDate, about, avatar?.inputStream?.readBytes())
 }
 
 /**

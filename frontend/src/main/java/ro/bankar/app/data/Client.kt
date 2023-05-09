@@ -44,7 +44,7 @@ sealed class SafeResponse<Result> {
 }
 
 suspend inline fun <reified Result, reified Fail> HttpClient.safeStatusRequest(
-    successCode: HttpStatusCode,
+    successCode: HttpStatusCode = HttpStatusCode.OK,
     crossinline request: suspend HttpClient.() -> HttpResponse
 ): SafeStatusResponse<Result, Fail> =
     withContext(Dispatchers.IO) {

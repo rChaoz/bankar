@@ -2,6 +2,7 @@ package ro.bankar.app.data
 
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.HttpStatusCode
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import ro.bankar.app.R
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
@@ -17,6 +19,7 @@ import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SUser
+import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
 
 /**
@@ -30,11 +33,11 @@ abstract class RequestFlow<T> protected constructor(
     /**
      * @param mustRetry if this emission cannot fail. If true and there is an error, emission will be reattempted until successful
      */
-    fun requestEmit(mustRetry: Boolean) {
-        scope.launch { onEmissionRequest(mustRetry) }
+    fun requestEmit(mustRetry: Boolean, sendError: Boolean = true) {
+        scope.launch { onEmissionRequest(mustRetry, sendError) }
     }
 
-    protected abstract suspend fun onEmissionRequest(mustRetry: Boolean)
+    protected abstract suspend fun onEmissionRequest(mustRetry: Boolean, sendError: Boolean)
 }
 
 // LocalRepository defined in debug/release source sets
@@ -48,6 +51,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
 
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
+    abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
     abstract val friends: RequestFlow<List<SPublicUser>>
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
 
@@ -64,6 +68,12 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
 private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository(scope, sessionToken, onSessionExpire) {
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
+    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = ktorClient.safeStatusRequest<StatusResponse, InvalidParamResponse> {
+        put("profile/update") {
+            bearerAuth(sessionToken)
+            setBody(data)
+        }
+    }
     override val friends = createFlow<List<SPublicUser>>("friends")
     override val friendRequests = createFlow<List<SPublicUser>>("friend_requests")
 
@@ -83,25 +93,25 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     init {
-        profile.requestEmit(false)
-        friends.requestEmit(false)
-        friendRequests.requestEmit(false)
-        accounts.requestEmit(false)
+        profile.requestEmit(false, sendError = false)
+        friends.requestEmit(false, sendError = false)
+        friendRequests.requestEmit(false, sendError = false)
+        accounts.requestEmit(false, sendError = false)
     }
 
     // Utility functions
     private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
-        override suspend fun onEmissionRequest(mustRetry: Boolean) {
+        override suspend fun onEmissionRequest(mustRetry: Boolean, sendError: Boolean) {
             val r = ktorClient.safeRequest<T> {
                 get(url) {
                     bearerAuth(sessionToken)
                 }
             }
             when (r) {
-                is SafeResponse.InternalError -> mutableErrorFlow.emit(Error(r.message, mustRetry, this::requestEmit))
+                is SafeResponse.InternalError -> if (sendError) mutableErrorFlow.emit(Error(r.message, mustRetry, this::requestEmit))
                 is SafeResponse.Fail -> {
                     if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onSessionExpire()
-                    else mutableErrorFlow.emit(Error(0, mustRetry, this::requestEmit))
+                    else if (sendError) mutableErrorFlow.emit(Error(R.string.unknown_error, mustRetry, this::requestEmit))
                 }
                 is SafeResponse.Success -> flow.emit(r.result)
             }

@@ -23,6 +23,7 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
+import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
 import ro.bankar.model.TransferDirection
 import ro.bankar.util.nowHere
@@ -37,12 +38,13 @@ val EmptyRepository: Repository = MockRepository
 @Suppress("SpellCheckingInspection")
 @OptIn(DelicateCoroutinesApi::class)
 private object MockRepository : Repository(GlobalScope, "", {}) {
-    fun <T> mockFlow(value: T) = object : RequestFlow<T>(scope) {
-        override suspend fun onEmissionRequest(mustRetry: Boolean) {
+    private fun <T> mockFlow(value: T) = object : RequestFlow<T>(scope) {
+        override suspend fun onEmissionRequest(mustRetry: Boolean, sendError: Boolean) {
             delay(2.seconds)
             flow.emit(value)
         }
     }
+    private fun <Result, Fail> mockResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)
 
     override val profile = mockFlow(
         SUser(
@@ -62,6 +64,8 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
             avatar = null
         )
     )
+
+    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockResponse<StatusResponse, InvalidParamResponse>()
     override val friends = mockFlow(
         listOf(
             SPublicUser(
@@ -121,7 +125,5 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         SBankAccountData(emptyList(), emptyList(), emptyList()) // TODO
     )
 
-    override suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse> {
-        return SafeStatusResponse.InternalError(R.string.connection_error)
-    }
+    override suspend fun sendCreateAccount(account: SNewBankAccount) = mockResponse<StatusResponse, InvalidParamResponse>()
 }

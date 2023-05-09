@@ -129,4 +129,10 @@
     <string name="friend_requests">Cereri de prietenie</string>
     <string name="edit">Modifică</string>
     <string name="add_friend">Adaugă prieten</string>
+    <string name="image_crop">Decupare imagine</string>
+    <string name="error_loading_image">Eroare la încărcarea imaginii</string>
+    <string name="profile_picture_problem">A apărut o problemă la aplicarea pozei de profil, te rugăm să alegi o altă imagine</string>
+    <string name="avatar">Avatar</string>
+    <string name="joined_on">Membru din %s</string>
+    <string name="about">Despre</string>
 </resources>
