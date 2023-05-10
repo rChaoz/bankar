@@ -28,6 +28,7 @@ import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
 import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
+import kotlin.coroutines.Continuation
 import kotlin.time.Duration.Companion.seconds
 
 val LocalRepository = compositionLocalOf<Repository> { MockRepository }
@@ -39,9 +40,9 @@ val EmptyRepository: Repository = MockRepository
 @OptIn(DelicateCoroutinesApi::class)
 private object MockRepository : Repository(GlobalScope, "", {}) {
     private fun <T> mockFlow(value: T) = object : RequestFlow<T>(scope) {
-        override suspend fun onEmissionRequest(mustRetry: Boolean, sendError: Boolean) {
+        override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
             delay(2.seconds)
-            flow.emit(value)
+            flow.emit(EmissionResult.Success(value))
         }
     }
     private fun <Result, Fail> mockStatusResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)

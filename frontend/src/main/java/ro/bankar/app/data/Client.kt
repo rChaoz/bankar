@@ -56,7 +56,11 @@ suspend inline fun <reified Result, reified Fail> HttpClient.safeStatusRequest(
             try {
                 val response = result.getOrThrow()
                 if (response.status == successCode) SafeStatusResponse.Success(response, response.body())
-                else SafeStatusResponse.Fail(response, response.body())
+                else {
+                    val body = response.body<Fail>()
+                    Log.w(TAG, "HttpRequest failed: $response\n$body")
+                    SafeStatusResponse.Fail(response, body)
+                }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 Log.e(TAG, "HttpRequest", e)
@@ -78,6 +82,7 @@ suspend inline fun <reified Result> HttpClient.safeRequest(
             try {
                 val response = result.getOrThrow()
                 if (response.status == successCode) SafeResponse.Success(response, response.body())
+                else if (response.status == HttpStatusCode.InternalServerError) SafeResponse.InternalError(R.string.internal_error)
                 else {
                     val body = response.bodyAsText()
                     Log.w(TAG, "HttpRequest failed: $response\n$body")

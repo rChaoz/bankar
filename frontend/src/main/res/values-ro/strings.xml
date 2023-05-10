@@ -152,4 +152,5 @@
     <string name="sent_requests">Cereri trimise</string>
     <string name="received_requests">Cereri primite</string>
     <string name="options">Opțiuni</string>
+    <string name="internal_error">Eroare de sistem, te rugăm să încerci mai târziu</string>
 </resources>

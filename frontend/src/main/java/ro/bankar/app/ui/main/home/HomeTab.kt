@@ -29,6 +29,7 @@ import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.collectRetrying
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
@@ -53,12 +54,10 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
     override fun Content(model: Model, navigation: NavHostController) {
         val repository = LocalRepository.current
 
-        // Get accounts data
+        // Get data
         LaunchedEffect(true) {
-            repository.accounts.requestEmit(true)
-            repository.recentActivity.requestEmit(true)
-            launch { repository.accounts.collect { model.accounts = it } }
-            launch { repository.recentActivity.collect { model.recentActivity = it } }
+            launch { repository.accounts.collectRetrying { model.accounts = it } }
+            launch { repository.recentActivity.collectRetrying { model.recentActivity = it } }
         }
 
         // Hide FAB when scrolling down

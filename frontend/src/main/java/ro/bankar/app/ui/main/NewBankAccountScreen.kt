@@ -100,15 +100,17 @@ class NewBankAccountModel : ViewModel() {
             val result = repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value, color, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
             )
-            isLoading = false
             when (result) {
-                is SafeStatusResponse.Fail -> snackBar.showSnackbar(context.getString(R.string.unable_new_bank_account, result.s.param))
-                is SafeStatusResponse.InternalError -> snackBar.showSnackbar(context.getString(R.string.connection_error), withDismissAction = true)
+                is SafeStatusResponse.Fail ->
+                    launch { snackBar.showSnackbar(context.getString(R.string.unable_new_bank_account, result.s.param)) }
+                is SafeStatusResponse.InternalError ->
+                    launch { snackBar.showSnackbar(context.getString(R.string.connection_error), withDismissAction = true) }
                 is SafeStatusResponse.Success -> {
+                    repository.accounts.emitNow()
                     onDismiss()
-                    repository.accounts.requestEmit(true)
                 }
             }
+            isLoading = false
         }
     }
 }

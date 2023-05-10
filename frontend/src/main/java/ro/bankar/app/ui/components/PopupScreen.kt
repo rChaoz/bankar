@@ -31,8 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
-import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.ui.handleWithSnackBar
 
 @Composable
 fun PopupScreen(
@@ -45,7 +43,6 @@ fun PopupScreen(
     fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    LocalRepository.current.errorFlow.handleWithSnackBar(snackBar)
     Scaffold(
         snackbarHost = { SnackbarHost(snackBar) },
         topBar = {

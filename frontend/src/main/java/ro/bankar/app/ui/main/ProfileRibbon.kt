@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.valentinilk.shimmer.shimmer
 import ro.bankar.app.R
 
 private val ribbonShape = GenericShape { size, _ ->
@@ -28,6 +29,8 @@ private val ribbonShape = GenericShape { size, _ ->
     lineTo(size.width, 0f)
     close()
 }
+
+val NoImage = ByteArray(0)
 
 @Composable
 fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
@@ -44,10 +47,10 @@ fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            if (image == null) Icon(
+            if (image == null || image === NoImage) Icon(
                 imageVector = Icons.Default.AccountCircle,
                 contentDescription = stringResource(R.string.profile_picture),
-                modifier = Modifier.size(65.dp)
+                modifier = Modifier.size(65.dp).run { if (image == null) shimmer() else this }
             )
             else AsyncImage(
                 model = image,

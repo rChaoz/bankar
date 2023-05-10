@@ -1,5 +1,7 @@
 package ro.bankar.app.data
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.put
@@ -7,11 +9,11 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import ro.bankar.app.R
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
@@ -21,23 +23,51 @@ import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * A Shared flow with the option to request emitting
  */
 abstract class RequestFlow<T> protected constructor(
     private val scope: CoroutineScope,
-    protected val flow: MutableSharedFlow<T> = MutableSharedFlow(replay = 1)
-) : SharedFlow<T> by flow.asSharedFlow() {
-
-    /**
-     * @param mustRetry if this emission cannot fail. If true and there is an error, emission will be reattempted until successful
-     */
-    fun requestEmit(mustRetry: Boolean, sendError: Boolean = true) {
-        scope.launch { onEmissionRequest(mustRetry, sendError) }
+    protected val flow: MutableSharedFlow<EmissionResult<T>> = MutableSharedFlow(replay = 1)
+) : SharedFlow<RequestFlow.EmissionResult<T>> by flow.asSharedFlow() {
+    sealed class EmissionResult<T> {
+        class Fail<T>(val continuation: Continuation<Unit>?) : EmissionResult<T>()
+        class Success<T>(val value: T) : EmissionResult<T>()
     }
 
-    protected abstract suspend fun onEmissionRequest(mustRetry: Boolean, sendError: Boolean)
+    fun requestEmit(continuation: Continuation<Unit>? = null) {
+        scope.launch { onEmissionRequest(continuation) }
+    }
+
+    suspend fun emitNow() = suspendCoroutine {
+        scope.launch { onEmissionRequest(it) }
+    }
+
+    protected abstract suspend fun onEmissionRequest(continuation: Continuation<Unit>?)
+}
+
+@Composable
+fun <T> RequestFlow<T>.collectAsStateRetrying() = mapCollectAsStateRetrying { it }
+
+@Composable
+fun <T, V> RequestFlow<T>.mapCollectAsStateRetrying(mapFunction: (T) -> V) = produceState<V?>(null) {
+    collect {
+        when (it) {
+            is RequestFlow.EmissionResult.Fail -> requestEmit(it.continuation)
+            is RequestFlow.EmissionResult.Success -> value = mapFunction(it.value)
+        }
+    }
+}
+
+suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Nothing = collect {
+    when (it) {
+        is RequestFlow.EmissionResult.Fail -> requestEmit(it.continuation)
+        is RequestFlow.EmissionResult.Success -> collector.emit(it.value)
+    }
 }
 
 // LocalRepository defined in debug/release source sets
@@ -45,10 +75,6 @@ abstract class RequestFlow<T> protected constructor(
 fun repository(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onSessionExpire)
 
 abstract class Repository(protected val scope: CoroutineScope, protected val sessionToken: String, protected val onSessionExpire: () -> Unit) {
-    data class Error(val message: Int, val mustRetry: Boolean, val retry: (mustRetry: Boolean) -> Unit)
-    protected val mutableErrorFlow = MutableSharedFlow<Error>(replay = 0)
-    val errorFlow = mutableErrorFlow.asSharedFlow()
-
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
@@ -68,7 +94,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
 }
 
-private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository(scope, sessionToken, onSessionExpire) {
+private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit) : Repository(scope, sessionToken, onSessionExpire) {
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = ktorClient.safeStatusRequest<StatusResponse, InvalidParamResponse> {
@@ -82,12 +108,14 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
         url("profile/friends/add/$id")
         bearerAuth(sessionToken)
     }
+
     override val friends = createFlow<List<SPublicUser>>("profile/friends")
     override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = ktorClient.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
         bearerAuth(sessionToken)
     }
+
     override suspend fun sendCancelFriendRequest(tag: String) = ktorClient.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/cancel/$tag")
         bearerAuth(sessionToken)
@@ -109,27 +137,33 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     init {
-        profile.requestEmit(false, sendError = false)
-        friends.requestEmit(false, sendError = false)
-        friendRequests.requestEmit(false, sendError = false)
-        accounts.requestEmit(false, sendError = false)
+        // Home page (and profile)
+        profile.requestEmit()
+        accounts.requestEmit()
+        recentActivity.requestEmit()
+        // Friends page
+        friends.requestEmit()
+        friendRequests.requestEmit()
     }
 
     // Utility functions
     private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
-        override suspend fun onEmissionRequest(mustRetry: Boolean, sendError: Boolean) {
+        override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
             val r = ktorClient.safeRequest<T> {
                 get(url) {
                     bearerAuth(sessionToken)
                 }
             }
             when (r) {
-                is SafeResponse.InternalError -> if (sendError) mutableErrorFlow.emit(Error(r.message, mustRetry, this::requestEmit))
+                is SafeResponse.InternalError -> flow.emit(EmissionResult.Fail(continuation))
                 is SafeResponse.Fail -> {
                     if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onSessionExpire()
-                    else if (sendError) mutableErrorFlow.emit(Error(R.string.unknown_error, mustRetry, this::requestEmit))
+                    else flow.emit(EmissionResult.Fail(continuation))
                 }
-                is SafeResponse.Success -> flow.emit(r.result)
+                is SafeResponse.Success -> {
+                    flow.emit(EmissionResult.Success(r.result))
+                    continuation?.resume(Unit)
+                }
             }
         }
     }

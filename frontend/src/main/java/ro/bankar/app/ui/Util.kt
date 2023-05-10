@@ -1,11 +1,8 @@
 package ro.bankar.app.ui
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,10 +11,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.platform.LocalContext
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -27,7 +22,6 @@ import kotlinx.datetime.toJavaLocalTime
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
-import ro.bankar.app.data.Repository
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.SBankAccountType
 import ro.bankar.util.todayHere
@@ -48,27 +42,11 @@ val SBankAccountType.rString get() = when(this) {
     SBankAccountType.Credit -> R.string.account_credit
 }
 
-@SuppressLint("ComposableNaming")
-@Composable
-fun SharedFlow<Repository.Error>.handleWithSnackBar(snackBar: SnackbarHostState) {
-    val context = LocalContext.current
-    LaunchedEffect(true) {
-        collect {
-            val result = snackBar.showSnackbar(
-                message = context.getString(it.message),
-                actionLabel = if (it.mustRetry) context.getString(R.string.retry) else null,
-                withDismissAction = !it.mustRetry
-            )
-            if (result == SnackbarResult.ActionPerformed) it.retry(true)
-        }
-    }
-}
-
 @Composable
 fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
     var previousScrollAmount by rememberSaveable { mutableStateOf(0) }
     LaunchedEffect(state.value) {
-        if (abs(state.value - previousScrollAmount) < 10) return@LaunchedEffect
+        if (abs(state.value - previousScrollAmount) < 20) return@LaunchedEffect
         else setFABShown(state.value <= previousScrollAmount)
         previousScrollAmount = state.value
     }

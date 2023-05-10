@@ -2,7 +2,6 @@ package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.border
@@ -36,8 +35,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,33 +68,24 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ro.bankar.app.R
-import ro.bankar.app.TAG
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
+import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.PopupScreen
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
-import ro.bankar.app.ui.handleWithSnackBar
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.SUserValidation
 import java.io.ByteArrayOutputStream
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun ProfileScreen(onDismiss: () -> Unit) {
     val repository = LocalRepository.current
     val snackBar = remember { SnackbarHostState() }
-    repository.errorFlow.handleWithSnackBar(snackBar)
-    LaunchedEffect(true) { repository.profile.requestEmit(true) }
 
-    val dataState = repository.profile.collectAsState(initial = null)
+    val dataState = repository.profile.collectAsStateRetrying()
     val data = dataState.value // extract to variable to prevent "variable has custom getter" null-check errors
-    data?.avatar.let { Log.d(TAG, "avatar is null? ${it == null}") }
-
-    LaunchedEffect(dataState.value) {
-        Log.d(TAG, "dataState is now ${if (dataState.value == null) "null" else "not null"}")
-    }
 
     // Code to load picked image and submit to server
     val context = LocalContext.current
@@ -122,11 +110,9 @@ fun ProfileScreen(onDismiss: () -> Unit) {
             when (val result = repository.sendAboutOrPicture(SUserProfileUpdate(null, bytes.toByteArray()))) {
                 is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(result.message), withDismissAction = true) }
                 is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.profile_picture_problem), withDismissAction = true) }
-                is SafeStatusResponse.Success -> {
-                    repository.profile.requestEmit(true)
-                    // Wait an additional second for the image to update
-                    delay(1.seconds)
-                }
+                is SafeStatusResponse.Success ->
+                    // Wait for image update to be received
+                    repository.profile.emitNow()
             }
             isLoading = false
         }
@@ -270,8 +256,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                                     is SafeStatusResponse.Fail ->
                                         launch { snackBar.showSnackbar(context.getString(R.string.invalid_about), withDismissAction = true) }
                                     is SafeStatusResponse.Success -> {
-                                        repository.profile.requestEmit(true)
-                                        delay(1.seconds)
+                                        repository.profile.emitNow()
                                         editingAbout = false
                                     }
                                 }
@@ -281,7 +266,9 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         TextField(
                             value = if (editingAbout != false) aboutValue else data.about,
                             onValueChange = { aboutValue = it },
-                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
                             readOnly = editingAbout != true,
                             singleLine = true,
                             isError = aboutError,

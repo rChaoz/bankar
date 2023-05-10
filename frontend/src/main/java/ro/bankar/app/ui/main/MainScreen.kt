@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,10 +30,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,17 +57,16 @@ import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.Nav
 import ro.bankar.app.R
 import ro.bankar.app.USER_SESSION
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.mapCollectAsStateRetrying
 import ro.bankar.app.removePreference
 import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.components.SurfaceList
-import ro.bankar.app.ui.handleWithSnackBar
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.app.ui.theme.AppTheme
@@ -114,17 +110,13 @@ fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
     MainScreen(tab, setTab, navigation)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMotionApi::class)
+@OptIn(ExperimentalMotionApi::class)
 @Composable
 private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (MainTab<*>) -> Unit, navigation: NavHostController) {
     val tabModel = tab.viewModel()
 
     val snackBar = remember { SnackbarHostState() }
-    // Show connection errors using SnackBar
-    val repository = LocalRepository.current
-    LaunchedEffect(true) { repository.profile.requestEmit(false) }
-    val profileImage by remember { repository.profile.map { it.avatar } }.collectAsState(initial = null)
-    repository.errorFlow.handleWithSnackBar(snackBar)
+    val profileImage by LocalRepository.current.profile.mapCollectAsStateRetrying { it.avatar ?: NoImage }
 
     Search(topBar = { isSearchOpen, searchField ->
         Surface(color = MaterialTheme.colorScheme.secondary) {
@@ -266,9 +258,9 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     label = "Main Tab",
                     transitionSpec = {
                         if (targetState.index > initialState.index)
-                            slideInHorizontally { it / 3 } + fadeIn() with slideOutHorizontally { -it / 3 } + fadeOut()
+                            slideInHorizontally { it / 4 } + fadeIn() with slideOutHorizontally { -it / 4 } + fadeOut()
                         else
-                            slideInHorizontally { -it / 3 } + fadeIn() with slideOutHorizontally { it / 3 } + fadeOut()
+                            slideInHorizontally { -it / 4 } + fadeIn() with slideOutHorizontally { it / 4 } + fadeOut()
                     }
                 ) {
                     it.Content(it.viewModel(), navigation)
