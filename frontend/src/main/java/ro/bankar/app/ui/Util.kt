@@ -24,6 +24,7 @@ import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SCountries
 import ro.bankar.util.todayHere
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
@@ -42,6 +43,8 @@ val SBankAccountType.rString get() = when(this) {
     SBankAccountType.Credit -> R.string.account_credit
 }
 
+fun SCountries?.nameFromCode(code: String) = this?.find { it.code == code }?.country ?: code
+
 @Composable
 fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
     var previousScrollAmount by rememberSaveable { mutableStateOf(0) }
@@ -52,6 +55,7 @@ fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
     }
 }
 
+// Date time formatting
 private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!
 private val longDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")!!
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")!!

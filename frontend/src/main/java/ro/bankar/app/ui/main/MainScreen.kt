@@ -65,6 +65,7 @@ import ro.bankar.app.USER_SESSION
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.mapCollectAsStateRetrying
 import ro.bankar.app.removePreference
+import ro.bankar.app.ui.components.NoImage
 import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.main.friends.FriendsTab

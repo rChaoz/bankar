@@ -6,20 +6,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import com.valentinilk.shimmer.shimmer
 import ro.bankar.app.R
+import ro.bankar.app.ui.components.Avatar
 
 private val ribbonShape = GenericShape { size, _ ->
     moveTo(0f, 0f)
@@ -29,8 +23,6 @@ private val ribbonShape = GenericShape { size, _ ->
     lineTo(size.width, 0f)
     close()
 }
-
-val NoImage = ByteArray(0)
 
 @Composable
 fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
@@ -47,18 +39,12 @@ fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
                 .padding(top = 12.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            if (image == null || image === NoImage) Icon(
-                imageVector = Icons.Default.AccountCircle,
-                contentDescription = stringResource(R.string.profile_picture),
-                modifier = Modifier.size(65.dp).run { if (image == null) shimmer() else this }
-            )
-            else AsyncImage(
-                model = image,
-                contentDescription = stringResource(R.string.profile_picture),
-                modifier = Modifier
-                    .size(65.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+            Avatar(
+                image = image,
+                modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentDescription = R.string.profile,
+                size = 65.dp,
+                nullIsLoading = true
             )
         }
     }

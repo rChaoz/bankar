@@ -18,6 +18,7 @@ import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
+import ro.bankar.model.SCountries
 import ro.bankar.model.SDirection
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
@@ -29,6 +30,7 @@ import ro.bankar.model.StatusResponse
 import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
 import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 
 val LocalRepository = compositionLocalOf<Repository> { MockRepository }
@@ -43,10 +45,14 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
             delay(2.seconds)
             flow.emit(EmissionResult.Success(value))
+            continuation?.resume(Unit)
         }
     }
+
     private fun <Result, Fail> mockStatusResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)
     private fun <Result> mockResponse() = SafeResponse.InternalError<Result>(R.string.connection_error)
+
+    override val countryData = mockFlow<SCountries>(emptyList())
 
     override val profile = mockFlow(
         SUser(
@@ -91,20 +97,33 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
             SPublicUser(
                 "not.a.scammer", "Your", "Computer", "Virus", "NL",
                 Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "hello your computer has wirus", SDirection.Received, null
+            ),
+            SPublicUser(
+                "mary.poppins", "Marry", null, "Poppins", "RO",
+                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 25), "Poppin'", SDirection.Sent, null
             )
         )
     )
+
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockStatusResponse<StatusResponse, StatusResponse>()
 
-        private val mockRecentActivity = SRecentActivity(
+    private val mockRecentActivity = SRecentActivity(
         listOf(
-            SBankTransfer(SDirection.Received, "Koleci 1", "testIBAN",
-                25.215, Currency.EURO, "ia bani", Clock.System.nowHere()),
-            SBankTransfer(SDirection.Sent, "Koleci 2", "testIBAN!!",
-                15.0, Currency.US_DOLLAR, "nu, ia tu bani :3", Clock.System.nowHere()),
+            SBankTransfer(
+                SDirection.Received, "Koleci 1", "testIBAN",
+                25.215, Currency.EURO, "ia bani", Clock.System.nowHere()
+            ),
+            SBankTransfer(
+                SDirection.Sent, "Koleci 2", "testIBAN!!",
+                15.0, Currency.US_DOLLAR, "nu, ia tu bani :3", Clock.System.nowHere()
+            ),
         ),
-        listOf(SCardTransaction(1L, 2, "1373",
-            23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun")),
+        listOf(
+            SCardTransaction(
+                1L, 2, "1373",
+                23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun"
+            )
+        ),
         listOf(
             STransferRequest(
                 SDirection.Received, "Big", null, "Boy",
@@ -136,4 +155,8 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
     )
 
     override suspend fun sendCreateAccount(account: SNewBankAccount) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
+
+    init {
+        init()
+    }
 }

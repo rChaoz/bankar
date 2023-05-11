@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Info
@@ -43,7 +42,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
@@ -54,7 +52,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmapOrNull
 import coil.ImageLoader
-import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
@@ -71,6 +68,7 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectAsStateRetrying
+import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.PopupScreen
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
@@ -140,26 +138,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         .padding(6.dp)
                 ) {
                     Box {
-                        if (data == null) Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = stringResource(R.string.avatar),
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .size(100.dp)
-                                .shimmer()
-                        ) else if (data.avatar == null) Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = stringResource(R.string.avatar),
-                            modifier = Modifier.size(100.dp)
-                        ) else AsyncImage(
-                            model = data.avatar,
-                            contentDescription = stringResource(R.string.avatar),
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .size(100.dp)
-                                .clip(CircleShape)
-                        )
-
+                        Avatar(image = data?.avatar, nullIsLoading = data == null, modifier = Modifier.padding(8.dp))
                         if (data != null) {
                             val imagePickerActivityTitle = stringResource(R.string.image_crop)
                             FilledIconButton(
@@ -169,7 +148,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                                             null, CropImageOptions(
                                                 activityTitle = imagePickerActivityTitle,
                                                 aspectRatioX = 1, aspectRatioY = 1, fixAspectRatio = true,
-                                                minCropResultWidth = 150, minCropResultHeight = 150, cropShape = CropImageView.CropShape.OVAL,
+                                                minCropResultWidth = 300, minCropResultHeight = 300, cropShape = CropImageView.CropShape.OVAL,
                                                 outputRequestWidth = SUserValidation.avatarSize, outputRequestHeight = SUserValidation.avatarSize
                                             )
                                         )

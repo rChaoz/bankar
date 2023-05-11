@@ -30,11 +30,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -42,12 +44,17 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,11 +68,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -73,14 +81,19 @@ import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectRetrying
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.components.AcceptDeclineButtons
+import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.SurfaceList
+import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackBar
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.main.home.InfoCard
+import ro.bankar.app.ui.nameFromCode
+import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.model.SCountries
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import kotlin.math.absoluteValue
@@ -91,6 +104,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         // Data
         var friends by mutableStateOf<List<SPublicUser>?>(null)
         var friendRequests by mutableStateOf<List<SPublicUser>?>(null)
+        var countryData by mutableStateOf<SCountries?>(null)
 
         // FAB
         override val showFAB = mutableStateOf(true)
@@ -142,6 +156,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                     // Sometimes, the same request can be removed twice (due to fast click/lag), don't show error, just update screen
                     if (result.s.status == "request_not_found") repository.friendRequests.requestEmit()
                     else snackBar.showSnackbar(c.getString(R.string.unknown_error))
+
                 is SafeStatusResponse.Success -> repository.friendRequests.requestEmit()
             }
         }
@@ -155,8 +170,10 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                     launch { repository.friends.emitNow() }
                     launch { repository.friendRequests.emitNow() }
                 }
+
                 is SafeStatusResponse.InternalError ->
                     snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
+
                 is SafeStatusResponse.Fail ->
                     snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
             }
@@ -175,9 +192,10 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         LaunchedEffect(true) {
             launch { repository.friends.collectRetrying { model.friends = it } }
             launch { repository.friendRequests.collectRetrying { model.friendRequests = it } }
+            launch { repository.countryData.collectRetrying { model.countryData = it } }
         }
 
-        // Add friend dialog
+        // "Add friend" dialog
         val context = LocalContext.current
         BottomDialog(
             visible = model.showAddFriendDialog,
@@ -261,54 +279,43 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
     abstract fun Content(model: FriendsTab.Model, repository: Repository)
 
     object Friends : FriendsTabs(0, R.string.friends) {
-        @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
 
-            SurfaceList(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(vertical = 8.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            ) {
-                if (model.friends == null) ShimmerFriends()
-                else if (model.friends!!.isEmpty())
-                    InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
-                else {
-                    for (friend in model.friends!!) Surface(onClick = { /*TODO*/ }, tonalElevation = 1.dp) {
-                        Row(
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (friend.avatar == null) Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = stringResource(R.string.avatar),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            else AsyncImage(
-                                model = friend.avatar,
-                                contentDescription = stringResource(R.string.avatar),
+            Column(modifier = Modifier.fillMaxSize()) {
+                SurfaceList(
+                    modifier = Modifier
+                        .verticalScroll(scrollState)
+                        .padding(vertical = 8.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                ) {
+                    if (model.friends == null) ShimmerFriends()
+                    else if (model.friends!!.isEmpty())
+                        InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
+                    else {
+                        for (friend in model.friends!!) Surface(onClick = { /*TODO*/ }, tonalElevation = 1.dp) {
+                            Row(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                            )
-                            Column {
-                                Text(
-                                    text = friend.fullName,
-                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
-                                )
-                                Text(text = "@${friend.tag}", style = MaterialTheme.typography.titleSmall)
-                            }
-                            Spacer(modifier = Modifier.weight(1f))
-                            // TODO Implement menu to allow remove friend, more options
-                            IconButton(onClick = { /*TODO*/ }) {
-                                Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                                    .padding(12.dp)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Avatar(image = friend.avatar, size = 48.dp)
+                                Column {
+                                    Text(
+                                        text = friend.fullName,
+                                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
+                                    )
+                                    Text(text = "@${friend.tag}", style = MaterialTheme.typography.titleSmall)
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                                // TODO Implement menu to allow remove friend, more options
+                                IconButton(onClick = { /*TODO*/ }) {
+                                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                                }
                             }
                         }
                     }
@@ -318,8 +325,68 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
     }
 
     object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
+        private object SPublicUserSaver : Saver<SPublicUser?, String> {
+            override fun restore(value: String): SPublicUser? = Json.safeDecodeFromString(value)
+            override fun SaverScope.save(value: SPublicUser?) = if (value != null) Json.encodeToString(value) else null
+        }
+
+        @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
+            // Show information about friend request
+            val (requestInfo, setRequestInfo) = rememberSaveable(stateSaver = SPublicUserSaver) { mutableStateOf(null) }
+
+            requestInfo?.let {
+                val sheetState = rememberModalBottomSheetState()
+                ModalBottomSheet(onDismissRequest = { setRequestInfo(null) }, sheetState = sheetState) {
+                    Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 12.dp)) {
+                            Avatar(image = it.avatar)
+                            Column {
+                                Text(text = "@${it.tag}", style = MaterialTheme.typography.titleLarge)
+                                Text(
+                                    text = it.fullName,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "${model.countryData.nameFromCode(it.countryCode)}\n" +
+                                            stringResource(R.string.joined_on, it.joinDate.format(true)),
+                                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                        if (it.about.isNotEmpty()) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
+                                tonalElevation = 3.dp,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(text = stringResource(R.string.about), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                                    Text(text = it.about)
+                                }
+                            }
+                        }
+                        Divider()
+                        val scope = rememberCoroutineScope()
+                        TextButton(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
+                            onClick = {
+                                scope.launch {
+                                    sheetState.hide()
+                                    setRequestInfo(null)
+                                }
+                            }) {
+                            Text(text = stringResource(id = R.string.close))
+                        }
+                    }
+                }
+            }
+
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
             Column(
@@ -335,10 +402,15 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                     val (sentRequests, receivedRequests) = model.friendRequests!!.sortedBy { it.tag }.partition { it.requestDirection == SDirection.Sent }
                     val context = LocalContext.current
                     if (sentRequests.isNotEmpty())
-                        SentRequests(requests = sentRequests, onCancelRequest = { tag -> model.onCancelRequest(context, tag, repository) })
+                        SentRequests(
+                            requests = sentRequests,
+                            setRequestInfo = setRequestInfo,
+                            onCancelRequest = { tag -> model.onCancelRequest(context, tag, repository) }
+                        )
                     if (receivedRequests.isNotEmpty())
                         ReceivedRequests(
                             requests = receivedRequests,
+                            setRequestInfo = setRequestInfo,
                             onRespondToRequest = { tag, accepted -> model.onRespondToRequest(context, tag, accepted, repository) }
                         )
                 }
@@ -346,7 +418,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
 
         @Composable
-        fun SentRequests(requests: List<SPublicUser>, onCancelRequest: (String) -> Unit) {
+        fun SentRequests(requests: List<SPublicUser>, setRequestInfo: (SPublicUser) -> Unit, onCancelRequest: (String) -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.sent_requests),
@@ -359,7 +431,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                         .fillMaxSize()
                         .clip(RoundedCornerShape(16.dp))
                 ) {
-                    for (req in requests) Surface(tonalElevation = 1.dp) {
+                    for (req in requests) Surface(onClick = { setRequestInfo(req) }, tonalElevation = 1.dp) {
                         Row(
                             modifier = Modifier
                                 .padding(12.dp)
@@ -367,18 +439,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                             horizontalArrangement = Arrangement.spacedBy(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (req.avatar == null) Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = stringResource(R.string.avatar),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            else AsyncImage(
-                                model = req.avatar,
-                                contentDescription = stringResource(R.string.avatar),
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                            )
+                            Avatar(image = req.avatar, size = 48.dp)
                             Column {
                                 Text(
                                     text = req.fullName,
@@ -404,7 +465,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
 
         @Composable
-        private fun ReceivedRequests(requests: List<SPublicUser>, onRespondToRequest: (String, Boolean) -> Unit) {
+        private fun ReceivedRequests(requests: List<SPublicUser>, setRequestInfo: (SPublicUser) -> Unit, onRespondToRequest: (String, Boolean) -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.received_requests),
@@ -417,7 +478,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                         .fillMaxSize()
                         .clip(RoundedCornerShape(16.dp))
                 ) {
-                    for (req in requests) Surface(onClick = { /*TODO*/ }, tonalElevation = 1.dp) {
+                    for (req in requests) Surface(onClick = { setRequestInfo(req) }, tonalElevation = 1.dp) {
                         Row(
                             modifier = Modifier
                                 .padding(12.dp)
@@ -425,18 +486,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                             horizontalArrangement = Arrangement.spacedBy(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (req.avatar == null) Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = stringResource(R.string.avatar),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            else AsyncImage(
-                                model = req.avatar,
-                                contentDescription = stringResource(R.string.avatar),
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                            )
+                            Avatar(image = req.avatar, size = 48.dp)
                             Column {
                                 Text(
                                     text = req.fullName,
@@ -462,12 +512,12 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
 private fun ShimmerFriends() {
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
     Column {
-        repeat(4) {
+        repeat(5) {
             Row(
                 modifier = Modifier
                     .padding(12.dp)
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -496,7 +546,7 @@ private fun ShimmerFriends() {
 
 @Preview(showBackground = true)
 @Composable
-private fun HomePreview() {
+private fun FriendsPreview() {
     AppTheme {
         FriendsTab.Content(FriendsTab.viewModel(), rememberNavController())
     }
@@ -504,7 +554,7 @@ private fun HomePreview() {
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
-fun HomePreviewDark() {
+private fun FriendsPreviewDark() {
     AppTheme {
         FriendsTab.Content(FriendsTab.viewModel(), rememberNavController())
     }

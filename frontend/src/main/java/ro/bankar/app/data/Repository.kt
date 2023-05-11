@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
+import ro.bankar.model.SCountries
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
@@ -75,6 +76,8 @@ suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Not
 fun repository(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onSessionExpire)
 
 abstract class Repository(protected val scope: CoroutineScope, protected val sessionToken: String, protected val onSessionExpire: () -> Unit) {
+    // Country data
+    abstract val countryData: RequestFlow<SCountries>
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
@@ -92,9 +95,23 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
+
+    // Load data on Repository creation to avoid having to wait when going to each screen
+    protected fun init() {
+        // Home page (and profile)
+        profile.requestEmit()
+        accounts.requestEmit()
+        recentActivity.requestEmit()
+        // Friends page
+        friends.requestEmit()
+        friendRequests.requestEmit()
+    }
 }
 
 private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit) : Repository(scope, sessionToken, onSessionExpire) {
+    // Country data
+    override val countryData = createFlow<SCountries>("api/data/countries.json")
+
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = ktorClient.safeStatusRequest<StatusResponse, InvalidParamResponse> {
@@ -134,18 +151,6 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
         setBody(account)
     }
 
-
-    // Load data on Repository creation to avoid having to wait when going to each screen
-    init {
-        // Home page (and profile)
-        profile.requestEmit()
-        accounts.requestEmit()
-        recentActivity.requestEmit()
-        // Friends page
-        friends.requestEmit()
-        friendRequests.requestEmit()
-    }
-
     // Utility functions
     private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
         override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
@@ -160,11 +165,16 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
                     if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onSessionExpire()
                     else flow.emit(EmissionResult.Fail(continuation))
                 }
+
                 is SafeResponse.Success -> {
                     flow.emit(EmissionResult.Success(r.result))
                     continuation?.resume(Unit)
                 }
             }
         }
+    }
+
+    init {
+        init()
     }
 }
