@@ -304,14 +304,14 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Avatar(image = friend.avatar, size = 48.dp)
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = friend.fullName,
-                                        style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Medium
                                     )
                                     Text(text = "@${friend.tag}", style = MaterialTheme.typography.titleSmall)
                                 }
-                                Spacer(modifier = Modifier.weight(1f))
                                 // TODO Implement menu to allow remove friend, more options
                                 IconButton(onClick = { /*TODO*/ }) {
                                     Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
@@ -343,10 +343,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 12.dp)) {
                             Avatar(image = it.avatar)
                             Column {
-                                Text(text = "@${it.tag}", style = MaterialTheme.typography.titleLarge)
+                                Text(text = it.fullName, style = MaterialTheme.typography.titleLarge)
                                 Text(
-                                    text = it.fullName,
-                                    style = MaterialTheme.typography.titleMedium
+                                    text = "@${it.tag}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
@@ -440,18 +441,17 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Avatar(image = req.avatar, size = 48.dp)
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = req.fullName,
                                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
                                 )
                                 Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
                             }
-                            Spacer(modifier = Modifier.weight(1f))
                             OutlinedButton(
-                                onClick = { onCancelRequest(req.tag) }, colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                ), border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
+                                onClick = { onCancelRequest(req.tag) },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
                             ) {
                                 Icon(imageVector = Icons.Default.Clear, contentDescription = null)
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -487,14 +487,13 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Avatar(image = req.avatar, size = 48.dp)
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = req.fullName,
                                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
                                 )
                                 Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
                             }
-                            Spacer(modifier = Modifier.weight(1f))
                             AcceptDeclineButtons(
                                 onAccept = { onRespondToRequest(req.tag, true) },
                                 onDecline = { onRespondToRequest(req.tag, false) }

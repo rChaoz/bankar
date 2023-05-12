@@ -98,6 +98,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
+        countryData.requestEmit()
         // Home page (and profile)
         profile.requestEmit()
         accounts.requestEmit()
@@ -110,7 +111,7 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
 
 private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit) : Repository(scope, sessionToken, onSessionExpire) {
     // Country data
-    override val countryData = createFlow<SCountries>("api/data/countries.json")
+    override val countryData = createFlow<SCountries>("data/countries.json")
 
     // User profile & friends
     override val profile = createFlow<SUser>("profile")

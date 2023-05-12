@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -52,22 +52,32 @@ fun WelcomeScreen(onSignIn: () -> Unit, onSignUp: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
                 ElevatedButton(
-                    onClick = onSignUp,
-//                    colors = ButtonDefaults.elevatedButtonColors(MaterialTheme.colorScheme.primary, contentColorFor(MaterialTheme.colorScheme.primary)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(75.dp)
+                    onClick = onSignIn,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    )
                 ) {
-                    Text(text = stringResource(R.string.sign_up).uppercase(), style = MaterialTheme.typography.displaySmall)
+                    Text(
+                        text = stringResource(R.string.sign_in).uppercase(),
+                        style = MaterialTheme.typography.displaySmall,
+                        modifier = Modifier.padding(8.dp)
+                    )
                 }
                 ElevatedButton(
-                    onClick = onSignIn,
-//                    colors = ButtonDefaults.elevatedButtonColors(MaterialTheme.colorScheme.primary, contentColorFor(MaterialTheme.colorScheme.primary)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(75.dp)
+                    onClick = onSignUp,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 ) {
-                    Text(text = stringResource(R.string.sign_in).uppercase(), style = MaterialTheme.typography.displaySmall)
+                    Text(
+                        text = stringResource(R.string.sign_up).uppercase(),
+                        style = MaterialTheme.typography.displaySmall,
+                        modifier = Modifier.padding(8.dp)
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = {}) {

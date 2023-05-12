@@ -712,7 +712,7 @@ private fun PersonalInformationStep(model: SignUpModel) {
             supportingText = "",
         )
         VerifiableField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city")
-        VerifiableField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address", multiLine = true)
+        VerifiableField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address", multiLine = true, isLast = true)
 
         // Button
         val focusManager = LocalFocusManager.current
