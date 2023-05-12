@@ -18,6 +18,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconToggleButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +64,7 @@ import java.text.DecimalFormat
 class NewBankAccountModel : ViewModel() {
     var accountType by mutableStateOf(SBankAccountType.Debit)
     var name = verifiableStateOf("") { newName ->
+        if (newName.isBlank()) return@verifiableStateOf null
         SNewBankAccount.nameLengthRange.let {
             if (newName.trim().length in it) null
             else getString(R.string.invalid_bank_account_name, it.first, it.last)
@@ -98,7 +101,8 @@ class NewBankAccountModel : ViewModel() {
         isLoading = true
         viewModelScope.launch {
             val result = repository.sendCreateAccount(
-                SNewBankAccount(accountType, name.value, color, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
+                SNewBankAccount(accountType, name.value.ifBlank { context.getString(R.string.s_account, context.getString(accountType.rString)) },
+                    color, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
             )
             when (result) {
                 is SafeStatusResponse.Fail ->
@@ -123,10 +127,7 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
     // Load credit data on composition
     val context = LocalContext.current
     val repository = LocalRepository.current
-    LaunchedEffect(true) {
-        model.name.value = context.getString(R.string.bank_account)
-        model.loadCreditData(snackBar, context)
-    }
+    LaunchedEffect(true) { model.loadCreditData(snackBar, context) }
 
     PopupScreen(
         onDismiss,
@@ -189,7 +190,22 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
                 }
             }
             Text(text = stringResource(R.string.personalize_new_account))
-            VerifiableField(model.name, R.string.account_name, KeyboardType.Text, modifier = Modifier.fillMaxWidth(), isLast = true)
+            var accountNameFocused by remember { mutableStateOf(false) }
+            OutlinedTextField(
+                value = if (accountNameFocused) model.name.value else stringResource(R.string.s_account, stringResource(model.accountType.rString)),
+                onValueChange = { model.name.value = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged {
+                        accountNameFocused = it.isFocused
+                        if (it.isFocused) model.name.clearError()
+                        else if (model.name.value.isNotEmpty()) model.name.check(context)
+                    },
+                singleLine = true,
+                label = { Text(text = stringResource(R.string.account_name)) },
+                isError = model.name.hasError,
+                supportingText = { Text(text = model.name.error ?: "") }
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -154,4 +154,5 @@
     <string name="options">Opțiuni</string>
     <string name="internal_error">Eroare de sistem, te rugăm să încerci mai târziu</string>
     <string name="close">Închide</string>
+    <string name="s_account">Cont de %s</string>
 </resources>

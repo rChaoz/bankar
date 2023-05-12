@@ -154,4 +154,5 @@
     <string name="options">Options</string>
     <string name="internal_error">Internal error, please try again later</string>
     <string name="close">Close</string>
+    <string name="s_account">%s account</string>
 </resources>
