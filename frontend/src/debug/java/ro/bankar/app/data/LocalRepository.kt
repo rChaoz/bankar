@@ -43,7 +43,7 @@ val EmptyRepository: Repository = MockRepository
 private object MockRepository : Repository(GlobalScope, "", {}) {
     private fun <T> mockFlow(value: T) = object : RequestFlow<T>(scope) {
         override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
-            delay(2.seconds)
+            delay(3.seconds)
             flow.emit(EmissionResult.Success(value))
             continuation?.resume(Unit)
         }
@@ -126,8 +126,12 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         ),
         listOf(
             STransferRequest(
-                SDirection.Received, "Big", null, "Boy",
-                50.25, Currency.ROMANIAN_LEU, "Tesla Dealer", 5, Clock.System.nowUTC()
+                SDirection.Received, "Big", "Boy", "Long-Nameus Whatsapp",
+                50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
+            ),
+            STransferRequest(
+                SDirection.Received, "Gimme", null, "Cash",
+                12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
             )
         ),
     )

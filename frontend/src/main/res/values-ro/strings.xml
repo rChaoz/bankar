@@ -155,4 +155,6 @@
     <string name="internal_error">Eroare de sistem, te rugăm să încerci mai târziu</string>
     <string name="close">Închide</string>
     <string name="s_account">Cont de %s</string>
+    <string name="transfer_request">Cerere de transfer</string>
+    <string name="request_from">Cerere de la %s</string>
 </resources>

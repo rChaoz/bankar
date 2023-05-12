@@ -155,4 +155,6 @@
     <string name="internal_error">Internal error, please try again later</string>
     <string name="close">Close</string>
     <string name="s_account">%s account</string>
+    <string name="transfer_request">Transfer request</string>
+    <string name="request_from">Request from %s</string>
 </resources>

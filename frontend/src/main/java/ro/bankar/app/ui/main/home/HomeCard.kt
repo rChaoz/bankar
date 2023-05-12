@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.Shimmer
@@ -85,9 +86,13 @@ private fun HomeCardContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            val mod = Modifier.weight(1f, fill = false)
             Text(
-                text = title, style = MaterialTheme.typography.titleLarge,
-                modifier = if (shimmer == null) Modifier else Modifier.shimmer(shimmer)
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                modifier = mod.run { if (shimmer != null) shimmer(shimmer) else this }
             )
             Box(modifier = Modifier.padding(4.dp)) {
                 icon()
@@ -116,7 +121,7 @@ fun Amount(
     currency: String,
     modifier: Modifier = Modifier,
     withPlusSign: Boolean = false,
-    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    textStyle: TextStyle = MaterialTheme.typography.titleMedium,
     fontWeight: FontWeight = FontWeight.Medium,
     shimmer: Shimmer? = null,
 ) {

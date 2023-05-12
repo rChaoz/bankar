@@ -37,11 +37,12 @@ inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
 
-val SBankAccountType.rString get() = when(this) {
-    SBankAccountType.Debit -> R.string.account_debit
-    SBankAccountType.Savings -> R.string.account_savings
-    SBankAccountType.Credit -> R.string.account_credit
-}
+val SBankAccountType.rString
+    get() = when (this) {
+        SBankAccountType.Debit -> R.string.account_debit
+        SBankAccountType.Savings -> R.string.account_savings
+        SBankAccountType.Credit -> R.string.account_credit
+    }
 
 fun SCountries?.nameFromCode(code: String) = this?.find { it.code == code }?.country ?: code
 
@@ -63,5 +64,7 @@ private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")!!
 fun LocalDate.format(long: Boolean = false) = toJavaLocalDate().format(if (long) longDateFormatter else dateFormatter)!!
 fun LocalTime.format() = toJavaLocalTime().format(timeFormatter)!!
 
-fun LocalDateTime.format(long: Boolean = false) = if (date == Clock.System.todayHere()) time.format()
-else "${date.format(long)} • ${time.format()}"
+fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
+    if (date == Clock.System.todayHere()) time.format()
+    else if (vague) date.format(long)
+    else "${date.format(long)} • ${time.format()}"

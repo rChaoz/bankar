@@ -68,8 +68,8 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
         Column(
             modifier = Modifier
                 .verticalScroll(scrollState)
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(vertical = 12.dp, horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
             val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
             if (model.recentActivity == null) RecentActivityShimmer(shimmer)

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,6 +42,7 @@ import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
@@ -59,29 +62,45 @@ fun RecentActivity(recentActivity: SRecentActivity) {
         else {
             val (partyInvites, otherRequests) = recentActivity.transferRequests.partition { it.partyID != null }
             partyInvites.forEach {
-                PartyInvite(fromName = "${it.firstName} ${it.lastName}", time = it.dateTime.toInstant(TimeZone.UTC), place = it.note)
+                PartyInvite(
+                    fromName = "${it.firstName} ${it.lastName}",
+                    amount = it.amount,
+                    currency = it.currency.code,
+                    place = it.note
+                )
             }
-            @Suppress("ForEachParameterNotUsed")
             otherRequests.forEach {
-                // TODO Add transfer request component
+                TransferRequest(
+                    fromName = "${it.firstName} ${it.lastName}",
+                    amount = it.amount,
+                    currency = it.currency.code
+                )
             }
 
             // Merge display transfers and transactions
             val (transfers, transactions) = recentActivity
             var transferI = 0
             var transactionI = 0
-            while (transferI < transfers.size && transactionI < transactions.size) {
-                if (transfers[transferI].dateTime < transactions[transactionI].dateTime) {
+            // Limit total number of entries to 3
+            while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
+                if (transferI < transfers.size && (transactionI < transactions.size || transfers[transferI].dateTime < transactions[transactionI].dateTime)) {
                     val transfer = transfers[transferI++]
                     val amount = if (transfer.direction == SDirection.Sent) -transfer.amount else transfer.amount
                     Transfer(name = transfer.fullName, time = transfer.dateTime.toInstant(TimeZone.UTC), amount = amount, currency = transfer.currency.code)
                 } else {
                     val transaction = transactions[transactionI++]
-                    Payment(title = transaction.title, time = transaction.dateTime.toInstant(TimeZone.UTC),
-                        amount = transaction.amount, currency = transaction.currency.code)
+                    Payment(
+                        title = transaction.title, time = transaction.dateTime.toInstant(TimeZone.UTC),
+                        amount = transaction.amount, currency = transaction.currency.code
+                    )
                 }
             }
-            TextButton(onClick = { /*TODO*/ }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            TextButton(
+                onClick = { /*TODO*/ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
                 Text(text = stringResource(R.string.see_more))
             }
         }
@@ -95,13 +114,21 @@ private fun RecentActivityPreview() {
         RecentActivity(
             SRecentActivity(
                 listOf(
-                    SBankTransfer(SDirection.Received, "Koleci 1", "testIBAN",
-                        25.215, Currency.EURO, "middd", Clock.System.nowHere()),
-                    SBankTransfer(SDirection.Sent, "Koleci 2", "testIBAN!!",
-                        15.0, Currency.US_DOLLAR, ":/", Clock.System.nowHere()),
+                    SBankTransfer(
+                        SDirection.Received, "Koleci 1", "testIBAN",
+                        25.215, Currency.EURO, "middd", Clock.System.nowHere()
+                    ),
+                    SBankTransfer(
+                        SDirection.Sent, "Koleci 2", "testIBAN!!",
+                        15.0, Currency.US_DOLLAR, ":/", Clock.System.nowHere()
+                    ),
                 ),
-                listOf(SCardTransaction(1L, 2, "1373",
-                    23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "1234 idk")),
+                listOf(
+                    SCardTransaction(
+                        1L, 2, "1373",
+                        23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "1234 idk"
+                    )
+                ),
                 listOf(
                     STransferRequest(
                         SDirection.Received, "Big", null, "Boy",
@@ -127,7 +154,13 @@ fun RecentActivityShimmer(shimmer: Shimmer) {
         Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null, modifier = Modifier.shimmer(shimmer))
     }) {
         repeat(3) { ShimmerRow(shimmer) }
-        Spacer(modifier = Modifier.height(6.dp))
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(18.dp)
+                .size(80.dp, 16.dp)
+                .grayShimmer(shimmer)
+        )
     }
 }
 
@@ -144,14 +177,14 @@ private fun ShimmerRow(shimmer: Shimmer) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.clip(CircleShape)) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(34.dp)
                     .grayShimmer(shimmer)
             )
         }
@@ -164,21 +197,42 @@ private fun ShimmerRow(shimmer: Shimmer) {
             Spacer(modifier = Modifier.height(6.dp))
             Box(
                 modifier = Modifier
-                    .size(150.dp, 11.dp)
+                    .size(120.dp, 11.dp)
                     .grayShimmer(shimmer)
             )
         }
     }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @Composable
-private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subtitle: String, trailingContent: @Composable () -> Unit) {
-    Surface(onClick = {}) {
+private inline fun RecentActivityRow(
+    noinline icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    elevated: Boolean = false,
+    noinline trailingContent: @Composable () -> Unit
+) {
+    RecentActivityRow(icon, title, AnnotatedString(subtitle), elevated, trailingContent)
+}
+
+@Composable
+private fun RecentActivityRow(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: AnnotatedString,
+    elevated: Boolean = false,
+    trailingContent: @Composable () -> Unit
+) {
+    Surface(
+        onClick = {},
+        tonalElevation = if (elevated) 8.dp else 0.dp
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             icon()
@@ -192,7 +246,7 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
                 Text(
                     text = subtitle,
                     color = MaterialTheme.colorScheme.outline,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -202,16 +256,36 @@ private fun RecentActivityRow(icon: @Composable () -> Unit, title: String, subti
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PartyInvite(fromName: String, time: Instant, place: String) {
-    RecentActivityRow(icon = {
+private fun PartyInvite(fromName: String, amount: Double, currency: String, place: String) {
+    RecentActivityRow(elevated = true, icon = {
         FilledIcon(
             painter = painterResource(id = R.drawable.share_bill),
             contentDescription = null,
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.primary,
         )
-    }, title = stringResource(R.string.party_invite_from, fromName), subtitle = stringResource(R.string.date_time_at_place, time.here().format(), place)) {
+    }, title = stringResource(R.string.party_invite_from, fromName), subtitle = buildAnnotatedString {
+        pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
+        append("%.2f %s".format(amount, currency))
+        pop()
+        append(" • ", place)
+    }) {
+        AcceptDeclineButtons(onAccept = {}, onDecline = {})
+    }
+}
+
+@Composable
+private fun TransferRequest(fromName: String, amount: Double, currency: String) {
+    RecentActivityRow(elevated = true, icon = {
+        FilledIcon(
+            painter = painterResource(R.drawable.transfer_request),
+            contentDescription = stringResource(R.string.transfer_request),
+            color = MaterialTheme.colorScheme.tertiary,
+        )
+    }, title = stringResource(R.string.request_from, fromName), subtitle = buildAnnotatedString {
+        pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
+        append("%.2f %s".format(amount, currency))
+    }) {
         AcceptDeclineButtons(onAccept = {}, onDecline = {})
     }
 }
@@ -234,7 +308,7 @@ private fun Transfer(name: String, time: Instant, amount: Double, currency: Stri
     RecentActivityRow(
         icon = {
             FilledIcon(
-                painter = painterResource(R.drawable.baseline_transfer_24),
+                painter = painterResource(R.drawable.transfer),
                 contentDescription = stringResource(R.string.transfer),
                 color = MaterialTheme.colorScheme.secondary,
             )

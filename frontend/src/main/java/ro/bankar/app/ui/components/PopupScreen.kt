@@ -27,8 +27,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
 
@@ -50,7 +52,8 @@ fun PopupScreen(
                 Row(
                     modifier = Modifier
                         .padding(vertical = 12.dp)
-                        .fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDismiss) {
                         Icon(imageVector = Icons.Default.ArrowBack, stringResource(R.string.back), modifier = Modifier.size(32.dp))
@@ -58,8 +61,10 @@ fun PopupScreen(
                     Text(
                         text = stringResource(title),
                         style = MaterialTheme.typography.displaySmall,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
             }
         },
