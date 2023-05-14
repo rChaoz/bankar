@@ -21,9 +21,7 @@
 #-renamesourcefileattribute SourceFile
 
 # KTOR Rules
--dontwarn org.slf4j.**
--keep class io.ktor.** { *; }
--dontwarn io.ktor.util.debug.**
+-keepclassmembers class io.ktor.http.** { *; }
 
 # OkHttp3 Rules
 

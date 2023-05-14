@@ -30,8 +30,8 @@ val Typography = Typography(
     displaySmall = TextStyle(
         fontFamily = BebasNeue,
         fontWeight = FontWeight.Medium,
-        fontSize = 40.sp,
-        lineHeight = 48.sp,
+        fontSize = 38.sp,
+        lineHeight = 46.sp,
     ),
 
     headlineMedium = TextStyle(

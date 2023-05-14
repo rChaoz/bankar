@@ -32,26 +32,21 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
-import ro.bankar.banking.Currency
-import ro.bankar.model.SBankTransfer
-import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SDirection
 import ro.bankar.model.SRecentActivity
-import ro.bankar.model.STransferRequest
 import ro.bankar.util.here
-import ro.bankar.util.nowHere
-import ro.bankar.util.nowUTC
 
 @Composable
 fun RecentActivity(recentActivity: SRecentActivity) {
@@ -111,32 +106,9 @@ fun RecentActivity(recentActivity: SRecentActivity) {
 @Composable
 private fun RecentActivityPreview() {
     AppTheme {
-        RecentActivity(
-            SRecentActivity(
-                listOf(
-                    SBankTransfer(
-                        SDirection.Received, "Koleci 1", "testIBAN",
-                        25.215, Currency.EURO, "middd", Clock.System.nowHere()
-                    ),
-                    SBankTransfer(
-                        SDirection.Sent, "Koleci 2", "testIBAN!!",
-                        15.0, Currency.US_DOLLAR, ":/", Clock.System.nowHere()
-                    ),
-                ),
-                listOf(
-                    SCardTransaction(
-                        1L, 2, "1373",
-                        23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "1234 idk"
-                    )
-                ),
-                listOf(
-                    STransferRequest(
-                        SDirection.Received, "Big", null, "Boy",
-                        50.25, Currency.ROMANIAN_LEU, "Tesla Dealer", 5, Clock.System.nowUTC()
-                    )
-                ),
-            )
-        )
+        LocalRepository.current.recentActivity.collectAsStateRetrying().value?.let {
+            RecentActivity(it)
+        } ?: RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
     }
 }
 

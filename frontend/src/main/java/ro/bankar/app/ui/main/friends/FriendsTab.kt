@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
@@ -59,6 +59,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -88,6 +90,7 @@ import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackBar
+import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.nameFromCode
@@ -116,6 +119,9 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         var addFriendInput by mutableStateOf("")
         var addFriendError by mutableStateOf<Int?>(null)
 
+        // Navigate to friend
+        lateinit var onNavigateToFriend: (friend: SPublicUser) -> Unit
+
         fun showAddFriendDialog() {
             addFriendInput = ""
             addFriendError = null
@@ -124,7 +130,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
         fun onAddFriend(c: Context, repository: Repository) = viewModelScope.launch {
             addFriendLoading = true
-            val result = repository.sendAddFriend(addFriendInput.trim())
+            val result = repository.sendAddFriend(addFriendInput.trim().removePrefix("@"))
             addFriendLoading = false
             when (result) {
                 is SafeStatusResponse.InternalError -> addFriendError = result.message
@@ -195,6 +201,8 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             launch { repository.countryData.collectRetrying { model.countryData = it } }
         }
 
+        model.onNavigateToFriend = { friend -> navigation.navigate(MainNav.Friend(friend)) }
+
         // "Add friend" dialog
         val context = LocalContext.current
         BottomDialog(
@@ -207,10 +215,14 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             LoadingOverlay(isLoading = model.addFriendLoading) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(text = stringResource(R.string.add_friend_by))
+                    val requester = remember { FocusRequester() }
+                    LaunchedEffect(key1 = true) { requester.requestFocus() }
                     TextField(
                         value = model.addFriendInput,
                         onValueChange = { model.addFriendInput = it; model.addFriendError = null },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(requester),
                         singleLine = true,
                         label = { Text(text = stringResource(R.string.friend)) },
                         isError = model.addFriendError != null,
@@ -254,8 +266,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             HorizontalPager(
                 pageCount = tabs.size,
                 state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                flingBehavior = PagerDefaults.flingBehavior(state = pagerState)
+                modifier = Modifier.fillMaxSize()
             ) {
                 tabs[it].Content(model, repository)
             }
@@ -295,7 +306,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                     else if (model.friends!!.isEmpty())
                         InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
                     else {
-                        for (friend in model.friends!!) Surface(onClick = { /*TODO*/ }, tonalElevation = 1.dp) {
+                        for (friend in model.friends!!) Surface(onClick = { model.onNavigateToFriend(friend) }, tonalElevation = 1.dp) {
                             Row(
                                 modifier = Modifier
                                     .padding(12.dp)
@@ -324,11 +335,13 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
     }
 
+    object SPublicUserSaver : Saver<SPublicUser?, String> {
+        override fun restore(value: String): SPublicUser? = Json.safeDecodeFromString(value)
+        override fun SaverScope.save(value: SPublicUser?) = if (value != null) Json.encodeToString(value) else null
+    }
+
     object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
-        private object SPublicUserSaver : Saver<SPublicUser?, String> {
-            override fun restore(value: String): SPublicUser? = Json.safeDecodeFromString(value)
-            override fun SaverScope.save(value: SPublicUser?) = if (value != null) Json.encodeToString(value) else null
-        }
+
 
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable

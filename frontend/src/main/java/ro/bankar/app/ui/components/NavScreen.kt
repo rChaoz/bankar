@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
 
 @Composable
-fun PopupScreen(
+fun NavScreen(
     onDismiss: () -> Unit,
     title: Int,
     bottomBar: @Composable () -> Unit = {},
@@ -51,7 +51,7 @@ fun PopupScreen(
             Surface(color = MaterialTheme.colorScheme.secondary) {
                 Row(
                     modifier = Modifier
-                        .padding(vertical = 12.dp)
+                        .padding(vertical = 8.dp)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -82,7 +82,7 @@ fun PopupScreen(
 }
 
 @Composable
-fun PopupScreen(
+fun NavScreen(
     onDismiss: () -> Unit,
     title: Int,
     confirmText: Int,
@@ -94,7 +94,7 @@ fun PopupScreen(
     fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    PopupScreen(onDismiss, title, bottomBar = {
+    NavScreen(onDismiss, title, bottomBar = {
         Column {
             Divider()
             Row(

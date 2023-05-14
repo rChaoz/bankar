@@ -48,7 +48,7 @@ import ro.bankar.app.data.ktorClient
 import ro.bankar.app.data.safeGet
 import ro.bankar.app.ui.components.ButtonRow
 import ro.bankar.app.ui.components.ComboBox
-import ro.bankar.app.ui.components.PopupScreen
+import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.rString
@@ -129,7 +129,7 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
     val repository = LocalRepository.current
     LaunchedEffect(true) { model.loadCreditData(snackBar, context) }
 
-    PopupScreen(
+    NavScreen(
         onDismiss,
         title = R.string.open_bank_account,
         snackBar = snackBar,

@@ -157,4 +157,10 @@
     <string name="s_account">%s account</string>
     <string name="transfer_request">Transfer request</string>
     <string name="request_from">Request from %s</string>
+    <string name="friend_profile">Friend profile</string>
+    <string name="send_message">Send message</string>
+    <string name="send_money">Send money</string>
+    <string name="request_money">Request money</string>
+    <string name="recent_transfers">Recent transfers</string>
+    <string name="no_friend_recent_transfers">You don\'t have any recent transfers to/from this friend</string>
 </resources>

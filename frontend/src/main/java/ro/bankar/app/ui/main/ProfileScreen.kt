@@ -69,7 +69,7 @@ import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.Avatar
-import ro.bankar.app.ui.components.PopupScreen
+import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
@@ -118,7 +118,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
 
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
     val textMod = if (data == null) Modifier.shimmer(shimmer) else Modifier
-    PopupScreen(onDismiss, title = R.string.profile, isLoading = isLoading, snackBar = snackBar, isFABVisible = data != null, fabContent = {
+    NavScreen(onDismiss, title = R.string.profile, isLoading = isLoading, snackBar = snackBar, isFABVisible = data != null, fabContent = {
         FloatingActionButton(onClick = { /*TODO*/ }, shape = CircleShape) {
             Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
         }
@@ -165,10 +165,10 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         if (data == null) {
                             Box(
                                 modifier = Modifier
-                                    .size(100.dp, 22.dp)
+                                    .size(100.dp, 18.dp)
                                     .grayShimmer(shimmer)
                             )
-                            Spacer(modifier = Modifier.height(3.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Box(
                                 modifier = Modifier
                                     .size(150.dp, 16.dp)
@@ -199,7 +199,6 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
-                shadowElevation = 6.dp,
                 tonalElevation = 1.dp,
                 shape = RoundedCornerShape(8.dp),
             ) {

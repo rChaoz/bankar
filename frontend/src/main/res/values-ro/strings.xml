@@ -102,7 +102,7 @@
     <string name="account">Cont</string>
     <string name="clear">Golește</string>
     <string name="cash">Cash</string>
-    <string name="stocks">Stocuri</string>
+    <string name="stocks">Bursă</string>
     <string name="crypto">Crypto</string>
     <string name="no_bank_accounts">Nu ai un cont bancar încă.\nApasă aici să îți creezi unul acum!</string>
     <string name="create">Creează</string>
@@ -157,4 +157,10 @@
     <string name="s_account">Cont de %s</string>
     <string name="transfer_request">Cerere de transfer</string>
     <string name="request_from">Cerere de la %s</string>
+    <string name="friend_profile">Profil prieten</string>
+    <string name="send_message">Trimite mesaj</string>
+    <string name="send_money">Trimite bani</string>
+    <string name="request_money">Cere bani</string>
+    <string name="recent_transfers">Transferuri recente</string>
+    <string name="no_friend_recent_transfers">Nu ai niciun transfer recent la/de la acest prieten</string>
 </resources>
