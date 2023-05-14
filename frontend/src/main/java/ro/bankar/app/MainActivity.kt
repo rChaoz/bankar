@@ -12,12 +12,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -27,14 +33,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 import ro.bankar.app.data.EmptyRepository
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.repository
+import ro.bankar.app.ui.LockScreen
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.mainNavigation
 import ro.bankar.app.ui.newuser.NewUserNav
 import ro.bankar.app.ui.newuser.newUserNavigation
 import ro.bankar.app.ui.theme.AppTheme
+import kotlin.time.Duration.Companion.seconds
 
 // For logging
 const val TAG = "BanKAR"
@@ -88,7 +97,26 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                 } ?: EmptyRepository
             }
 
-            CompositionLocalProvider(LocalRepository provides repository) {
+            // Track user inactivity
+            var locked by remember { mutableStateOf(sessionToken != null) }
+            var lastActiveAt by remember { mutableStateOf(Clock.System.now()) }
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_STOP) lastActiveAt = Clock.System.now()
+                    // TODO Increase timer from 10 seconds to 1 minute
+                    else if (event == Lifecycle.Event.ON_START && (Clock.System.now() - lastActiveAt) > 10.seconds) locked = true
+                }
+                val lifecycle = lifecycleOwner.lifecycle
+                lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycle.removeObserver(observer)
+                }
+            }
+
+            if (locked && sessionToken != null) {
+                LockScreen(onUnlock = { locked = false })
+            } else CompositionLocalProvider(LocalRepository provides repository) {
                 AnimatedNavHost(
                     controller,
                     startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
@@ -96,7 +124,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) },
                 ) {
-                    navigation(controller)
+                    navigation(controller, onSignIn = { locked = false })
                 }
             }
         }
@@ -104,8 +132,9 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
 }
 
 
-private fun NavGraphBuilder.navigation(controller: NavHostController) {
+private fun NavGraphBuilder.navigation(controller: NavHostController, onSignIn: () -> Unit) {
     newUserNavigation(controller, onSuccess = {
+        onSignIn()
         controller.navigate(Nav.Main.route) {
             popUpTo(Nav.NewUser.route) { inclusive = true }
         }

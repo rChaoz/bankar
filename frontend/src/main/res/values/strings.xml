@@ -163,4 +163,8 @@
     <string name="request_money">Request money</string>
     <string name="recent_transfers">Recent transfers</string>
     <string name="no_friend_recent_transfers">You don\'t have any recent transfers to/from this friend</string>
+    <string name="welcome_back">Welcome back</string>
+    <string name="verification_password">Please enter your password to verify your identity:</string>
+    <string name="incorrect_password">Incorrect password</string>
+    <string name="button_continue">Continue</string>
 </resources>

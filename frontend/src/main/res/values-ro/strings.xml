@@ -163,4 +163,8 @@
     <string name="request_money">Cere bani</string>
     <string name="recent_transfers">Transferuri recente</string>
     <string name="no_friend_recent_transfers">Nu ai niciun transfer recent la/de la acest prieten</string>
+    <string name="welcome_back">Bine ai venit înapoi</string>
+    <string name="verification_password">Te rugăm să-ți introduci parola ca să-ți verifici identitatea:</string>
+    <string name="incorrect_password">Parolă incorectă</string>
+    <string name="button_continue">Continuă</string>
 </resources>
