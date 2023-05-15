@@ -10,13 +10,26 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import ro.bankar.database.BankTransfer
 import ro.bankar.database.TransferRequest
 import ro.bankar.database.User
+import ro.bankar.database.serializable
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SSendMoney
 import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
 
 fun Route.configureBankTransfers() {
-    route("action") {
+    route("transfer") {
+        get("list/{tag}") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val tag = call.parameters["tag"]!!
+
+            newSuspendedTransaction {
+                val targetUser = User.findByTag(tag)
+
+                if (targetUser == null || targetUser !in user.friends) call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
+                else call.respond(HttpStatusCode.OK, BankTransfer.findBetween(user, targetUser).serializable(user))
+            }
+        }
+
         post("send") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             val data = call.receive<SSendMoney>()

@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
@@ -23,6 +24,12 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
                 .limit(count)
         }
 
+        fun findBetween(user: User, otherUser: User) = with(BankTransfers) {
+            find {
+                ((sender eq user.id) and (recipient eq otherUser.id)) or ((sender eq otherUser.id) and (recipient eq user.id))
+            }
+        }
+
         fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String): Boolean {
             if (sourceAccount.balance < amount) return false
             sourceAccount.balance -= amount
@@ -36,7 +43,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
                 recipientIban = targetAccount.iban
                 this.amount = amount
                 currency = sourceAccount.currency
-                this.note = note
+                this.note = note.trim()
             }
             return true
         }

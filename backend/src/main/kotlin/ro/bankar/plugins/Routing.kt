@@ -14,6 +14,7 @@ fun Application.configureRouting() {
             authenticate {
                 configureRecentActivity()
                 configureUserProfiles()
+                configureUserMessaging()
 
                 configureBankAccounts()
                 configureBankTransfers()

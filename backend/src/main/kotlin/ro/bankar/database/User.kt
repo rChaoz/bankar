@@ -14,10 +14,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
-import ro.bankar.model.SDirection
-import ro.bankar.model.SNewUser
-import ro.bankar.model.SPublicUser
-import ro.bankar.model.SUser
+import ro.bankar.model.*
 import ro.bankar.sha256
 import kotlin.time.Duration.Companion.days
 
@@ -176,12 +173,31 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Send a message to a user
      */
+    fun sendMessage(recipient: User, message: String) {
+        UserMessage.create(this, recipient, message)
+    }
+
+    /**
+     * Returns the conversation with another user
+     */
+    fun getConversationWith(otherUser: User) = UserMessage.getConversationBetween(this, otherUser)
+
+    /**
+     * Returns the serializable format of the conversation with another user
+     */
+    fun getSerializableConversationWith(otherUser: User) =
+        SConversation(
+            otherUser.publicSerializable(SDirection.Sent),
+            getConversationWith(otherUser).serializable(this)
+        )
 
     /**
      * Returns a serializable user
      */
-    fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state,
-        city, address, joinDate, about, avatar?.inputStream?.readBytes())
+    fun serializable() = SUser(
+        email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state,
+        city, address, joinDate, about, avatar?.inputStream?.readBytes()
+    )
 
     /**
      * Returns this user's public data as serializable

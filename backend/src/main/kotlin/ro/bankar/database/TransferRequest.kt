@@ -28,7 +28,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
                 this.party = party
                 this.amount = amount
                 currency = sourceAccount.currency
-                this.note = note
+                this.note = note.trim()
             }
             return true
         }
