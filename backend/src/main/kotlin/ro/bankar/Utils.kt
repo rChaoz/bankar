@@ -2,6 +2,7 @@ package ro.bankar
 
 import org.h2.security.SHA256
 import org.jetbrains.exposed.sql.Table
+import ro.bankar.banking.Currency
 import java.security.SecureRandom
 
 private val RANDOM = SecureRandom()
@@ -32,4 +33,4 @@ fun Table.amount(name: String) = decimal(name, 20, 2)
 /**
  * Column to store currency. Equivalent to `varchar(name, 4)`.
  */
-fun Table.currency(name: String) = varchar(name, 4)
+fun Table.currency(name: String) = enumerationByName<Currency>("currency", 20)

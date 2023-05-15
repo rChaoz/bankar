@@ -23,6 +23,7 @@ data class SBankTransfer(
 
 @Serializable
 data class STransferRequest(
+    val id: Int,
     val direction: SDirection,
 
     val firstName: String,
@@ -35,4 +36,34 @@ data class STransferRequest(
 
     val partyID: Int?,
     val dateTime: LocalDateTime,
+)
+
+/**
+ * Send money to another user, by tag
+ */
+@Serializable
+data class SSendMoney(
+    val targetTag: String,
+    val sourceAccountID: Int,
+
+    val amount: Double,
+    // For verification - as source account already has a currency
+    val currency: Currency,
+
+    val note: String
+) {
+    fun validate() = when {
+        amount < 0 -> "amount"
+        note.trim().length > 200 -> "note"
+        else -> null
+    }
+}
+
+/**
+ * Accept the money received into the specified account
+ */
+@Serializable
+data class SAcceptMoney(
+    val transferRequestID: Int,
+    val accountID: Int
 )

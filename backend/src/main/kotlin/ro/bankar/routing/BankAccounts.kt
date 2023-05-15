@@ -1,10 +1,10 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -14,14 +14,10 @@ import ro.bankar.database.BankAccount
 import ro.bankar.database.BankCard
 import ro.bankar.database.CREDIT_DATA
 import ro.bankar.database.serializable
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
-import ro.bankar.model.SNewBankAccount
-import ro.bankar.model.SNewBankCard
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.*
 import ro.bankar.plugins.UserPrincipal
 
-fun Route.configureBanking() {
+fun Route.configureBankAccounts() {
     route("accounts") {
         // Get all accounts
         get {

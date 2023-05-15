@@ -10,10 +10,10 @@ import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
-import ro.bankar.banking.Currency
 import ro.bankar.currency
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SDirection
+import java.math.BigDecimal
 
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankTransfer>(BankTransfers) {
@@ -21,6 +21,24 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
             find { (BankTransfers.sender inList ids) or (BankTransfers.recipient inList ids) }
                 .orderBy(BankTransfers.dateTime to SortOrder.DESC)
                 .limit(count)
+        }
+
+        fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String): Boolean {
+            if (sourceAccount.balance < amount) return false
+            sourceAccount.balance -= amount
+            targetAccount.balance += amount
+            new {
+                sender = sourceAccount
+                senderName = sourceAccount.user.fullName
+                senderIban = sourceAccount.iban
+                recipient = targetAccount
+                recipientName = targetAccount.user.fullName
+                recipientIban = targetAccount.iban
+                this.amount = amount
+                currency = sourceAccount.currency
+                this.note = note
+            }
+            return true
         }
     }
 
@@ -33,12 +51,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var recipientIban by BankTransfers.recipientIban
 
     var amount by BankTransfers.amount
-    private var currencyString by BankTransfers.currency
-    var currency: Currency
-        get() = Currency.from(currencyString)
-        set(value) {
-            currencyString = value.code
-        }
+    var currency by BankTransfers.currency
     var note by BankTransfers.note
     var dateTime by BankTransfers.dateTime
 

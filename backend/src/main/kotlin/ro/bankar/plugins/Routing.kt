@@ -12,9 +12,11 @@ fun Application.configureRouting() {
             configureUserAccounts()
             configureAPIs()
             authenticate {
-                configureUserProfiles()
-                configureBanking()
                 configureRecentActivity()
+                configureUserProfiles()
+
+                configureBankAccounts()
+                configureBankTransfers()
             }
             static("data") {
                 resources("data")

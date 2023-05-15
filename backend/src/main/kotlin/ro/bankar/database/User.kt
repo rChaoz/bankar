@@ -7,15 +7,11 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
-import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.model.SDirection
@@ -103,6 +99,8 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var firstName by Users.firstName
     var middleName by Users.middleName
     var lastName by Users.lastName
+    val fullName
+        get() = "$firstName ${if (middleName != null) "$middleName " else ""}$lastName"
     var dateOfBirth by Users.dateOfBirth
 
     var countryCode by Users.countryCode
