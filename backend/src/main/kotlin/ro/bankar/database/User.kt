@@ -167,6 +167,17 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     }
 
     /**
+     * Removes user from friend list
+     */
+    fun removeFriend(other: User) {
+        friends = SizedCollection(friends.filter { it.id != other.id })
+    }
+
+    /**
+     * Send a message to a user
+     */
+
+    /**
      * Returns a serializable user
      */
     fun serializable() = SUser(email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state,

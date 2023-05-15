@@ -1,10 +1,10 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.put
@@ -38,9 +38,7 @@ fun Route.configureUserProfiles() {
 
             get("add/{id}") {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
-                val id = call.parameters["id"] ?: run {
-                    call.respond(HttpStatusCode.BadRequest, StatusResponse("no_id_provided")); return@get
-                }
+                val id = call.parameters["id"]!!
                 newSuspendedTransaction {
                     val otherUser = User.findByAnything(id)
                     if (otherUser == null) call.respond(HttpStatusCode.NotFound, StatusResponse("user_not_found"))
@@ -55,6 +53,20 @@ fun Route.configureUserProfiles() {
                             // Else, notify the user
                             call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
                         }
+                    }
+                }
+            }
+
+            get("remove/{tag}") {
+                val user = call.authentication.principal<UserPrincipal>()!!.user
+                val tag = call.parameters["tag"]!!
+                newSuspendedTransaction {
+                    val otherUser = User.findByTag(tag)
+                    if (otherUser == null || otherUser !in user.friends) call.respond(HttpStatusCode.NotFound, StatusResponse("user_not_found"))
+                    else {
+                        user.removeFriend(otherUser)
+                        otherUser.removeFriend(user)
+                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
                     }
                 }
             }
