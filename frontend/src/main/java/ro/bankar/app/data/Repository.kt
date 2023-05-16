@@ -2,12 +2,19 @@ package ro.bankar.app.data
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -75,13 +82,14 @@ suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Not
 
 fun repository(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onSessionExpire)
 
-abstract class Repository(protected val scope: CoroutineScope, protected val sessionToken: String, protected val onSessionExpire: () -> Unit) {
+abstract class Repository {
     // Country data
     abstract val countryData: RequestFlow<SCountries>
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
     abstract suspend fun sendAddFriend(id: String): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendRemoveFriend(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract val friends: RequestFlow<List<SPublicUser>>
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
     abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): SafeStatusResponse<StatusResponse, StatusResponse>
@@ -109,34 +117,45 @@ abstract class Repository(protected val scope: CoroutineScope, protected val ses
     }
 }
 
-private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit) : Repository(scope, sessionToken, onSessionExpire) {
+private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: String, private val onSessionExpire: () -> Unit) : Repository() {
+    private val client = HttpClient(OkHttp) {
+        defaultRequest {
+            configUrl()
+            bearerAuth(sessionToken)
+            contentType(ContentType.Application.Json)
+        }
+        install(ContentNegotiation) {
+            json()
+        }
+    }
+
     // Country data
     override val countryData = createFlow<SCountries>("data/countries.json")
 
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
-    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = ktorClient.safeStatusRequest<StatusResponse, InvalidParamResponse> {
+    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeStatusRequest<StatusResponse, InvalidParamResponse> {
         put("profile/update") {
-            bearerAuth(sessionToken)
             setBody(data)
         }
     }
 
-    override suspend fun sendAddFriend(id: String) = ktorClient.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {
+    override suspend fun sendAddFriend(id: String) = client.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {
         url("profile/friends/add/$id")
-        bearerAuth(sessionToken)
+    }
+
+    override suspend fun sendRemoveFriend(tag: String) = client.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {
+        url("profile/friends/remove/$tag")
     }
 
     override val friends = createFlow<List<SPublicUser>>("profile/friends")
     override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")
-    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = ktorClient.safeGet<StatusResponse, StatusResponse> {
+    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = client.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
-        bearerAuth(sessionToken)
     }
 
-    override suspend fun sendCancelFriendRequest(tag: String) = ktorClient.safeGet<StatusResponse, StatusResponse> {
+    override suspend fun sendCancelFriendRequest(tag: String) = client.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/cancel/$tag")
-        bearerAuth(sessionToken)
     }
 
     // Recent activity
@@ -146,21 +165,15 @@ private class RepositoryImpl(scope: CoroutineScope, sessionToken: String, onSess
     // Bank accounts
     override val accounts = createFlow<List<SBankAccount>>("accounts")
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
-    override suspend fun sendCreateAccount(account: SNewBankAccount) = ktorClient.safePost<StatusResponse, InvalidParamResponse>(HttpStatusCode.Created) {
+    override suspend fun sendCreateAccount(account: SNewBankAccount) = client.safePost<StatusResponse, InvalidParamResponse>(HttpStatusCode.Created) {
         url("accounts/new")
-        bearerAuth(sessionToken)
         setBody(account)
     }
 
     // Utility functions
     private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
         override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
-            val r = ktorClient.safeRequest<T> {
-                get(url) {
-                    bearerAuth(sessionToken)
-                }
-            }
-            when (r) {
+            when (val r = client.safeRequest<T> { get(url) }) {
                 is SafeResponse.InternalError -> flow.emit(EmissionResult.Fail(continuation))
                 is SafeResponse.Fail -> {
                     if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onSessionExpire()

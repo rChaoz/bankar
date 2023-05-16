@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
 private object EmptyDataStore : DataStore<Preferences> {
-    val emptyPreferences = emptyPreferences()
+    private val emptyPreferences = emptyPreferences()
 
     override val data: Flow<Preferences> = emptyFlow()
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = emptyPreferences

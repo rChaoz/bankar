@@ -88,11 +88,12 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             val repository = remember(sessionToken) {
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
-                        controller.navigate(NewUserNav.route) {
-                            popUpTo(MainNav.tabsRoute) {
-                                inclusive = true
+                        val stack = controller.currentBackStack.value
+                        // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
+                        if (stack.isNotEmpty() && stack[0].destination.route == Nav.Main.route)
+                            controller.navigate(NewUserNav.route) {
+                                popUpTo(Nav.Main.route) { inclusive = true }
                             }
-                        }
                     }
                 } ?: EmptyRepository
             }

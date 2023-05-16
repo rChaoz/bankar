@@ -39,9 +39,10 @@ val LocalRepository = compositionLocalOf<Repository> { MockRepository }
 val EmptyRepository: Repository = MockRepository
 
 @Suppress("SpellCheckingInspection")
-@OptIn(DelicateCoroutinesApi::class)
-private object MockRepository : Repository(GlobalScope, "", {}) {
-    private fun <T> mockFlow(value: T) = object : RequestFlow<T>(scope) {
+private object MockRepository : Repository() {
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun <T> mockFlow(value: T) = object : RequestFlow<T>(GlobalScope) {
         override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
             delay(3.seconds)
             flow.emit(EmissionResult.Success(value))
@@ -92,6 +93,7 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
     )
 
     override suspend fun sendAddFriend(id: String) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendRemoveFriend(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
     override val friendRequests = mockFlow(
         listOf(
             SPublicUser(
@@ -126,11 +128,11 @@ private object MockRepository : Repository(GlobalScope, "", {}) {
         ),
         listOf(
             STransferRequest(
-                SDirection.Received, "Big", "Boy", "Long-Nameus Whatsapp",
+                0, SDirection.Received, "Big", "Boy", "Long-Nameus Whatsapp",
                 50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
             ),
             STransferRequest(
-                SDirection.Received, "Gimme", null, "Cash",
+                1, SDirection.Received, "Gimme", null, "Cash",
                 12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
             )
         ),
