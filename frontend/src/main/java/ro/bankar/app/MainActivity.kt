@@ -28,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
@@ -60,6 +61,8 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class Nav(val route: String) {
+    Lock("lock"),
+
     NewUser(NewUserNav.route), Main(MainNav.route), Verification("verification");
 }
 
@@ -90,7 +93,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                     repository(lifecycleScope, it) {
                         val stack = controller.currentBackStack.value
                         // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
-                        if (stack.isNotEmpty() && stack[0].destination.route == Nav.Main.route)
+                        if (stack.size < 2 || stack[1].destination.route == Nav.Main.route)
                             controller.navigate(NewUserNav.route) {
                                 popUpTo(Nav.Main.route) { inclusive = true }
                             }
@@ -99,14 +102,15 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             }
 
             // Track user inactivity
-            var locked by remember { mutableStateOf(sessionToken != null) }
             var lastActiveAt by remember { mutableStateOf(Clock.System.now()) }
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
                     if (event == Lifecycle.Event.ON_STOP) lastActiveAt = Clock.System.now()
-                    // TODO Increase timer from 10 seconds to 1 minute
-                    else if (event == Lifecycle.Event.ON_START && (Clock.System.now() - lastActiveAt) > 10.seconds) locked = true
+                    // TODO Increase timer from 10 seconds to 1-2 minutes
+                    else if (event == Lifecycle.Event.ON_START && (Clock.System.now() - lastActiveAt) > 10.seconds) {
+                        if (sessionToken != null) controller.navigate(Nav.Lock.route)
+                    }
                 }
                 val lifecycle = lifecycleOwner.lifecycle
                 lifecycle.addObserver(observer)
@@ -115,9 +119,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                 }
             }
 
-            if (locked && sessionToken != null) {
-                LockScreen(onUnlock = { locked = false })
-            } else CompositionLocalProvider(LocalRepository provides repository) {
+            CompositionLocalProvider(LocalRepository provides repository) {
                 AnimatedNavHost(
                     controller,
                     startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
@@ -125,7 +127,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) },
                 ) {
-                    navigation(controller, onSignIn = { locked = false })
+                    navigation(controller)
                 }
             }
         }
@@ -133,9 +135,12 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
 }
 
 
-private fun NavGraphBuilder.navigation(controller: NavHostController, onSignIn: () -> Unit) {
+@OptIn(ExperimentalAnimationApi::class)
+private fun NavGraphBuilder.navigation(controller: NavHostController) {
+    composable(Nav.Lock.route) {
+        LockScreen(onUnlock = { controller.popBackStack() })
+    }
     newUserNavigation(controller, onSuccess = {
-        onSignIn()
         controller.navigate(Nav.Main.route) {
             popUpTo(Nav.NewUser.route) { inclusive = true }
         }

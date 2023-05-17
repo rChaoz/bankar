@@ -25,6 +25,7 @@ import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SCountries
+import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
@@ -83,8 +84,9 @@ suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Not
 fun repository(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onSessionExpire)
 
 abstract class Repository {
-    // Country data
+    // Country data & password check
     abstract val countryData: RequestFlow<SCountries>
+    abstract suspend fun sendCheckPassword(password: String): SafeStatusResponse<StatusResponse, StatusResponse>
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
@@ -129,9 +131,12 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         }
     }
 
-    // Country data
+    // Country data & password check
     override val countryData = createFlow<SCountries>("data/countries.json")
-
+    override suspend fun sendCheckPassword(password: String) = client.safePost<StatusResponse, StatusResponse> {
+        url("verifyPassword")
+        setBody(SInitialLoginData("", password))
+    }
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeStatusRequest<StatusResponse, InvalidParamResponse> {

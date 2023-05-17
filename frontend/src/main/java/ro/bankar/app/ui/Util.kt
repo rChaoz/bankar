@@ -1,5 +1,8 @@
 package ro.bankar.app.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +39,12 @@ inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
 }
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
+
+fun Context.getActivity(): Activity = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.getActivity()
+    else -> throw RuntimeException("Unable to get activity from context")
+}
 
 val SBankAccountType.rString
     get() = when (this) {

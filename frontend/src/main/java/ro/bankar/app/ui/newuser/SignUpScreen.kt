@@ -540,8 +540,10 @@ private fun LoginInformationStep(model: SignUpModel) {
         val (showPassword, setShowPassword) = remember { mutableStateOf(false) }
         VerifiableField(model.email, label = R.string.email, type = KeyboardType.Email, id = "email")
         VerifiableField(model.password, label = R.string.password, type = KeyboardType.Password, id = "password", showPassword = showPassword)
+        val context = LocalContext.current
+        val focusManager = LocalFocusManager.current
         VerifiableField(
-            model.confirmPassword, label = R.string.confirm_password,
+            model.confirmPassword, label = R.string.confirm_password, onDone = { model.onNext(context, focusManager) },
             type = KeyboardType.Password, id = "confirmPassword", showPassword = showPassword, isLast = true
         )
 
@@ -573,8 +575,6 @@ private fun LoginInformationStep(model: SignUpModel) {
             }
         }
 
-        val context = LocalContext.current
-        val focusManager = LocalFocusManager.current
         Button(onClick = { model.onNext(context, focusManager) }, modifier = Modifier.layoutId("button")) {
             Text(stringResource(R.string.next))
         }
@@ -760,7 +760,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
         }
         if (model.step == SignUpStep.PhoneNumber) {
             Button(modifier = Modifier.align(Alignment.End), onClick = { model.onNext(context, focusManager) }) {
-                Text(text = stringResource(R.string.next))
+                Text(text = stringResource(R.string.send_message))
             }
         } else {
             Text(text = stringResource(R.string.code_was_sent, model.countryCode + model.phone.value))

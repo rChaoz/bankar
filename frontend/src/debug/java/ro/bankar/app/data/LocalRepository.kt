@@ -54,6 +54,7 @@ private object MockRepository : Repository() {
     private fun <Result> mockResponse() = SafeResponse.InternalError<Result>(R.string.connection_error)
 
     override val countryData = mockFlow<SCountries>(emptyList())
+    override suspend fun sendCheckPassword(password: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     override val profile = mockFlow(
         SUser(

@@ -175,5 +175,14 @@ fun Route.configureUserAccounts() {
             newSuspendedTransaction { user.clearSession() }
             call.respond(HttpStatusCode.OK, StatusResponse.Success)
         }
+
+        post("verifyPassword") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val data = call.receive<SInitialLoginData>()
+            newSuspendedTransaction {
+                if (user.verifyPassword(data.password)) call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                else call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect"))
+            }
+        }
     }
 }

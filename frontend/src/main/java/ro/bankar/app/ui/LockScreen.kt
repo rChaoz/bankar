@@ -1,5 +1,6 @@
 package ro.bankar.app.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,13 +29,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import ro.bankar.app.R
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.ui.components.VerifiableField
-import ro.bankar.app.ui.components.verifiableStateOf
+import ro.bankar.app.ui.components.verifiableSuspendingStateOf
 
 @Composable
 fun LockScreen(onUnlock: () -> Unit) {
-    val password = remember { verifiableStateOf("", R.string.incorrect_password) { it == "123456" } }
+    // Don't allow exiting this screen via back button
+    val activity = LocalContext.current.getActivity()
+    BackHandler { activity.moveTaskToBack(true) }
+
+    val repository = LocalRepository.current
+
+    val scope = rememberCoroutineScope()
+    val password = remember {
+        verifiableSuspendingStateOf("", scope) {
+            when (val result = repository.sendCheckPassword(it)) {
+                is SafeStatusResponse.Success -> null
+                is SafeStatusResponse.InternalError -> activity.getString(result.message)
+                is SafeStatusResponse.Fail -> activity.getString(R.string.incorrect_password)
+            }
+        }
+    }
     var showPassword by rememberSaveable { mutableStateOf(false) }
 
     Scaffold { paddingValues ->
@@ -79,10 +99,13 @@ fun LockScreen(onUnlock: () -> Unit) {
                         )
                     }
                 },
+                onDone = { scope.launch { password.checkSuspending(activity); if (password.verified) onUnlock() } },
                 isLast = true
             )
-            val context = LocalContext.current
-            Button(onClick = { password.check(context); if (password.verified) onUnlock() }, enabled = password.value.isNotEmpty()) {
+            Button(
+                onClick = { scope.launch { password.checkSuspending(activity); if (password.verified) onUnlock() } },
+                enabled = password.value.isNotEmpty()
+            ) {
                 Text(text = stringResource(R.string.button_continue))
             }
         }

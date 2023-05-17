@@ -1,6 +1,8 @@
 package ro.bankar.app.ui.components
 
 import android.content.Context
+import androidx.compose.foundation.text.KeyboardActionScope
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -33,6 +35,7 @@ fun VerifiableField(
     showPassword: Boolean = true,
     isLast: Boolean = false,
     trailingIcon: (@Composable () -> Unit)? = null,
+    onDone: (KeyboardActionScope.() -> Unit)? = null,
     multiLine: Boolean = false,
 ) {
     val context = LocalContext.current
@@ -51,6 +54,7 @@ fun VerifiableField(
         label = { Text(text = stringResource(label)) },
         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(imeAction = if (isLast) ImeAction.Done else ImeAction.Next, keyboardType = type),
+        keyboardActions = KeyboardActions(onDone = onDone),
         isError = verifiableState.hasError,
         supportingText = { Text(text = verifiableState.error ?: "") }
     )

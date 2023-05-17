@@ -46,11 +46,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmapOrNull
+import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
 import coil.request.ImageRequest
 import com.canhub.cropper.CropImageContract
@@ -87,12 +89,13 @@ fun ProfileScreen(onDismiss: () -> Unit) {
 
     // Code to load picked image and submit to server
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val lifecycleScope = LocalLifecycleOwner.current.lifecycleScope
     var isLoading by remember { mutableStateOf(false) }
     val imagePicker = rememberLauncherForActivityResult(contract = CropImageContract()) {
         if (!it.isSuccessful || it.uriContent == null) return@rememberLauncherForActivityResult
         isLoading = true
-        scope.launch {
+        // We need lifecycleScope because the "Welcome back" (password screen) might be displaying on top due to long time spent by user in cropping activity
+        lifecycleScope.launch {
             // Load image as bitmap
             val bitmap = withContext(Dispatchers.IO) { ImageLoader(context).execute(ImageRequest.Builder(context).data(it.uriContent).build()) }
                 .drawable?.toBitmapOrNull(SUserValidation.avatarSize, SUserValidation.avatarSize)
@@ -116,8 +119,10 @@ fun ProfileScreen(onDismiss: () -> Unit) {
         }
     }
 
+    // For loading animations
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
     val textMod = if (data == null) Modifier.shimmer(shimmer) else Modifier
+
     NavScreen(onDismiss, title = R.string.profile, isLoading = isLoading, snackBar = snackBar, isFABVisible = data != null, fabContent = {
         FloatingActionButton(onClick = { /*TODO*/ }, shape = CircleShape) {
             Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
@@ -224,6 +229,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         val aboutError = editingAbout == true && aboutValue.trim().length > SUserValidation.aboutMaxLength
                         val focusManager = LocalFocusManager.current
                         val focusRequester = remember { FocusRequester() }
+                        val scope = rememberCoroutineScope()
                         val onDone: () -> Unit = {
                             focusManager.clearFocus()
                             editingAbout = null
