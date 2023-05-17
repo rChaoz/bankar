@@ -21,14 +21,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.Repository
 import ro.bankar.app.data.collectRetrying
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.main.MainNav
@@ -45,6 +50,19 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
 
         // Only show FAB after data has loaded
         override val showFAB = derivedStateOf { scrollShowFAB.value && accounts != null && recentActivity != null }
+
+        // Swipe refresh functionality for home page
+        var isRefreshing by mutableStateOf(false)
+            private set
+
+        fun refresh(repository: Repository) = viewModelScope.launch {
+            isRefreshing = true
+            coroutineScope {
+                launch { repository.accounts.emitNow() }
+                launch { repository.recentActivity.emitNow() }
+            }
+            isRefreshing = false
+        }
     }
 
     @Composable
@@ -64,26 +82,29 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
         val scrollState = rememberScrollState()
         HideFABOnScroll(state = scrollState, setFABShown = model.scrollShowFAB.component2())
 
-        // TODO Pull to refresh?
-        Column(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
-        ) {
-            val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
-            if (model.recentActivity == null) RecentActivityShimmer(shimmer)
-            else RecentActivity(model.recentActivity!!)
+        // Deprecated but replacement is not yet available in M3
+        @Suppress("DEPRECATION") val swipeRefreshState = rememberSwipeRefreshState(model.isRefreshing)
+        @Suppress("DEPRECATION") SwipeRefresh(state = swipeRefreshState, onRefresh = { model.refresh(repository) }) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
+                if (model.recentActivity == null) RecentActivityShimmer(shimmer)
+                else RecentActivity(model.recentActivity!!)
 
-            if (model.accounts == null) {
-                BankAccountShimmer(shimmer)
-                AssetsShimmer(shimmer)
-            } else {
-                for (account in model.accounts!!) BankAccount(data = account)
-                if (model.accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {
-                    navigation.navigate(MainNav.NewBankAccount.route)
-                })
-                Assets()
+                if (model.accounts == null) {
+                    BankAccountShimmer(shimmer)
+                    AssetsShimmer(shimmer)
+                } else {
+                    for (account in model.accounts!!) BankAccount(data = account)
+                    if (model.accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {
+                        navigation.navigate(MainNav.NewBankAccount.route)
+                    })
+                    Assets()
+                }
             }
         }
     }

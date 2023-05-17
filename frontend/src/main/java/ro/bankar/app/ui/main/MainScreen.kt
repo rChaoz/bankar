@@ -244,7 +244,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
             floatingActionButtonPosition = FabPosition.End,
             floatingActionButton = {
                 AnimatedVisibility(
-                    visible = snackBar.currentSnackbarData == null && tabModel.showFAB.value,
+                    visible = tabModel.showFAB.value,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
                 ) {

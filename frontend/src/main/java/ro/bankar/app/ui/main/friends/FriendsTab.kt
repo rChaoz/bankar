@@ -48,6 +48,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +71,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.coroutineScope
@@ -110,7 +113,8 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         var countryData by mutableStateOf<SCountries?>(null)
 
         // FAB
-        override val showFAB = mutableStateOf(true)
+        var scrollShowFAB = mutableStateOf(true)
+        override val showFAB = derivedStateOf { scrollShowFAB.value && friends != null && friendRequests != null }
         lateinit var snackBar: SnackbarHostState
 
         // Add friend dialog
@@ -121,6 +125,19 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
         // Navigate to friend
         lateinit var onNavigateToFriend: (friend: SPublicUser) -> Unit
+
+        // Swipe to refresh
+        lateinit var repository: Repository
+        var isRefreshing by mutableStateOf(false)
+            private set
+        fun refresh() = viewModelScope.launch {
+            isRefreshing = true
+            coroutineScope {
+                launch { repository.friends.emitNow() }
+                launch { repository.friendRequests.emitNow() }
+            }
+            isRefreshing = false
+        }
 
         fun showAddFriendDialog() {
             addFriendInput = ""
@@ -195,6 +212,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         model.snackBar = LocalSnackBar.current
         // Load data
         val repository = LocalRepository.current
+        model.repository = repository
         LaunchedEffect(true) {
             launch { repository.friends.collectRetrying { model.friends = it } }
             launch { repository.friendRequests.collectRetrying { model.friendRequests = it } }
@@ -293,39 +311,42 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             val scrollState = rememberScrollState()
-            HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
+            HideFABOnScroll(state = scrollState, setFABShown = model.scrollShowFAB.component2())
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                SurfaceList(
-                    modifier = Modifier
-                        .verticalScroll(scrollState)
-                        .padding(vertical = 8.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    if (model.friends == null) ShimmerFriends()
-                    else if (model.friends!!.isEmpty())
-                        InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
-                    else {
-                        for (friend in model.friends!!) Surface(onClick = { model.onNavigateToFriend(friend) }, tonalElevation = 1.dp) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(12.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Avatar(image = friend.avatar, size = 48.dp)
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = friend.fullName,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(text = "@${friend.tag}", style = MaterialTheme.typography.titleSmall)
-                                }
-                                // TODO Implement menu to allow remove friend, more options
-                                IconButton(onClick = { /*TODO*/ }) {
-                                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+            @Suppress("DEPRECATION") val swipeRefreshState = rememberSwipeRefreshState(model.isRefreshing)
+            @Suppress("DEPRECATION") SwipeRefresh(state = swipeRefreshState, onRefresh = model::refresh) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SurfaceList(
+                        modifier = Modifier
+                            .verticalScroll(scrollState)
+                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        if (model.friends == null) ShimmerFriends()
+                        else if (model.friends!!.isEmpty())
+                            InfoCard(onClick = model::showAddFriendDialog, text = R.string.no_friends)
+                        else {
+                            for (friend in model.friends!!) Surface(onClick = { model.onNavigateToFriend(friend) }, tonalElevation = 1.dp) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Avatar(image = friend.avatar, size = 48.dp)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = friend.fullName,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(text = "@${friend.tag}", style = MaterialTheme.typography.titleSmall)
+                                    }
+                                    // TODO Implement menu to allow remove friend, more options
+                                    IconButton(onClick = { /*TODO*/ }) {
+                                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                                    }
                                 }
                             }
                         }
@@ -402,31 +423,34 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
             }
 
             val scrollState = rememberScrollState()
-            HideFABOnScroll(state = scrollState, setFABShown = model.showFAB.component2())
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (model.friendRequests == null) ShimmerFriends()
-                else if (model.friendRequests!!.isEmpty()) {
-                    InfoCard(text = R.string.no_friend_requests)
-                } else {
-                    // TODO Friend requests clickable to view user profile
-                    val (sentRequests, receivedRequests) = model.friendRequests!!.sortedBy { it.tag }.partition { it.requestDirection == SDirection.Sent }
-                    val context = LocalContext.current
-                    if (sentRequests.isNotEmpty())
-                        SentRequests(
-                            requests = sentRequests,
-                            setRequestInfo = setRequestInfo,
-                            onCancelRequest = { tag -> model.onCancelRequest(context, tag, repository) }
-                        )
-                    if (receivedRequests.isNotEmpty())
-                        ReceivedRequests(
-                            requests = receivedRequests,
-                            setRequestInfo = setRequestInfo,
-                            onRespondToRequest = { tag, accepted -> model.onRespondToRequest(context, tag, accepted, repository) }
-                        )
+            HideFABOnScroll(state = scrollState, setFABShown = model.scrollShowFAB.component2())
+            @Suppress("DEPRECATION") val swipeRefreshState = rememberSwipeRefreshState(model.isRefreshing)
+            @Suppress("DEPRECATION") SwipeRefresh(state = swipeRefreshState, onRefresh = model::refresh) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (model.friendRequests == null) ShimmerFriends()
+                    else if (model.friendRequests!!.isEmpty()) {
+                        InfoCard(text = R.string.no_friend_requests)
+                    } else {
+                        // TODO Friend requests clickable to view user profile
+                        val (sentRequests, receivedRequests) = model.friendRequests!!.sortedBy { it.tag }.partition { it.requestDirection == SDirection.Sent }
+                        val context = LocalContext.current
+                        if (sentRequests.isNotEmpty())
+                            SentRequests(
+                                requests = sentRequests,
+                                setRequestInfo = setRequestInfo,
+                                onCancelRequest = { tag -> model.onCancelRequest(context, tag, repository) }
+                            )
+                        if (receivedRequests.isNotEmpty())
+                            ReceivedRequests(
+                                requests = receivedRequests,
+                                setRequestInfo = setRequestInfo,
+                                onRespondToRequest = { tag, accepted -> model.onRespondToRequest(context, tag, accepted, repository) }
+                            )
+                    }
                 }
             }
         }
