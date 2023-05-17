@@ -62,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -401,7 +402,10 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(text = stringResource(R.string.about), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-                                    Text(text = it.about)
+                                    Text(
+                                        text = it.about.ifEmpty { stringResource(R.string.nothing_here) },
+                                        color = if (it.about.isEmpty()) MaterialTheme.colorScheme.outline else Color.Unspecified
+                                    )
                                 }
                             }
                         }

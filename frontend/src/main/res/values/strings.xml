@@ -167,4 +167,5 @@
     <string name="verification_password">Please enter your password to verify your identity:</string>
     <string name="incorrect_password">Incorrect password</string>
     <string name="button_continue">Continue</string>
+    <string name="nothing_here">Nothing to be seen here</string>
 </resources>

@@ -167,4 +167,5 @@
     <string name="verification_password">Te rugăm să-ți introduci parola ca să-ți verifici identitatea:</string>
     <string name="incorrect_password">Parolă incorectă</string>
     <string name="button_continue">Continuă</string>
+    <string name="nothing_here">Nimic de văzut aici</string>
 </resources>

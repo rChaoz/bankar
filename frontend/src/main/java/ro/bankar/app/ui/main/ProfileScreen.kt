@@ -250,6 +250,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                         TextField(
                             value = if (editingAbout != false) aboutValue else data.about,
                             onValueChange = { aboutValue = it },
+                            placeholder = { Text(text = stringResource(R.string.nothing_here), color = MaterialTheme.colorScheme.outline) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequester),
