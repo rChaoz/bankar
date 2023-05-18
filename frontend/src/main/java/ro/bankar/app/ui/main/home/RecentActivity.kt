@@ -44,6 +44,7 @@ import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 import ro.bankar.model.SDirection
 import ro.bankar.model.SRecentActivity
 import ro.bankar.util.here
@@ -60,7 +61,7 @@ fun RecentActivity(recentActivity: SRecentActivity) {
                 PartyInvite(
                     fromName = "${it.firstName} ${it.lastName}",
                     amount = it.amount,
-                    currency = it.currency.code,
+                    currency = it.currency,
                     place = it.note
                 )
             }
@@ -68,7 +69,7 @@ fun RecentActivity(recentActivity: SRecentActivity) {
                 TransferRequest(
                     fromName = "${it.firstName} ${it.lastName}",
                     amount = it.amount,
-                    currency = it.currency.code
+                    currency = it.currency
                 )
             }
 
@@ -81,12 +82,12 @@ fun RecentActivity(recentActivity: SRecentActivity) {
                 if (transferI < transfers.size && (transactionI < transactions.size || transfers[transferI].dateTime < transactions[transactionI].dateTime)) {
                     val transfer = transfers[transferI++]
                     val amount = if (transfer.direction == SDirection.Sent) -transfer.amount else transfer.amount
-                    Transfer(name = transfer.fullName, time = transfer.dateTime.toInstant(TimeZone.UTC), amount = amount, currency = transfer.currency.code)
+                    Transfer(name = transfer.fullName, time = transfer.dateTime.toInstant(TimeZone.UTC), amount = amount, currency = transfer.currency)
                 } else {
                     val transaction = transactions[transactionI++]
                     Payment(
                         title = transaction.title, time = transaction.dateTime.toInstant(TimeZone.UTC),
-                        amount = transaction.amount, currency = transaction.currency.code
+                        amount = transaction.amount, currency = transaction.currency
                     )
                 }
             }
@@ -229,7 +230,7 @@ private fun RecentActivityRow(
 }
 
 @Composable
-private fun PartyInvite(fromName: String, amount: Double, currency: String, place: String) {
+private fun PartyInvite(fromName: String, amount: Double, currency: Currency, place: String) {
     RecentActivityRow(elevated = true, icon = {
         FilledIcon(
             painter = painterResource(id = R.drawable.share_bill),
@@ -238,7 +239,7 @@ private fun PartyInvite(fromName: String, amount: Double, currency: String, plac
         )
     }, title = stringResource(R.string.party_invite_from, fromName), subtitle = buildAnnotatedString {
         pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
-        append("%.2f %s".format(amount, currency))
+        append(currency.format(amount))
         pop()
         append(" • ", place)
     }) {
@@ -247,7 +248,7 @@ private fun PartyInvite(fromName: String, amount: Double, currency: String, plac
 }
 
 @Composable
-private fun TransferRequest(fromName: String, amount: Double, currency: String) {
+private fun TransferRequest(fromName: String, amount: Double, currency: Currency) {
     RecentActivityRow(elevated = true, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.transfer_request),
@@ -256,14 +257,14 @@ private fun TransferRequest(fromName: String, amount: Double, currency: String) 
         )
     }, title = stringResource(R.string.request_from, fromName), subtitle = buildAnnotatedString {
         pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
-        append("%.2f %s".format(amount, currency))
+        append(currency.format(amount))
     }) {
         AcceptDeclineButtons(onAccept = {}, onDecline = {})
     }
 }
 
 @Composable
-private fun Payment(title: String, time: Instant, amount: Double, currency: String) {
+private fun Payment(title: String, time: Instant, amount: Double, currency: Currency) {
     RecentActivityRow(icon = {
         FilledIcon(
             painter = painterResource(R.drawable.payment),
@@ -276,7 +277,7 @@ private fun Payment(title: String, time: Instant, amount: Double, currency: Stri
 }
 
 @Composable
-private fun Transfer(name: String, time: Instant, amount: Double, currency: String) {
+private fun Transfer(name: String, time: Instant, amount: Double, currency: Currency) {
     RecentActivityRow(
         icon = {
             FilledIcon(

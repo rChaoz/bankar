@@ -31,6 +31,7 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import ro.bankar.app.R
+import ro.bankar.app.ui.format
 import ro.bankar.app.ui.rString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.accountColors
@@ -56,11 +57,11 @@ fun BankAccount(data: SBankAccount) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)) {
-            Amount(amount = data.balance, currency = data.currency.code, textStyle = MaterialTheme.typography.headlineMedium)
+            Amount(amount = data.balance, currency = data.currency, textStyle = MaterialTheme.typography.headlineMedium)
             if (data.type == SBankAccountType.Credit) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(text = stringResource(R.string.limit_is), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
-                    Text(text = "${data.limit} ${data.currency.code}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.customColors.red)
+                    Text(text = data.currency.format(data.limit), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.customColors.red)
                 }
             }
         }

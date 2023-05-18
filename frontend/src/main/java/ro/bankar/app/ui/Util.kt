@@ -26,6 +26,7 @@ import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
 import ro.bankar.app.R
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SCountries
 import ro.bankar.util.todayHere
@@ -77,3 +78,7 @@ fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
     if (date == Clock.System.todayHere()) time.format()
     else if (vague) date.format(long)
     else "${date.format(long)} • ${time.format()}"
+
+// Currency formatting
+fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =
+    "${if(showPlusSign) "%+.2f" else "%.2f"}$separator%s".format(amount, this.code)

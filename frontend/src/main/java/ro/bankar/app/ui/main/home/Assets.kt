@@ -30,14 +30,16 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import ro.bankar.app.R
+import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 
 @Composable
 fun Assets() {
     HomeCard(title = stringResource(R.string.assets), icon = {
-        Amount(amount = 1225.35, currency = "RON", textStyle = MaterialTheme.typography.headlineSmall)
+        Amount(amount = 1225.35, currency = Currency.ROMANIAN_LEU, textStyle = MaterialTheme.typography.headlineSmall)
     }) {
         Row(
             modifier = Modifier
@@ -47,15 +49,15 @@ fun Assets() {
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.money), contentDescription = null, modifier = Modifier.size(32.dp))
-            }, title = R.string.cash, amount = 1234.56, currency = "RON", onClick = {}, modifier = Modifier.weight(1f))
+            }, title = R.string.cash, amount = 1234.56, currency = Currency.EURO, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.stocks), contentDescription = null, modifier = Modifier.size(32.dp))
-            }, title = R.string.stocks, amount = 0.0, currency = "RON", onClick = {}, modifier = Modifier.weight(1f))
+            }, title = R.string.stocks, amount = 0.0, currency = Currency.ROMANIAN_LEU, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.crypto), contentDescription = null, modifier = Modifier.size(32.dp))
-            }, title = R.string.crypto, amount = .215, currency = "RON", onClick = {}, modifier = Modifier.weight(1f))
+            }, title = R.string.crypto, amount = .215, currency = Currency.US_DOLLAR, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
         }
     }
@@ -122,7 +124,7 @@ private fun AssetsShimmerPreview() {
 }
 
 @Composable
-private fun AssetsColumn(icon: @Composable () -> Unit, title: Int, amount: Double, currency: String, onClick: () -> Unit, modifier: Modifier) {
+private fun AssetsColumn(icon: @Composable () -> Unit, title: Int, amount: Double, currency: Currency, onClick: () -> Unit, modifier: Modifier) {
     Surface(onClick, modifier, tonalElevation = 3.dp, shape = RoundedCornerShape(8.dp)) {
         Column(
             modifier = Modifier.padding(6.dp),
@@ -132,7 +134,7 @@ private fun AssetsColumn(icon: @Composable () -> Unit, title: Int, amount: Doubl
             icon()
             Text(text = stringResource(title), style = MaterialTheme.typography.bodyMedium)
             Text(
-                text = "%.2f\n%s".format(amount, currency),
+                text = currency.format(amount, separator = "\n"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.customColors.green,
                 textAlign = TextAlign.Center

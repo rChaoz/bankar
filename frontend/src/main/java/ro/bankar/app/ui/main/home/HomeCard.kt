@@ -26,8 +26,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
+import ro.bankar.app.ui.format
 import ro.bankar.app.ui.theme.LocalCustomColors
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 
 @Composable
 fun HomeCard(
@@ -118,7 +120,7 @@ private fun Modifier.topBorder(thickness: Dp, color: Color) = composed {
 @Composable
 fun Amount(
     amount: Double,
-    currency: String,
+    currency: Currency,
     modifier: Modifier = Modifier,
     withPlusSign: Boolean = false,
     textStyle: TextStyle = MaterialTheme.typography.titleMedium,
@@ -126,7 +128,7 @@ fun Amount(
     shimmer: Shimmer? = null,
 ) {
     Text(
-        text = "%${if (withPlusSign) "+.2f" else ".2f"} %s".format(amount, currency),
+        text = currency.format(amount, withPlusSign),
         modifier = modifier.let { if (shimmer != null) it.shimmer(shimmer) else it },
         style = textStyle,
         fontWeight = fontWeight,
