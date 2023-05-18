@@ -120,7 +120,10 @@ class LoginModel : ViewModel() {
         usernameOrPasswordError = null
         val result = ktorClient.safePost<StatusResponse, StatusResponse> {
             url("login/initial")
-            setBody(SInitialLoginData(username, password))
+            // Allow the user to input tag prefixed with '@' symbol
+            setBody(
+                SInitialLoginData(username.trim().removePrefix("@"), password)
+            )
         }
         isLoading = false
         when (result) {

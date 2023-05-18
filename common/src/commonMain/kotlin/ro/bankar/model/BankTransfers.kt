@@ -54,7 +54,7 @@ data class SSendMoney(
 ) {
     fun validate() = when {
         amount < 0 -> "amount"
-        note.trim().length > 200 -> "note"
+        note.length > 200 -> "note"
         else -> null
     }
 }

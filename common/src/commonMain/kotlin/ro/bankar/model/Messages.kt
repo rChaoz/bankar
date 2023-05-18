@@ -22,5 +22,5 @@ data class SSendMessage(
     val message: String,
     val recipientTag: String
 ) {
-    fun validate() = if (message.trim().length > 500) "message" else null
+    fun validate() = if (message.length > 500) "message" else null
 }

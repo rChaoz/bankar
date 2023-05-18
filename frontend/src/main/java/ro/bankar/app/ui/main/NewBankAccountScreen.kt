@@ -101,7 +101,7 @@ class NewBankAccountModel : ViewModel() {
         isLoading = true
         viewModelScope.launch {
             val result = repository.sendCreateAccount(
-                SNewBankAccount(accountType, name.value.ifBlank { context.getString(R.string.s_account, context.getString(accountType.rString)) },
+                SNewBankAccount(accountType, name.value.trim().ifEmpty { context.getString(R.string.s_account, context.getString(accountType.rString)) },
                     color, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
             )
             when (result) {

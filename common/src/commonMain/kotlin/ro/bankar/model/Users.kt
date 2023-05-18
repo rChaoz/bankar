@@ -59,7 +59,7 @@ sealed class SPublicUserBase {
             !tagRegex.matches(tag) -> "tag"
 
             !nameRegex.matches(firstName) -> "firstName"
-            middleName.let { it != null && !nameRegex.matches(it.trim()) } -> "middleName"
+            middleName.let { it != null && !nameRegex.matches(it) } -> "middleName"
             !nameRegex.matches(lastName) -> "lastName"
 
             data.none { it.code == countryCode } -> "countryCode"

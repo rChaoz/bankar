@@ -1,11 +1,14 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authentication
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.User
 import ro.bankar.model.InvalidParamResponse
@@ -27,7 +30,7 @@ fun Route.configureUserMessaging() {
                 if (recipient == null || recipient !in user.friends)
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
                 else {
-                    user.sendMessage(recipient, request.message)
+                    user.sendMessage(recipient, request.message.trim())
                     call.respond(HttpStatusCode.OK, StatusResponse.Success)
                 }
             }

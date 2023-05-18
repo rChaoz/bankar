@@ -19,5 +19,5 @@ data class SBankCard(
 
 @Serializable
 data class SNewBankCard(val name: String) {
-    fun validate() = if (name.trim().length in 2..30) null else "name"
+    fun validate() = if (name.length in 2..30) null else "name"
 }

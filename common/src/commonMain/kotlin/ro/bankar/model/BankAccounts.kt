@@ -42,7 +42,7 @@ data class SNewBankAccount(
     fun validate(creditData: List<SCreditData>): String? {
         val data = creditData.find { it.currency == currency }
         return when {
-            name.trim().length !in nameLengthRange -> "name"
+            name.length !in nameLengthRange -> "name"
             type != SBankAccountType.Credit -> null
             data == null -> "credit"
             creditAmount !in data.amountRange -> "credit-amount"

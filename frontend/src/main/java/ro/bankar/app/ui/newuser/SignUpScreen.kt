@@ -142,11 +142,13 @@ class SignUpModel : ViewModel() {
 
     // First step
     val tag = verifiableSuspendingStateOf("", viewModelScope) {
+        // Allow the user to input the '@' as well
+        val tag = it.trim().removePrefix("@")
         // Check that tag is valid
         when {
-            it.length < SUserValidation.tagLengthRange.first -> getString(R.string.tag_too_short, SUserValidation.tagLengthRange.first)
-            it.length > SUserValidation.tagLengthRange.last -> getString(R.string.tag_too_long, SUserValidation.tagLengthRange.last)
-            !SUserValidation.tagRegex.matches(it) -> getString(R.string.invalid_tag)
+            tag.length < SUserValidation.tagLengthRange.first -> getString(R.string.tag_too_short, SUserValidation.tagLengthRange.first)
+            tag.length > SUserValidation.tagLengthRange.last -> getString(R.string.tag_too_long, SUserValidation.tagLengthRange.last)
+            !SUserValidation.tagRegex.matches(tag) -> getString(R.string.invalid_tag)
             else -> null
         }?.let { error ->
             return@verifiableSuspendingStateOf error
@@ -154,7 +156,7 @@ class SignUpModel : ViewModel() {
 
         val result = ktorClient.safeGet<StatusResponse, StatusResponse> {
             url("signup/check_tag")
-            parameter("q", it)
+            parameter("q", tag)
         }
 
         when (result) {
@@ -192,7 +194,7 @@ class SignUpModel : ViewModel() {
     val phoneCountry = mutableStateOf<SCountry?>(null)
     val countryCode get() = (phoneCountry.value ?: country.value).dialCode
     val phone = verifiableStateOf("", R.string.invalid_phone) {
-        SUserValidation.phoneRegex.matches(countryCode + it)
+        SUserValidation.phoneRegex.matches(countryCode + it.trim())
     }
     var code by mutableStateOf("")
     var codeError by mutableStateOf("")
@@ -267,9 +269,9 @@ class SignUpModel : ViewModel() {
                         url("signup/initial")
                         setBody(
                             SNewUser(
-                                email = email.value,
-                                tag = tag.value,
-                                phone = countryCode + phone.value,
+                                email = email.value.trim(),
+                                tag = tag.value.trim().removePrefix("@"),
+                                phone = countryCode + phone.value.trim(),
                                 password = password.value,
                                 firstName = firstName.value.trim(),
                                 middleName = middleName.value.trim().takeIf(String::isNotEmpty),
