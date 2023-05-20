@@ -62,6 +62,7 @@ dependencies {
     coreLibraryDesugaring(libs.com.android.tools.desugaring)
     implementation(libs.maxkeppeler.compose.core)
     implementation(libs.maxkeppeler.compose.calendar)
+    implementation(libs.maxkeppeler.compose.state)
     implementation(libs.io.coil)
     implementation(libs.image.cropper)
     implementation(libs.shimmer.compose)

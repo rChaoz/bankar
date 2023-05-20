@@ -33,6 +33,7 @@ fun VerifiableField(
     id: String? = null,
     enabled: Boolean = true,
     showPassword: Boolean = true,
+    autoCorrect: Boolean = false,
     isLast: Boolean = false,
     trailingIcon: (@Composable () -> Unit)? = null,
     onDone: (KeyboardActionScope.() -> Unit)? = null,
@@ -53,7 +54,7 @@ fun VerifiableField(
         trailingIcon = trailingIcon,
         label = { Text(text = stringResource(label)) },
         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(imeAction = if (isLast) ImeAction.Done else ImeAction.Next, keyboardType = type),
+        keyboardOptions = KeyboardOptions(imeAction = if (isLast) ImeAction.Done else ImeAction.Next, keyboardType = type, autoCorrect = autoCorrect),
         keyboardActions = KeyboardActions(onDone = onDone),
         isError = verifiableState.hasError,
         supportingText = { Text(text = verifiableState.error ?: "") }

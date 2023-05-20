@@ -48,6 +48,7 @@ import ro.bankar.banking.Currency
 import ro.bankar.model.SDirection
 import ro.bankar.model.SRecentActivity
 import ro.bankar.util.here
+import kotlin.math.abs
 
 @Composable
 fun RecentActivity(recentActivity: SRecentActivity) {
@@ -68,7 +69,8 @@ fun RecentActivity(recentActivity: SRecentActivity) {
             otherRequests.forEach {
                 TransferRequest(
                     fromName = "${it.firstName} ${it.lastName}",
-                    amount = it.amount,
+                    time = it.dateTime.toInstant(TimeZone.UTC),
+                    amount = if (it.direction == SDirection.Received) it.amount else -it.amount,
                     currency = it.currency
                 )
             }
@@ -248,18 +250,21 @@ private fun PartyInvite(fromName: String, amount: Double, currency: Currency, pl
 }
 
 @Composable
-private fun TransferRequest(fromName: String, amount: Double, currency: Currency) {
+private fun TransferRequest(fromName: String, time: Instant, amount: Double, currency: Currency) {
     RecentActivityRow(elevated = true, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.transfer_request),
             contentDescription = stringResource(R.string.transfer_request),
             color = MaterialTheme.colorScheme.tertiary,
         )
-    }, title = stringResource(R.string.request_from, fromName), subtitle = buildAnnotatedString {
-        pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
-        append(currency.format(amount))
+    }, title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s, fromName), subtitle = buildAnnotatedString {
+        if (amount > 0) {
+            pushStyle(SpanStyle(color = MaterialTheme.customColors.green))
+            append(currency.format(abs(amount)))
+        } else append(time.here().format())
     }) {
-        AcceptDeclineButtons(onAccept = {}, onDecline = {})
+        if (amount > 0) AcceptDeclineButtons(onAccept = {}, onDecline = {})
+        else Amount(amount = amount, currency = currency)
     }
 }
 

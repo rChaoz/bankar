@@ -22,6 +22,8 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
                 .orderBy(TransferRequests.dateTime to SortOrder.DESC).limit(count)
 
         fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, party: Party? = null): Boolean {
+            if (sourceAccount.spendable < amount) return false
+            sourceAccount.balance -= amount
             new {
                 sourceUser = sourceAccount.user
                 targetUser = target
@@ -58,7 +60,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      * @param user The user this transfer data will be given to, used to deduce whether this is sent/received transfer
      */
     fun serializable(user: User) =
-        serializable(if (sourceUser.id == user.id) SDirection.Received else  SDirection.Sent)
+        serializable(if (targetUser.id == user.id) SDirection.Received else SDirection.Sent)
 }
 
 fun SizedIterable<TransferRequest>.serializable(user: User) = map { it.serializable(user) }

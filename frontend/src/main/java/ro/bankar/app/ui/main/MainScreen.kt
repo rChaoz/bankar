@@ -42,7 +42,6 @@ import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,10 +52,7 @@ import androidx.constraintlayout.compose.ExperimentalMotionApi
 import androidx.constraintlayout.compose.MotionLayout
 import androidx.constraintlayout.compose.Visibility
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptions
-import androidx.navigation.Navigator
 import kotlinx.coroutines.launch
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.Nav
@@ -70,6 +66,7 @@ import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
+import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 
 val MainTabs = listOf(HomeTab)
@@ -266,18 +263,6 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                 ) {
                     it.Content(it.viewModel(), navigation)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun rememberMockNavController(): NavHostController {
-    val context = LocalContext.current
-    return remember {
-        object : NavHostController(context) {
-            override fun navigate(request: NavDeepLinkRequest, navOptions: NavOptions?, navigatorExtras: Navigator.Extras?) {
-                // do nothing
             }
         }
     }

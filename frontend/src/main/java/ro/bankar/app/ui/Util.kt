@@ -10,10 +10,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavDeepLinkRequest
+import androidx.navigation.NavHostController
+import androidx.navigation.NavOptions
+import androidx.navigation.Navigator
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.datetime.Clock
@@ -56,6 +62,8 @@ val SBankAccountType.rString
 
 fun SCountries?.nameFromCode(code: String) = this?.find { it.code == code }?.country ?: code
 
+val Double.amountColor @Composable get() = if (this < 0) MaterialTheme.customColors.red else MaterialTheme.customColors.green
+
 @Composable
 fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
     var previousScrollAmount by rememberSaveable { mutableStateOf(0) }
@@ -63,6 +71,23 @@ fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
         if (abs(state.value - previousScrollAmount) < 20) return@LaunchedEffect
         else setFABShown(state.value <= previousScrollAmount)
         previousScrollAmount = state.value
+    }
+}
+
+@Composable
+fun rememberMockNavController(): NavHostController {
+    val context = LocalContext.current
+    return remember {
+        object : NavHostController(context) {
+            override fun navigate(request: NavDeepLinkRequest, navOptions: NavOptions?, navigatorExtras: Navigator.Extras?) {
+                // do nothing
+            }
+
+            override fun popBackStack(): Boolean {
+                // do nothing
+                return false
+            }
+        }
     }
 }
 
@@ -81,4 +106,4 @@ fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
 
 // Currency formatting
 fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =
-    "${if(showPlusSign) "%+.2f" else "%.2f"}$separator%s".format(amount, this.code)
+    "${if (showPlusSign) "%+.2f" else "%.2f"}$separator%s".format(amount, this.code)

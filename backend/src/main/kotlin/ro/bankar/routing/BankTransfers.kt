@@ -1,11 +1,14 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authentication
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.BankTransfer
 import ro.bankar.database.TransferRequest
@@ -56,8 +59,10 @@ fun Route.configureBankTransfers() {
                     }
                     else {
                         // Create a transfer request
-                        TransferRequest.create(sourceAccount, targetUser, data.amount.toBigDecimal(), data.note)
-                        call.respond(HttpStatusCode.OK, StatusResponse("sent_request"))
+                        if (!TransferRequest.create(sourceAccount, targetUser, data.amount.toBigDecimal(), data.note))
+                            call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
+                        else
+                            call.respond(HttpStatusCode.OK, StatusResponse("sent_request"))
                     }
                 }
             }

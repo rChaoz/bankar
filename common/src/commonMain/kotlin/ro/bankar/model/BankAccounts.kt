@@ -18,7 +18,15 @@ data class SBankAccount(
     val name: String,
     val color: Int,
     val interest: Double,
-)
+) {
+    // Because balance goes negative, but limit is positive, e.g. limit 500, balance -200 -> remaining 300
+    /**
+     * If credit account, this is the remaining credit. Otherwise, this is equal to balance.
+     *
+     * This represent the total remaining spendable amount.
+     */
+    val spendable = limit + balance
+}
 
 @Serializable
 data class SBankAccountData(

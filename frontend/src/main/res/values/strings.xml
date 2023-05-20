@@ -156,7 +156,6 @@
     <string name="close">Close</string>
     <string name="s_account">%s account</string>
     <string name="transfer_request">Transfer request</string>
-    <string name="request_from">Request from %s</string>
     <string name="friend_profile">Friend profile</string>
     <string name="send_message">Send message</string>
     <string name="send_money">Send money</string>
@@ -168,4 +167,15 @@
     <string name="incorrect_password">Incorrect password</string>
     <string name="button_continue">Continue</string>
     <string name="nothing_here">Nothing to be seen here</string>
+    <string name="choose_account_send">Choose what account you\'d like to send money from:</string>
+    <string name="select_an_account">Select an account…</string>
+    <string name="current_balance">"Current balance: "</string>
+    <string name="remaining_credit">"Remaining credit: "</string>
+    <string name="remaining_balance">Remaining balance:</string>
+    <string name="available_credit">"Available credit: "</string>
+    <string name="error">Error</string>
+    <string name="message_too_long">Message too long</string>
+    <string name="money_sent_successfully">Money sent and have arrived in your friend\'s account!</string>
+    <string name="money_sent_request">Money send, your friend now has to accept the transfer request.</string>
+    <string name="message">Message</string>
 </resources>

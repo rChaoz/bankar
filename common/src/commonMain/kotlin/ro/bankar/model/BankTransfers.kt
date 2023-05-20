@@ -52,9 +52,13 @@ data class SSendMoney(
 
     val note: String
 ) {
+    companion object {
+        const val maxNoteLength = 200
+    }
+
     fun validate() = when {
         amount < 0 -> "amount"
-        note.length > 200 -> "note"
+        note.length > maxNoteLength -> "note"
         else -> null
     }
 }

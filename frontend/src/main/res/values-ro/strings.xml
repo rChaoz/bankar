@@ -156,7 +156,6 @@
     <string name="close">Închide</string>
     <string name="s_account">Cont de %s</string>
     <string name="transfer_request">Cerere de transfer</string>
-    <string name="request_from">Cerere de la %s</string>
     <string name="friend_profile">Profil prieten</string>
     <string name="send_message">Trimite mesaj</string>
     <string name="send_money">Trimite bani</string>
@@ -168,4 +167,15 @@
     <string name="incorrect_password">Parolă incorectă</string>
     <string name="button_continue">Continuă</string>
     <string name="nothing_here">Nimic de văzut aici</string>
+    <string name="choose_account_send">Alege din ce cont dorești să trimiți bani;</string>
+    <string name="select_an_account">Alegeți un cont…</string>
+    <string name="current_balance">"Soldul curent: "</string>
+    <string name="remaining_credit">"Credit rămas: "</string>
+    <string name="remaining_balance">Sold rămas:</string>
+    <string name="available_credit">"Credit disponibil: "</string>
+    <string name="error">Eroare</string>
+    <string name="message_too_long">Mesajul este prea lung</string>
+    <string name="money_sent_successfully">Banii au fost trimiși și au ajuns în contul prietenului tău!</string>
+    <string name="money_sent_request">Banii au fost trimiși, iar prietenul tău acum trebuie să accepte cererea de transfer.</string>
+    <string name="message">Mesaj</string>
 </resources>

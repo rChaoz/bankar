@@ -26,9 +26,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
+import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.format
-import ro.bankar.app.ui.theme.LocalCustomColors
-import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 
 @Composable
@@ -132,6 +131,6 @@ fun Amount(
         modifier = modifier.let { if (shimmer != null) it.shimmer(shimmer) else it },
         style = textStyle,
         fontWeight = fontWeight,
-        color = if (amount < 0) MaterialTheme.customColors.red else LocalCustomColors.current.green
+        color = amount.amountColor
     )
 }

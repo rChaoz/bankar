@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import kotlinx.datetime.Clock
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -40,7 +41,9 @@ import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
+import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.nameFromCode
+import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
@@ -48,10 +51,10 @@ import ro.bankar.util.todayHere
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendProfileScreen(profile: SPublicUser, onDismiss: () -> Unit) {
+fun FriendProfileScreen(profile: SPublicUser, navigation: NavHostController) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsStateRetrying()
-    NavScreen(onDismiss, title = R.string.friend_profile) {
+    NavScreen(onDismiss = { navigation.popBackStack() }, title = R.string.friend_profile) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
@@ -80,13 +83,13 @@ fun FriendProfileScreen(profile: SPublicUser, onDismiss: () -> Unit) {
                     Spacer(modifier = Modifier.height(12.dp))
                     CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(.8f)) {
-                            ProfileButton(text = R.string.send_message) {
+                            ProfileButton(onClick = {}, text = R.string.send_message) {
                                 Icon(imageVector = Icons.Default.Send, contentDescription = null, modifier = Modifier.size(28.dp))
                             }
-                            ProfileButton(text = R.string.send_money) {
+                            ProfileButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {
                                 Icon(painter = painterResource(R.drawable.transfer), contentDescription = null, modifier = Modifier.size(28.dp))
                             }
-                            ProfileButton(text = R.string.request_money) {
+                            ProfileButton(onClick = {}, text = R.string.request_money) {
                                 Icon(painter = painterResource(R.drawable.transfer_request), contentDescription = null, modifier = Modifier.size(28.dp))
                             }
                         }
@@ -145,9 +148,9 @@ fun FriendProfileScreen(profile: SPublicUser, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun RowScope.ProfileButton(text: Int, icon: @Composable () -> Unit) {
+private fun RowScope.ProfileButton(onClick: () -> Unit, text: Int, icon: @Composable () -> Unit) {
     Surface(
-        onClick = { /*TODO*/ },
+        onClick,
         shape = RoundedCornerShape(6.dp),
         modifier = Modifier.weight(1f),
         contentColor = MaterialTheme.colorScheme.primary
@@ -172,7 +175,7 @@ private fun RowScope.ProfileButton(text: Int, icon: @Composable () -> Unit) {
 private fun FriendProfileScreenPreview() {
     AppTheme {
         FriendProfileScreen(
-            onDismiss = {}, profile = SPublicUser(
+            navigation = rememberMockNavController(), profile = SPublicUser(
                 "maximus", "Andi", "Paul", "Koleci", "RO",
                 Clock.System.todayHere(), "bing chilling; iaurti!", SDirection.Sent, null
             )

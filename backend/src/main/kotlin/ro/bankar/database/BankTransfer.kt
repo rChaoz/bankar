@@ -31,7 +31,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
         }
 
         fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String): Boolean {
-            if (sourceAccount.balance < amount) return false
+            if (sourceAccount.spendable < amount) return false
             sourceAccount.balance -= amount
             targetAccount.balance += amount
             new {

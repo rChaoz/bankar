@@ -38,6 +38,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var type by BankAccounts.type
 
     var balance by BankAccounts.balance
+    val spendable get() = limit + balance
     var currency by BankAccounts.currency
     var limit by BankAccounts.limit
 
