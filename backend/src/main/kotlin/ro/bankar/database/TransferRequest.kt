@@ -25,6 +25,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
             if (sourceAccount.spendable < amount) return false
             if (amount > BigDecimal.ZERO) sourceAccount.balance -= amount
             new {
+                this.sourceAccount = sourceAccount
                 sourceUser = sourceAccount.user
                 targetUser = target
                 this.party = party
@@ -37,6 +38,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     }
 
     var sourceUser by User referencedOn TransferRequests.sourceUser
+    var sourceAccount by BankAccount referencedOn TransferRequests.sourceAccount
     var targetUser by User referencedOn TransferRequests.targetUser
 
     private val partyID by TransferRequests.party
@@ -61,12 +63,18 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable(user: User) =
         serializable(if (targetUser.id == user.id) SDirection.Received else SDirection.Sent)
+
+    override fun delete() {
+        if (amount > BigDecimal.ZERO) sourceAccount.balance += amount
+        super.delete()
+    }
 }
 
 fun SizedIterable<TransferRequest>.serializable(user: User) = map { it.serializable(user) }
 
 internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val sourceUser = reference("source_user_id", Users)
+    val sourceAccount = reference("source_account_id", BankAccounts)
     val targetUser = reference("target_user_id", Users)
 
     val note = varchar("note", 100)

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -20,9 +21,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -35,17 +42,20 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
+import ro.bankar.app.ui.main.LocalSnackBar
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
@@ -73,6 +83,7 @@ fun RecentActivity(recentActivity: SRecentActivity) {
             otherRequests.forEach {
                 if (it.direction == SDirection.Sent)
                     SentTransferRequest(
+                        id = it.id,
                         fromName = "${it.firstName} ${it.lastName}",
                         amount = it.amount,
                         currency = it.currency
@@ -201,6 +212,67 @@ private inline fun RecentActivityRow(
     RecentActivityRow(icon, title, AnnotatedString(subtitle), elevated, trailingContent)
 }
 
+@Suppress("NOTHING_TO_INLINE")
+@Composable
+private inline fun RecentActivityRow(
+    noinline onClick: () -> Unit,
+    noinline icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    elevated: Boolean = false,
+    noinline trailingContent: @Composable () -> Unit
+) {
+    RecentActivityRow(onClick, icon, title, AnnotatedString(subtitle), elevated, trailingContent)
+}
+
+@Composable
+private fun RecentActivityRowBase(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: AnnotatedString,
+    trailingContent: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        icon()
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                maxLines = 1,
+                style = MaterialTheme.typography.bodyMedium,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = subtitle,
+                color = MaterialTheme.colorScheme.outline,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        trailingContent()
+    }
+}
+
+@Composable
+private fun RecentActivityRow(
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: AnnotatedString,
+    elevated: Boolean = false,
+    trailingContent: @Composable () -> Unit
+) {
+    Surface(onClick, tonalElevation = if (elevated) 8.dp else 0.dp) {
+        RecentActivityRowBase(icon, title, subtitle, trailingContent)
+    }
+}
+
 @Composable
 private fun RecentActivityRow(
     icon: @Composable () -> Unit,
@@ -209,35 +281,8 @@ private fun RecentActivityRow(
     elevated: Boolean = false,
     trailingContent: @Composable () -> Unit
 ) {
-    Surface(
-        onClick = {},
-        tonalElevation = if (elevated) 8.dp else 0.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            icon()
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    maxLines = 1,
-                    style = MaterialTheme.typography.bodyMedium,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = subtitle,
-                    color = MaterialTheme.colorScheme.outline,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            trailingContent()
-        }
+    Surface(tonalElevation = if (elevated) 8.dp else 0.dp) {
+        RecentActivityRowBase(icon, title, subtitle, trailingContent)
     }
 }
 
@@ -260,7 +305,9 @@ private fun PartyInvite(fromName: String, amount: Double, currency: Currency, pl
 }
 
 @Composable
-private fun SentTransferRequest(fromName: String, amount: Double, currency: Currency) {
+private fun SentTransferRequest(id: Int, fromName: String, amount: Double, currency: Currency) {
+    var isLoading by remember { mutableStateOf(false) }
+
     RecentActivityRow(elevated = true, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.transfer_request),
@@ -272,12 +319,34 @@ private fun SentTransferRequest(fromName: String, amount: Double, currency: Curr
         pushStyle(SpanStyle(color = (-amount).amountColor))
         append(currency.format(abs(amount)))
     }) {
-        OutlinedButton(
-            onClick = { /* TODO */ },
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
-        ) {
-            Text(text = stringResource(android.R.string.cancel))
+        val scope = rememberCoroutineScope()
+
+        if (isLoading) CircularProgressIndicator()
+        else {
+            val repository = LocalRepository.current
+            val context = LocalContext.current
+            val snackBar = LocalSnackBar.current
+
+            OutlinedButton(
+                onClick = {
+                    isLoading = true
+                    scope.launch {
+                        when (val r = repository.sendCancelTransferRequest(id)) {
+                            is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
+                            is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
+                            is SafeStatusResponse.Success -> {
+                                repository.accounts.requestEmit()
+                                repository.recentActivity.emitNow()
+                            }
+                        }
+                        isLoading = false
+                    }
+                },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
+            ) {
+                Text(text = stringResource(android.R.string.cancel))
+            }
         }
     }
 }
@@ -301,7 +370,7 @@ private fun ReceivedTransferRequest(fromName: String, amount: Double, currency: 
 
 @Composable
 private fun Payment(title: String, time: Instant, amount: Double, currency: Currency) {
-    RecentActivityRow(icon = {
+    RecentActivityRow(onClick = {}, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.payment),
             contentDescription = stringResource(R.string.payment),
@@ -315,6 +384,7 @@ private fun Payment(title: String, time: Instant, amount: Double, currency: Curr
 @Composable
 private fun Transfer(name: String, time: Instant, amount: Double, currency: Currency) {
     RecentActivityRow(
+        onClick = {},
         icon = {
             FilledIcon(
                 painter = painterResource(R.drawable.transfer),

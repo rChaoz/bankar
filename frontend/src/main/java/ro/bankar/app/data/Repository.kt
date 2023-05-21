@@ -17,6 +17,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -37,6 +38,7 @@ import ro.bankar.model.StatusResponse
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * A Shared flow with the option to request emitting
@@ -68,7 +70,10 @@ fun <T> RequestFlow<T>.collectAsStateRetrying() = mapCollectAsStateRetrying { it
 fun <T, V> RequestFlow<T>.mapCollectAsStateRetrying(mapFunction: (T) -> V) = produceState<V?>(null) {
     collect {
         when (it) {
-            is RequestFlow.EmissionResult.Fail -> requestEmit(it.continuation)
+            is RequestFlow.EmissionResult.Fail -> {
+                delay(2.seconds)
+                requestEmit(it.continuation)
+            }
             is RequestFlow.EmissionResult.Success -> value = mapFunction(it.value)
         }
     }
@@ -76,7 +81,10 @@ fun <T, V> RequestFlow<T>.mapCollectAsStateRetrying(mapFunction: (T) -> V) = pro
 
 suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Nothing = collect {
     when (it) {
-        is RequestFlow.EmissionResult.Fail -> requestEmit(it.continuation)
+        is RequestFlow.EmissionResult.Fail -> {
+            delay(2.seconds)
+            requestEmit(it.continuation)
+        }
         is RequestFlow.EmissionResult.Success -> collector.emit(it.value)
     }
 }
@@ -109,6 +117,7 @@ abstract class Repository {
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
+    abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
@@ -174,19 +183,25 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     // Bank accounts
     override val accounts = createFlow<List<SBankAccount>>("accounts")
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
-    override suspend fun sendCreateAccount(account: SNewBankAccount) = client.safePost<StatusResponse, InvalidParamResponse>(HttpStatusCode.Created) {
+    override suspend fun sendCreateAccount(account: SNewBankAccount) =
+        client.safePost<StatusResponse, InvalidParamResponse>(HttpStatusCode.Created) {
         url("accounts/new")
         setBody(account)
     }
-    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
+    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String)
+    = client.safeRequest<StatusResponse> {
         post("transfer/send") {
             setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
         }
     }
-    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
+    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String)
+    = client.safeRequest<StatusResponse> {
         post("transfer/request") {
             setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
         }
+    }
+    override suspend fun sendCancelTransferRequest(id: Int) = client.safeGet<StatusResponse, StatusResponse> {
+        url("transfer/cancel/$id")
     }
 
     // Utility functions

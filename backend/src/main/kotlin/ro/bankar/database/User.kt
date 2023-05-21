@@ -7,14 +7,23 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SizedCollection
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
-import ro.bankar.model.*
+import ro.bankar.model.SConversation
+import ro.bankar.model.SDirection
+import ro.bankar.model.SNewUser
+import ro.bankar.model.SPublicUser
+import ro.bankar.model.SUser
 import ro.bankar.sha256
 import kotlin.time.Duration.Companion.days
 
@@ -115,7 +124,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var friends by User.via(FriendPairs.sourceUser, FriendPairs.targetUser)
     var friendRequests by User.via(FriendRequests.targetUser, FriendRequests.sourceUser)
 
-    val sendTransferRequests by TransferRequest referrersOn TransferRequests.sourceUser
+    val sentTransferRequests by TransferRequest referrersOn TransferRequests.sourceUser
     val receivedTransferRequests by TransferRequest referrersOn TransferRequests.targetUser
 
     /**

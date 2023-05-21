@@ -84,5 +84,17 @@ fun Route.configureBankTransfers() {
                 call.respond(HttpStatusCode.OK, StatusResponse("sent_request"))
             }
         }
+
+        get("cancel/{id}") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+
+            newSuspendedTransaction {
+                val request = call.parameters["id"]?.toIntOrNull()?.let { id -> user.sentTransferRequests.find { it.id.value == id } } ?: run {
+                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_id")); return@newSuspendedTransaction
+                }
+                request.delete()
+                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+            }
+        }
     }
 }
