@@ -23,7 +23,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
 
         fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, party: Party? = null): Boolean {
             if (sourceAccount.spendable < amount) return false
-            sourceAccount.balance -= amount
+            if (amount > BigDecimal.ZERO) sourceAccount.balance -= amount
             new {
                 sourceUser = sourceAccount.user
                 targetUser = target

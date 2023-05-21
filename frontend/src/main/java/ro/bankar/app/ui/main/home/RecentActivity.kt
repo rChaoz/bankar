@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.main.home
 
 import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,8 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,6 +41,7 @@ import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.collectAsStateRetrying
+import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.format
@@ -67,12 +71,18 @@ fun RecentActivity(recentActivity: SRecentActivity) {
                 )
             }
             otherRequests.forEach {
-                TransferRequest(
-                    fromName = "${it.firstName} ${it.lastName}",
-                    time = it.dateTime.toInstant(TimeZone.UTC),
-                    amount = if (it.direction == SDirection.Received) it.amount else -it.amount,
-                    currency = it.currency
-                )
+                if (it.direction == SDirection.Sent)
+                    SentTransferRequest(
+                        fromName = "${it.firstName} ${it.lastName}",
+                        amount = it.amount,
+                        currency = it.currency
+                    )
+                else
+                    ReceivedTransferRequest(
+                        fromName = "${it.firstName} ${it.lastName}",
+                        amount = it.amount,
+                        currency = it.currency
+                    )
             }
 
             // Merge display transfers and transactions
@@ -250,21 +260,42 @@ private fun PartyInvite(fromName: String, amount: Double, currency: Currency, pl
 }
 
 @Composable
-private fun TransferRequest(fromName: String, time: Instant, amount: Double, currency: Currency) {
+private fun SentTransferRequest(fromName: String, amount: Double, currency: Currency) {
     RecentActivityRow(elevated = true, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.transfer_request),
             contentDescription = stringResource(R.string.transfer_request),
             color = MaterialTheme.colorScheme.tertiary,
         )
-    }, title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s, fromName), subtitle = buildAnnotatedString {
-        if (amount > 0) {
-            pushStyle(SpanStyle(color = MaterialTheme.customColors.green))
-            append(currency.format(abs(amount)))
-        } else append(time.here().format())
+    }, title = stringResource(R.string.to_s, fromName), subtitle = buildAnnotatedString {
+        append(stringResource(if (amount > 0) R.string.sent else R.string.requesting))
+        pushStyle(SpanStyle(color = (-amount).amountColor))
+        append(currency.format(abs(amount)))
     }) {
-        if (amount > 0) AcceptDeclineButtons(onAccept = {}, onDecline = {})
-        else Amount(amount = amount, currency = currency)
+        OutlinedButton(
+            onClick = { /* TODO */ },
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
+        ) {
+            Text(text = stringResource(android.R.string.cancel))
+        }
+    }
+}
+
+@Composable
+private fun ReceivedTransferRequest(fromName: String, amount: Double, currency: Currency) {
+    RecentActivityRow(elevated = true, icon = {
+        FilledIcon(
+            painter = painterResource(R.drawable.transfer_request),
+            contentDescription = stringResource(R.string.transfer_request),
+            color = MaterialTheme.colorScheme.tertiary,
+        )
+    }, title = stringResource(R.string.from_s, fromName), subtitle = buildAnnotatedString {
+        append(stringResource(if (amount > 0) R.string.has_sent else R.string.has_requested))
+        pushStyle(SpanStyle(color = amount.amountColor))
+        append(currency.format(abs(amount)))
+    }) {
+        AcceptDeclineButtons(onAccept = {}, onDecline = {})
     }
 }
 

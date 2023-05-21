@@ -89,7 +89,7 @@ fun FriendProfileScreen(profile: SPublicUser, navigation: NavHostController) {
                             ProfileButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {
                                 Icon(painter = painterResource(R.drawable.transfer), contentDescription = null, modifier = Modifier.size(28.dp))
                             }
-                            ProfileButton(onClick = {}, text = R.string.request_money) {
+                            ProfileButton(onClick = { navigation.navigate(MainNav.RequestMoney(profile)) }, text = R.string.request_money) {
                                 Icon(painter = painterResource(R.drawable.transfer_request), contentDescription = null, modifier = Modifier.size(28.dp))
                             }
                         }

@@ -30,7 +30,7 @@ import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
-import ro.bankar.model.SSendMoney
+import ro.bankar.model.SSendRequestMoney
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
@@ -108,6 +108,7 @@ abstract class Repository {
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
+    abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
@@ -179,7 +180,12 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     }
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
         post("transfer/send") {
-            setBody(SSendMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+            setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+        }
+    }
+    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
+        post("transfer/request") {
+            setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
         }
     }
 

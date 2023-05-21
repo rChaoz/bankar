@@ -1,3 +1,5 @@
+@file:Suppress("ConstPropertyName")
+
 package ro.bankar.app.ui.main
 
 import android.net.Uri
@@ -11,19 +13,16 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ro.bankar.app.ui.main.friend.FriendProfileScreen
+import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.model.SPublicUser
 
-@Suppress("ConstPropertyName")
 private const val mainTabRoutePrefix = "mainTab"
-
-@Suppress("ConstPropertyName")
 private const val friendRoutePrefix = "friend"
-
-@Suppress("ConstPropertyName")
 private const val sendMoneyRoutePrefix = "sendMoneyTo"
+private const val requestMoneyRoutePrefix = "requestMoneyFrom"
 
 @Suppress("FunctionName")
 enum class MainNav(val route: String) {
@@ -33,7 +32,7 @@ enum class MainNav(val route: String) {
     Friends("$mainTabRoutePrefix/${FriendsTab.name}"), Home("$mainTabRoutePrefix/${HomeTab.name}"),
     NewBankAccount("createAccount"),
     // Friends
-    Friend("$friendRoutePrefix/{friend}"), SendMoney("$sendMoneyRoutePrefix/{friend}");
+    Friend("$friendRoutePrefix/{friend}"), SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}");
 
     companion object {
         const val route = "main"
@@ -44,6 +43,7 @@ enum class MainNav(val route: String) {
 
         fun Friend(user: SPublicUser) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun SendMoney(user: SPublicUser) = "$sendMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun RequestMoney(user: SPublicUser) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
     }
 }
 
@@ -67,6 +67,9 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         }
         composable(MainNav.SendMoney.route) {
             SendMoneyScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), onDismiss = controller::popBackStack)
+        }
+        composable(MainNav.RequestMoney.route) {
+            RequestMoneyScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), onDismiss = controller::popBackStack)
         }
     }
 }

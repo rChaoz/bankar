@@ -178,4 +178,10 @@
     <string name="money_sent_successfully">Money sent and have arrived in your friend\'s account!</string>
     <string name="money_sent_request">Money send, your friend now has to accept the transfer request.</string>
     <string name="message">Message</string>
+    <string name="requesting">"Requesting: "</string>
+    <string name="sent">"Sent: "</string>
+    <string name="has_sent">"Has sent: "</string>
+    <string name="has_requested">"Has requested: "</string>
+    <string name="choose_account_request">Choose into what account you\'d like to receive the money:</string>
+    <string name="request_sent">The request has been sent successfully.</string>
 </resources>

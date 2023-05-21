@@ -39,11 +39,14 @@ data class STransferRequest(
 )
 
 /**
- * Send money to another user, by tag
+ * Send or request money to/from another user, by tag
  */
 @Serializable
-data class SSendMoney(
+data class SSendRequestMoney(
     val targetTag: String,
+    /**
+     * For requesting money, this is the requesting user's account that money will go into
+     */
     val sourceAccountID: Int,
 
     val amount: Double,
@@ -57,7 +60,7 @@ data class SSendMoney(
     }
 
     fun validate() = when {
-        amount < 0 -> "amount"
+        amount <= 0 -> "amount"
         note.length > maxNoteLength -> "note"
         else -> null
     }

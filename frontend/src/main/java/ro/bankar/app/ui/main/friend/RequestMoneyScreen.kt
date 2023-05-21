@@ -10,15 +10,15 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.util.todayHere
 
 @Composable
-fun SendMoneyScreen(onDismiss: () -> Unit, user: SPublicUser) {
-    SendRequestMoneyScreenBase(onDismiss, user, requesting = false)
+fun RequestMoneyScreen(onDismiss: () -> Unit, user: SPublicUser) {
+    SendRequestMoneyScreenBase(onDismiss, user, requesting = true)
 }
 
 @Preview
 @Composable
-private fun SendMoneyScreenPreview() {
+private fun RequestMoneyScreenPreview() {
     AppTheme {
-        SendMoneyScreen(
+        RequestMoneyScreen(
             onDismiss = {}, user = SPublicUser(
                 "koleci", "Alexandru", "Paul", "Koleci",
                 "RO", Clock.System.todayHere(), "", SDirection.Sent, null
@@ -29,9 +29,9 @@ private fun SendMoneyScreenPreview() {
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun SendMoneyScreenPreviewDark() {
+private fun RequestMoneyScreenPreviewDark() {
     AppTheme {
-        SendMoneyScreen(
+        RequestMoneyScreen(
             onDismiss = {}, user = SPublicUser(
                 "koleci", "Alexandru", "Paul", "Koleci",
                 "RO", Clock.System.todayHere(), "", SDirection.Sent, null

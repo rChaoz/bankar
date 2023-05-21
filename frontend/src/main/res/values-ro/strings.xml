@@ -178,4 +178,10 @@
     <string name="money_sent_successfully">Banii au fost trimiși și au ajuns în contul prietenului tău!</string>
     <string name="money_sent_request">Banii au fost trimiși, iar prietenul tău acum trebuie să accepte cererea de transfer.</string>
     <string name="message">Mesaj</string>
+    <string name="requesting">"Solicitând: "</string>
+    <string name="sent">"Trimis: "</string>
+    <string name="has_requested">"A cerut: "</string>
+    <string name="has_sent">"A trimis: "</string>
+    <string name="choose_account_request">Alege în ce cont vrei să îți primești banii:</string>
+    <string name="request_sent">Cererea a fost trimisă cu success.</string>
 </resources>
