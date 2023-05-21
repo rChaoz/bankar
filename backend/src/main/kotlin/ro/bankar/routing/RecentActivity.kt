@@ -1,10 +1,11 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authentication
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.BankTransfer
 import ro.bankar.database.CardTransaction
@@ -24,8 +25,8 @@ fun Route.configureRecentActivity() {
             // As well as the most recent transactions
             val allCards = user.bankAccounts.flatMap { it.cards }
             val recentTransactions = CardTransaction.findRecent(allCards, count)
-            // Finally get 3 most recent transfer requests
-            val recentRequests = TransferRequest.findRecent(user, count)
+            // Finally get all pending transfer requests
+            val recentRequests = TransferRequest.findRecent(user)
             // Serialize all data
             SRecentActivity(recentTransfers.serializable(user), recentTransactions.serializable(), recentRequests.serializable(user))
         })

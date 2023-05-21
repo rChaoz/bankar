@@ -17,9 +17,9 @@ import java.math.BigDecimal
 
 class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<TransferRequest>(TransferRequests) {
-        fun findRecent(user: User, count: Int) =
+        fun findRecent(user: User) =
             find { (TransferRequests.sourceUser eq user.id) or (TransferRequests.targetUser eq user.id) }
-                .orderBy(TransferRequests.dateTime to SortOrder.DESC).limit(count)
+                .orderBy(TransferRequests.dateTime to SortOrder.DESC)
 
         fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, party: Party? = null): Boolean {
             if (sourceAccount.spendable < amount) return false
