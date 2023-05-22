@@ -1,6 +1,7 @@
 package ro.bankar.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCreditData
 
@@ -25,7 +26,7 @@ data class SBankAccount(
      *
      * This represent the total remaining spendable amount.
      */
-    val spendable = limit + balance
+    @Transient val spendable = limit + balance
 }
 
 @Serializable

@@ -19,6 +19,7 @@ import ro.bankar.database.User
 import ro.bankar.database.serializable
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SSendRequestMoney
+import ro.bankar.model.SSocketNotification
 import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
 
@@ -64,15 +65,19 @@ fun Route.configureBankTransfers() {
                 if (targetUser in sourceAccount.user.friends && targetAccount != null) {
                     if (!BankTransfer.transfer(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
                         call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
-                    else
+                    else {
+                        sendNotificationToUser(targetUser.id, SSocketNotification.STransferNotification)
                         call.respond(HttpStatusCode.OK, StatusResponse("sent"))
+                    }
                 }
                 else {
                     // Create a transfer request
                     if (!TransferRequest.create(sourceAccount, targetUser, data.amount.toBigDecimal(), data.note))
                         call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
-                    else
+                    else {
+                        sendNotificationToUser(targetUser.id, SSocketNotification.SRecentActivityNotification)
                         call.respond(HttpStatusCode.OK, StatusResponse("sent_request"))
+                    }
                 }
             }
         }
@@ -92,7 +97,9 @@ fun Route.configureBankTransfers() {
                 val request = call.parameters["id"]?.toIntOrNull()?.let { id -> user.sentTransferRequests.find { it.id.value == id } } ?: run {
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_id")); return@newSuspendedTransaction
                 }
+                val userID = request.targetUser.id
                 request.delete()
+                sendNotificationToUser(userID, SSocketNotification.SRecentActivityNotification)
                 call.respond(HttpStatusCode.OK, StatusResponse.Success)
             }
         }

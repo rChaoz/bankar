@@ -1,9 +1,12 @@
 package ro.bankar.app.data
 
 import androidx.compose.runtime.compositionLocalOf
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -25,6 +28,7 @@ import ro.bankar.model.SDirection
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
+import ro.bankar.model.SSocketNotification
 import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserMessage
@@ -56,6 +60,14 @@ private object MockRepository : Repository() {
 
     private fun <Result, Fail> mockStatusResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)
     private fun <Result> mockResponse() = SafeResponse.InternalError<Result>(R.string.connection_error)
+
+    // TODO If socket is ever used - change this to some mock version so it doesn't crash
+    override lateinit var socket: DefaultClientWebSocketSession
+    override val socketFlow = MutableSharedFlow<SSocketNotification>().asSharedFlow()
+    override suspend fun openAndMaintainSocket() {
+        // do nothing
+    }
+
 
     override val countryData = mockFlow<SCountries>(emptyList())
     override suspend fun sendCheckPassword(password: String) = mockStatusResponse<StatusResponse, StatusResponse>()

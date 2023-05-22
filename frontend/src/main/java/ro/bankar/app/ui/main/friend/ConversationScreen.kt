@@ -52,6 +52,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import ro.bankar.app.R
@@ -66,6 +67,7 @@ import ro.bankar.model.SConversation
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SSendMessage
+import ro.bankar.model.SSocketNotification
 import ro.bankar.util.todayHere
 import kotlin.time.Duration.Companion.seconds
 
@@ -105,17 +107,26 @@ fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUser) {
     val repository = LocalRepository.current
     model.repository = repository
     LaunchedEffect(key1 = true) {
-        repository.conversation(user.tag).also {
-            model.conversationFlow = it
-            it.requestEmit()
-        }.collectRetrying {
-            // Check what messages are new
-            val newMessages = it.take(it.size - (model.conversation?.size ?: 0))
-            model.conversation = it
-            // Remove new messages from pending messages list
-            val sentMessages = model.sentMessages.toMutableList()
-            for (message in newMessages) if (message.direction == SDirection.Sent) sentMessages.remove(message.message)
-            model.sentMessages = sentMessages
+        // Get messages
+        launch {
+            repository.conversation(user.tag).also {
+                model.conversationFlow = it
+                it.requestEmit()
+            }.collectRetrying {
+                // Check what messages are new
+                val newMessages = it.take(it.size - (model.conversation?.size ?: 0))
+                model.conversation = it
+                // Remove new messages from pending messages list
+                val sentMessages = model.sentMessages.toMutableList()
+                for (message in newMessages) if (message.direction == SDirection.Sent) sentMessages.remove(message.message)
+                model.sentMessages = sentMessages
+            }
+        }
+        // When a new message is received, re-get messages
+        launch {
+            repository.socketFlow.filter { it is SSocketNotification.SMessageNotification && it.fromTag == user.tag }.collect {
+                model.conversationFlow.requestEmit()
+            }
         }
     }
 

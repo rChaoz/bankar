@@ -13,6 +13,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,6 +100,13 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                             }
                     }
                 } ?: EmptyRepository
+            }
+
+            // Open web socket
+            LaunchedEffect(true) {
+                lifecycleScope.launch {
+                    repository.openAndMaintainSocket()
+                }
             }
 
             // Track user inactivity

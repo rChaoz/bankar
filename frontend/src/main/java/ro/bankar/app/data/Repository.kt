@@ -6,6 +6,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.receiveDeserialized
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -15,14 +19,17 @@ import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
@@ -34,6 +41,7 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSendRequestMoney
+import ro.bankar.model.SSocketNotification
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
@@ -96,9 +104,15 @@ suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Not
 fun repository(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onSessionExpire)
 
 abstract class Repository {
+    // WebSocket for transmitting live data
+    abstract val socket: DefaultClientWebSocketSession
+    abstract val socketFlow: Flow<SSocketNotification>
+    abstract suspend fun openAndMaintainSocket()
+
     // Country data & password check
     abstract val countryData: RequestFlow<SCountries>
     abstract suspend fun sendCheckPassword(password: String): SafeStatusResponse<StatusResponse, StatusResponse>
+
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
@@ -124,7 +138,6 @@ abstract class Repository {
     abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
 
 
-
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
         countryData.requestEmit()
@@ -148,6 +161,48 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         install(ContentNegotiation) {
             json()
         }
+        install(WebSockets) {
+            pingInterval = 15_000L
+            maxFrameSize = Int.MAX_VALUE.toLong()
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        }
+    }
+
+    // WebSocket
+    override lateinit var socket: DefaultClientWebSocketSession
+        private set
+    private val socketMutableFlow = MutableSharedFlow<SSocketNotification>()
+    override val socketFlow = socketMutableFlow.asSharedFlow()
+
+    override suspend fun openAndMaintainSocket() {
+        while (true) {
+            try {
+                client.webSocket(request = {
+                    url(path = "socket") { setSocketProtocol() }
+                }) {
+                    socket = this
+                    while (true) {
+                        val data = receiveDeserialized<SSocketNotification>()
+                        socketMutableFlow.emit(data)
+                        when (data) {
+                            SSocketNotification.STransferNotification -> {
+                                recentActivity.requestEmit()
+                                accounts.requestEmit()
+                            }
+                            SSocketNotification.SFriendNotification -> {
+                                friends.requestEmit()
+                                friendRequests.requestEmit()
+                            }
+                            SSocketNotification.SRecentActivityNotification -> recentActivity.emitNow()
+                            else -> socketMutableFlow.emit(data)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            delay(5.seconds)
+        }
     }
 
     // Country data & password check
@@ -156,6 +211,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         url("verifyPassword")
         setBody(SPasswordData(password))
     }
+
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeStatusRequest<StatusResponse, InvalidParamResponse> {
@@ -198,21 +254,23 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
     override suspend fun sendCreateAccount(account: SNewBankAccount) =
         client.safePost<StatusResponse, InvalidParamResponse>(HttpStatusCode.Created) {
-        url("accounts/new")
-        setBody(account)
-    }
-    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String)
-    = client.safeRequest<StatusResponse> {
+            url("accounts/new")
+            setBody(account)
+        }
+
+    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
         post("transfer/send") {
             setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
         }
     }
-    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String)
-    = client.safeRequest<StatusResponse> {
-        post("transfer/request") {
-            setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+
+    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) =
+        client.safeRequest<StatusResponse> {
+            post("transfer/request") {
+                setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+            }
         }
-    }
+
     override suspend fun sendCancelTransferRequest(id: Int) = client.safeGet<StatusResponse, StatusResponse> {
         url("transfer/cancel/$id")
     }

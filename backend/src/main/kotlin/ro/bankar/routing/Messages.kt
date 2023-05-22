@@ -9,7 +9,6 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.ktor.server.websocket.sendSerialized
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.User
 import ro.bankar.database.serializable
@@ -34,6 +33,8 @@ fun Route.configureUserMessaging() {
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
                 else {
                     user.sendMessage(recipient, request.message.trim())
+                    // Notify recipient if he is connected
+                    sendNotificationToUser(recipient.id, SSocketNotification.SMessageNotification(user.tag))
                     call.respond(HttpStatusCode.OK, StatusResponse.Success)
                 }
             }
