@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
@@ -22,8 +23,8 @@ class UserMessage(id: EntityID<Int>) : IntEntity(id) {
 
         fun getConversationBetween(user: User, otherUser: User) = with(UserMessages) {
             find {
-                (sourceUser eq user.id) and (targetUser eq otherUser.id) or (targetUser eq user.id) and (sourceUser eq otherUser.id)
-            }
+                ((sourceUser eq user.id) and (targetUser eq otherUser.id)) or ((targetUser eq user.id) and (sourceUser eq otherUser.id))
+            }.orderBy(dateTime to SortOrder.DESC)
         }
     }
 
@@ -36,7 +37,7 @@ class UserMessage(id: EntityID<Int>) : IntEntity(id) {
     fun serializable(direction: SDirection) = SUserMessage(direction, message, dateTime)
 }
 
-fun SizedIterable<UserMessage>.serializable(user: User) = map { it.serializable(if (it.sourceUser == user) SDirection.Sent else SDirection.Received) }
+fun SizedIterable<UserMessage>.serializable(user: User) = map { it.serializable(if (it.sourceUser.id == user.id) SDirection.Sent else SDirection.Received) }
 
 internal object UserMessages : IntIdTable() {
     val sourceUser = reference("source_user_id", Users.id)

@@ -26,11 +26,13 @@ import kotlinx.coroutines.launch
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
+import ro.bankar.model.SConversation
 import ro.bankar.model.SCountries
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPasswordData
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
+import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSendRequestMoney
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
@@ -106,6 +108,8 @@ abstract class Repository {
     abstract val friendRequests: RequestFlow<List<SPublicUser>>
     abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract suspend fun sendCancelFriendRequest(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract fun conversation(tag: String): RequestFlow<SConversation>
+    abstract suspend fun sendFriendMessage(recipientTag: String, message: String): SafeStatusResponse<StatusResponse, StatusResponse>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -118,6 +122,8 @@ abstract class Repository {
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
+
+
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
@@ -175,6 +181,13 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     override suspend fun sendCancelFriendRequest(tag: String) = client.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/cancel/$tag")
     }
+
+    override fun conversation(tag: String) = createFlow<SConversation>("messaging/conversation/$tag")
+    override suspend fun sendFriendMessage(recipientTag: String, message: String) = client.safePost<StatusResponse, StatusResponse> {
+        url("messaging/send")
+        setBody(SSendMessage(message, recipientTag))
+    }
+
 
     // Recent activity
     override val recentActivity = createFlow<SRecentActivity>("recent")

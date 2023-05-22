@@ -184,4 +184,8 @@
     <string name="has_sent">"A trimis: "</string>
     <string name="choose_account_request">Alege în ce cont vrei să îți primești banii:</string>
     <string name="request_sent">Cererea a fost trimisă cu success.</string>
+    <string name="sending">Se trimite…</string>
+    <string name="failed_to_send_message">Eroare la trimiterea mesajului. Se reîncearcă…</string>
+    <string name="send">Trimite</string>
+    <string name="type_a_message">Scrie un mesaj…</string>
 </resources>

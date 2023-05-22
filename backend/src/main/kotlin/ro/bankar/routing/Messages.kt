@@ -9,10 +9,13 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.server.websocket.sendSerialized
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.User
+import ro.bankar.database.serializable
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SSendMessage
+import ro.bankar.model.SSocketNotification
 import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
 
@@ -44,7 +47,7 @@ fun Route.configureUserMessaging() {
                 val otherUser = User.findByTag(tag)
                 if (otherUser == null || otherUser !in user.friends)
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
-                else call.respond(HttpStatusCode.OK, user.getSerializableConversationWith(otherUser))
+                else call.respond(HttpStatusCode.OK, user.getConversationWith(otherUser).serializable(user))
             }
         }
     }

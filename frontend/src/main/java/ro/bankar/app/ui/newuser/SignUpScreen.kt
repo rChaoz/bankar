@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -679,9 +680,9 @@ private fun PersonalInformationStep(model: SignUpModel) {
         Icon(imageVector = Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.layoutId("iconAddress"))
 
         // Fields
-        VerifiableField(model.firstName, label = R.string.first_name, type = KeyboardType.Text, id = "firstName")
-        VerifiableField(model.middleName, label = R.string.middle_name, type = KeyboardType.Text, id = "middleName")
-        VerifiableField(model.lastName, label = R.string.last_name, type = KeyboardType.Text, id = "lastName")
+        VerifiableField(model.firstName, label = R.string.first_name, type = KeyboardType.Text, id = "firstName", capitalization = KeyboardCapitalization.Words)
+        VerifiableField(model.middleName, label = R.string.middle_name, type = KeyboardType.Text, id = "middleName", capitalization = KeyboardCapitalization.Words)
+        VerifiableField(model.lastName, label = R.string.last_name, type = KeyboardType.Text, id = "lastName", capitalization = KeyboardCapitalization.Words)
         ButtonField(
             value = model.dateOfBirth.value.format(true),
             onClick = { datePickerDialog.show() },
@@ -713,8 +714,9 @@ private fun PersonalInformationStep(model: SignUpModel) {
             outlined = true,
             supportingText = "",
         )
-        VerifiableField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city")
-        VerifiableField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address", multiLine = true, isLast = true)
+        VerifiableField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city", capitalization = KeyboardCapitalization.Words)
+        VerifiableField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address",
+            multiLine = true, capitalization = KeyboardCapitalization.Sentences, isLast = true)
 
         // Button
         val focusManager = LocalFocusManager.current

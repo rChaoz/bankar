@@ -83,7 +83,7 @@ fun FriendProfileScreen(profile: SPublicUser, navigation: NavHostController) {
                     Spacer(modifier = Modifier.height(12.dp))
                     CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(.8f)) {
-                            ProfileButton(onClick = {}, text = R.string.send_message) {
+                            ProfileButton(onClick = { navigation.navigate(MainNav.Conversation(profile)) }, text = R.string.send_message) {
                                 Icon(imageVector = Icons.Default.Send, contentDescription = null, modifier = Modifier.size(28.dp))
                             }
                             ProfileButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {

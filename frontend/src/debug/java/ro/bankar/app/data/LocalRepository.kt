@@ -8,6 +8,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import ro.bankar.app.R
@@ -18,6 +19,7 @@ import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
+import ro.bankar.model.SConversation
 import ro.bankar.model.SCountries
 import ro.bankar.model.SDirection
 import ro.bankar.model.SNewBankAccount
@@ -25,10 +27,12 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
+import ro.bankar.model.SUserMessage
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
 import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
+import ro.bankar.util.todayHere
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
@@ -107,8 +111,34 @@ private object MockRepository : Repository() {
             )
         )
     )
-
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override fun conversation(tag: String): RequestFlow<SConversation> {
+        val today = Clock.System.todayHere()
+        val yesterday = today - DatePeriod(days = 1)
+        return mockFlow(listOf(
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+            SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+
+            SUserMessage(SDirection.Received, "hello!", yesterday.atTime(17, 25)),
+            SUserMessage(SDirection.Sent, "no.", yesterday.atTime(18, 50)),
+
+
+            SUserMessage(SDirection.Received, "Hello again!", today.atTime(12, 41)),
+            SUserMessage(SDirection.Sent, "I see you learned how to capitalize the 'H' in 'Hello'. That's acceptable." +
+                    "How are you? Also this a pretty long message, for no apparent reason.", today.atTime(12, 44)),
+            SUserMessage(SDirection.Sent, "Also I forgot to say I hate you", today.atTime(12, 44, 30)),
+            SUserMessage(SDirection.Received, ":(", today.atTime(12, 45)),
+            SUserMessage(SDirection.Received, "u mean", today.atTime(12, 45, 10)),
+            SUserMessage(SDirection.Sent, "unlucky.", today.atTime(15, 0))
+        ).reversed())
+    }
+    override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     private val mockRecentActivity = SRecentActivity(
         listOf(
@@ -162,7 +192,6 @@ private object MockRepository : Repository() {
     )
 
     override suspend fun sendCreateAccount(account: SNewBankAccount) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
-
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendCancelTransferRequest(id: Int) = mockStatusResponse<StatusResponse, StatusResponse>()

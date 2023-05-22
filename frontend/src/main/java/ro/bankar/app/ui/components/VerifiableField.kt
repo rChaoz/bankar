@@ -16,6 +16,7 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -37,6 +38,7 @@ fun VerifiableField(
     isLast: Boolean = false,
     trailingIcon: (@Composable () -> Unit)? = null,
     onDone: (KeyboardActionScope.() -> Unit)? = null,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     multiLine: Boolean = false,
 ) {
     val context = LocalContext.current
@@ -54,7 +56,12 @@ fun VerifiableField(
         trailingIcon = trailingIcon,
         label = { Text(text = stringResource(label)) },
         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(imeAction = if (isLast) ImeAction.Done else ImeAction.Next, keyboardType = type, autoCorrect = autoCorrect),
+        keyboardOptions = KeyboardOptions(
+            imeAction = if (isLast) ImeAction.Done else ImeAction.Next,
+            keyboardType = type,
+            autoCorrect = autoCorrect,
+            capitalization = capitalization
+        ),
         keyboardActions = KeyboardActions(onDone = onDone),
         isError = verifiableState.hasError,
         supportingText = { Text(text = verifiableState.error ?: "") }

@@ -11,16 +11,16 @@ data class SUserMessage(
     val dateTime: LocalDateTime
 )
 
-@Serializable
-data class SConversation(
-    val user: SPublicUser,
-    val messages: List<SUserMessage>
-)
+typealias SConversation = List<SUserMessage>
 
 @Serializable
 data class SSendMessage(
     val message: String,
     val recipientTag: String
 ) {
-    fun validate() = if (message.length > 500) "message" else null
+    companion object {
+        const val maxLength = 500
+    }
+
+    fun validate() = if (message.length > maxLength) "message" else null
 }

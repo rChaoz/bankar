@@ -19,7 +19,6 @@ import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
-import ro.bankar.model.SConversation
 import ro.bankar.model.SDirection
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPublicUser
@@ -198,15 +197,6 @@ class User(id: EntityID<Int>) : IntEntity(id) {
      * Returns the conversation with another user
      */
     fun getConversationWith(otherUser: User) = UserMessage.getConversationBetween(this, otherUser)
-
-    /**
-     * Returns the serializable format of the conversation with another user
-     */
-    fun getSerializableConversationWith(otherUser: User) =
-        SConversation(
-            otherUser.publicSerializable(SDirection.Sent),
-            getConversationWith(otherUser).serializable(this)
-        )
 
     /**
      * Returns a serializable user

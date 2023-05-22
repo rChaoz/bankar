@@ -184,4 +184,8 @@
     <string name="has_requested">"Has requested: "</string>
     <string name="choose_account_request">Choose into what account you\'d like to receive the money:</string>
     <string name="request_sent">The request has been sent successfully.</string>
+    <string name="sending">Sending…</string>
+    <string name="failed_to_send_message">Failed to send message. Retrying…</string>
+    <string name="send">Send</string>
+    <string name="type_a_message">Type a message…</string>
 </resources>
