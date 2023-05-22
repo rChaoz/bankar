@@ -27,8 +27,8 @@ import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SCountries
-import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SPasswordData
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSendRequestMoney
@@ -148,7 +148,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     override val countryData = createFlow<SCountries>("data/countries.json")
     override suspend fun sendCheckPassword(password: String) = client.safePost<StatusResponse, StatusResponse> {
         url("verifyPassword")
-        setBody(SInitialLoginData("", password))
+        setBody(SPasswordData(password))
     }
     // User profile & friends
     override val profile = createFlow<SUser>("profile")

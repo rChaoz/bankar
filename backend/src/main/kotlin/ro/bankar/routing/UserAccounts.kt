@@ -27,6 +27,7 @@ import ro.bankar.generateNumeric
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewUser
+import ro.bankar.model.SPasswordData
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation
 import ro.bankar.model.StatusResponse
@@ -178,10 +179,22 @@ fun Route.configureUserAccounts() {
 
         post("verifyPassword") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
-            val data = call.receive<SInitialLoginData>()
+            val data = call.receive<SPasswordData>()
             newSuspendedTransaction {
                 if (user.verifyPassword(data.password)) call.respond(HttpStatusCode.OK, StatusResponse.Success)
                 else call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect"))
+            }
+        }
+
+        post("disable") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val data = call.receive<SPasswordData>()
+            newSuspendedTransaction {
+                if (user.verifyPassword(data.password)) {
+                    // Sign out and disable
+                    user.disable()
+                    call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                } else call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect"))
             }
         }
     }

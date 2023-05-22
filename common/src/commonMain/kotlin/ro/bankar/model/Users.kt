@@ -201,6 +201,11 @@ data class SInitialLoginData(
     val password: String,
 )
 
+@Serializable
+data class SPasswordData(
+    val password: String
+)
+
 /**
  * Data sent by client to complete login/signup operation
  */

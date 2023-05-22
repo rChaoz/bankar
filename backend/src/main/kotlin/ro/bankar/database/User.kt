@@ -157,6 +157,14 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     }
 
     /**
+     * Sign out and disable this account
+     */
+    fun disable() {
+        clearSession()
+        disabled = true
+    }
+
+    /**
      * Adds an incoming friends request for this user, from target user
      */
     fun addFriendRequest(from: User) = FriendRequests.insert {
