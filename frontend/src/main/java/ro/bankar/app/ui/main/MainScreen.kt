@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -112,6 +113,7 @@ fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
 @Composable
 private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (MainTab<*>) -> Unit, navigation: NavHostController) {
     val tabModel = tab.viewModel()
+    BackHandler(enabled = tab != HomeTab) { setTab(HomeTab) }
 
     val snackBar = remember { SnackbarHostState() }
     val profileImage by LocalRepository.current.profile.mapCollectAsStateRetrying { it.avatar ?: NoImage }

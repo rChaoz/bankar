@@ -1,4 +1,4 @@
-package ro.bankar.model
+package ro.bankar.banking
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

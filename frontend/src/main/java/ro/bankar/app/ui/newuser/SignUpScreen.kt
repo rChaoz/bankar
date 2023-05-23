@@ -119,9 +119,9 @@ import ro.bankar.app.ui.format
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.SCountries
+import ro.bankar.banking.SCountry
 import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.SCountries
-import ro.bankar.model.SCountry
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation

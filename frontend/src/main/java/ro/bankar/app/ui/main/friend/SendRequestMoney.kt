@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +17,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -38,7 +36,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -52,7 +49,6 @@ import com.maxkeppeler.sheets.state.models.State
 import com.maxkeppeler.sheets.state.models.StateConfig
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
-import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ro.bankar.app.R
@@ -61,7 +57,7 @@ import ro.bankar.app.data.Repository
 import ro.bankar.app.data.SafeResponse
 import ro.bankar.app.data.collectRetrying
 import ro.bankar.app.ui.amountColor
-import ro.bankar.app.ui.components.ComboBox
+import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
@@ -78,7 +74,7 @@ import kotlin.math.min
 
 class SendRequestMoneyModel : ViewModel() {
     var accounts by mutableStateOf<List<SBankAccount>?>(null)
-    var selectedAccount by mutableStateOf<SBankAccount?>(null)
+    var selectedAccount = mutableStateOf<SBankAccount?>(null)
     var amount by mutableStateOf("0")
     var note = verifiableStateOf("", R.string.message_too_long) { it.trim().length <= SSendRequestMoney.maxNoteLength }
 
@@ -86,11 +82,12 @@ class SendRequestMoneyModel : ViewModel() {
 
     var result by mutableStateOf<Int?>(null)
     lateinit var onDismiss: () -> Unit
-    var resultState by mutableStateOf(UseCaseState(onDismissRequest = { onDismiss() }))
+    var resultState = UseCaseState(onDismissRequest = { onDismiss() })
+    var noAccountsState = UseCaseState(onDismissRequest = { onDismiss() })
 
     fun onSend(context: Context, snackBar: SnackbarHostState, recipient: String, repository: Repository, requesting: Boolean) {
         note.check(context)
-        val account = selectedAccount
+        val account = selectedAccount.value
         if (!note.verified || account == null) return
         val amount = amount.toDoubleOrNull()
         if (amount == null) {
@@ -139,13 +136,22 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUser, request
     LaunchedEffect(key1 = true) {
         repository.accounts.collectRetrying {
             model.accounts = it
-            if (model.selectedAccount == null) model.selectedAccount = it.firstOrNull()
+            if (it.isEmpty()) model.noAccountsState.show()
+            if (model.selectedAccount.value == null) model.selectedAccount.value = it.firstOrNull()
         }
     }
 
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
-    val textMod = if (model.accounts == null) Modifier.shimmer(shimmer) else Modifier
     val snackBar = remember { SnackbarHostState() }
+
+    // No accounts dialog
+    StateDialog(state = model.noAccountsState, config = StateConfig(State.Failure(labelText = stringResource(R.string.no_accounts_send_receive), postView = {
+        TextButton(
+            onClick = onDismiss
+        ) {
+            Text(text = stringResource(android.R.string.ok))
+        }
+    })), properties = DialogProperties())
 
     // Result dialog
     StateDialog(state = model.resultState, config = StateConfig(State.Success(labelText = model.result?.let { stringResource(it) }, postView = {
@@ -164,40 +170,16 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUser, request
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(text = stringResource(if (requesting) R.string.choose_account_request else R.string.choose_account_send), modifier = textMod)
-            val accounts = model.accounts
-            if (accounts == null) Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .grayShimmer(shimmer)
+            AccountsComboBox(
+                selectedAccount = model.selectedAccount,
+                accounts = model.accounts,
+                pickText = if (requesting) R.string.choose_account_request else R.string.choose_account_send,
+                showBalance = true,
+                showNoAccountsFound = true
             )
-            else ComboBox(
-                selectedItemText = model.selectedAccount?.name ?: stringResource(R.string.select_an_account),
-                onSelectItem = { model.selectedAccount = it },
-                items = accounts,
-                fillWidth = true
-            ) { item, onClick ->
-                DropdownMenuItem(text = {
-                    Column {
-                        Text(text = item.name, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            text = item.currency.format(item.balance),
-                            color = item.balance.amountColor,
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }, onClick)
-            }
-            val account = model.selectedAccount
-            if (account != null) {
-                Row {
-                    Text(text = stringResource(if (account.type == SBankAccountType.Credit) R.string.available_credit else R.string.current_balance))
-                    Text(text = account.currency.format(account.spendable), color = MaterialTheme.customColors.green, fontWeight = FontWeight.Medium)
-                }
-            }
             Spacer(modifier = Modifier.height(40.dp))
             // Centered text field
+            val account = model.selectedAccount.value
             if (account != null) Column {
                 BasicTextField(
                     value = model.amount,
@@ -245,18 +227,16 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUser, request
                     Text(text = account.currency.code, modifier = Modifier.padding(6.dp), style = MaterialTheme.typography.headlineSmall)
                 }
             }
-            else Column {
+            else Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
                         .size(200.dp, 50.dp)
-                        .align(Alignment.CenterHorizontally)
                         .grayShimmer(shimmer)
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Box(
                     modifier = Modifier
                         .size(120.dp, 40.dp)
-                        .align(Alignment.CenterHorizontally)
                         .grayShimmer(shimmer)
                 )
             }
@@ -285,7 +265,7 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUser, request
             val context = LocalContext.current
             Button(
                 onClick = { model.onSend(context, snackBar, user.tag, repository, requesting) },
-                enabled = account != null && model.amount.toDoubleOrNull()?.let { it > 0 && it <= account.spendable } ?: false,
+                enabled = account != null && model.amount.toDoubleOrNull()?.let { it > 0 && (requesting || it <= account.spendable) } ?: false,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(text = stringResource(if (requesting) R.string.request_money else R.string.send_money))

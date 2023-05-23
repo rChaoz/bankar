@@ -11,6 +11,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -28,22 +30,20 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalTime
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import ro.bankar.app.R
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
+import ro.bankar.banking.SCountries
 import ro.bankar.model.SBankAccountType
-import ro.bankar.model.SCountries
 import ro.bankar.util.todayHere
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
-
-inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
-    decodeFromString<T>(string)
-} catch (_: Exception) {
-    null
-}
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
 
@@ -107,3 +107,24 @@ fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
 // Currency formatting
 fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =
     "${if (showPlusSign) "%+.2f" else "%.2f"}$separator%s".format(amount, this.code)
+
+
+// Serialization helpers
+inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
+    decodeFromString<T>(string)
+} catch (_: Exception) {
+    null
+}
+
+/**
+ * Saver for kotlinx.serialization.Serializable classes
+ */
+class SerializableSaver<T>(private val serializer: KSerializer<T>) : Saver<T, String> {
+    override fun restore(value: String) = runCatching { Json.decodeFromString(serializer, value) }.getOrNull()
+    override fun SaverScope.save(value: T) = Json.encodeToString(serializer, value)
+}
+
+/**
+ * Obtains a saver for a type. The type must be a class annotated with [@Serializable][Serializable].
+ */
+inline fun <reified T> serializableSaver() = SerializableSaver(serializer<T>())

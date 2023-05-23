@@ -16,6 +16,8 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.banking.Currency
+import ro.bankar.banking.SCountries
+import ro.bankar.banking.SExchangeData
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
@@ -23,7 +25,6 @@ import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SConversation
-import ro.bankar.model.SCountries
 import ro.bankar.model.SDirection
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
@@ -48,7 +49,6 @@ val EmptyRepository: Repository = MockRepository
 
 @Suppress("SpellCheckingInspection")
 private object MockRepository : Repository() {
-
     @OptIn(DelicateCoroutinesApi::class)
     private fun <T> mockFlow(value: T) = object : RequestFlow<T>(GlobalScope) {
         override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
@@ -70,6 +70,11 @@ private object MockRepository : Repository() {
 
 
     override val countryData = mockFlow<SCountries>(emptyList())
+    override val exchangeData: RequestFlow<SExchangeData> = mockFlow(mapOf(
+        Currency.EURO to listOf(Currency.ROMANIAN_LEU to 4.91, Currency.US_DOLLAR to 1.05),
+        Currency.ROMANIAN_LEU to listOf(Currency.US_DOLLAR to 0.21, Currency.EURO to 0.20),
+        Currency.US_DOLLAR to listOf(Currency.ROMANIAN_LEU to 4.55, Currency.EURO to 0.91),
+    ))
     override suspend fun sendCheckPassword(password: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     override val profile = mockFlow(
@@ -92,22 +97,20 @@ private object MockRepository : Repository() {
     )
 
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
-    override val friends = mockFlow(
-        listOf(
-            SPublicUser(
-                "bombasticus", "Bomba", "Maximus", "Extremus", "RO",
-                LocalDate(1969, 6, 9), "straight up dead ngl", SDirection.Sent, null
-            ),
-            SPublicUser(
-                "koleci.alexandru", "Andi", null, "Koleci", "AL",
-                LocalDate(2001, 2, 15), "", SDirection.Sent, null
-            ),
-            SPublicUser(
-                "chad.gpt", "Chad", "Thundercock", "GPT", "DE",
-                Clock.System.todayIn(TimeZone.UTC), "not your business", SDirection.Sent, null
-            )
-        )
+
+    private val bombasticus = SPublicUser(
+        "bombasticus", "Bomba", "Maximus", "Extremus", "RO",
+        LocalDate(1969, 6, 9), "straight up dead ngl", SDirection.Sent, null
     )
+    private val koleci = SPublicUser(
+        "koleci.alexandru", "Andi", null, "Koleci", "AL",
+        LocalDate(2001, 2, 15), "", SDirection.Sent, null
+    )
+    private val chadGPT = SPublicUser(
+        "chad.gpt", "Chad", "Thundercock", "GPT", "DE",
+        Clock.System.todayIn(TimeZone.UTC), "not your business", SDirection.Sent, null
+    )
+    override val friends = mockFlow(listOf(bombasticus, koleci, chadGPT))
 
     override suspend fun sendAddFriend(id: String) = mockStatusResponse<StatusResponse, StatusResponse>()
     override suspend fun sendRemoveFriend(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
@@ -155,12 +158,12 @@ private object MockRepository : Repository() {
     private val mockRecentActivity = SRecentActivity(
         listOf(
             SBankTransfer(
-                SDirection.Received, "Koleci 1", "testIBAN",
-                25.215, Currency.EURO, "ia bani", Clock.System.nowHere()
+                SDirection.Received, 1, koleci, "Koleci 1", "test_iban",
+                25.215, null, Currency.EURO, Currency.EURO, "ia bani", Clock.System.nowHere()
             ),
             SBankTransfer(
-                SDirection.Sent, "Koleci 2", "testIBAN!!",
-                15.0, Currency.US_DOLLAR, "nu, ia tu bani :3", Clock.System.nowHere()
+                SDirection.Sent, 1, koleci, "Koleci 2", "testIBAN!!",
+                15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", Clock.System.nowHere()
             ),
         ),
         listOf(
@@ -171,11 +174,11 @@ private object MockRepository : Repository() {
         ),
         listOf(
             STransferRequest(
-                0, SDirection.Received, "Big", "Boy", "Long-Nameus Whatsapp",
+                0, SDirection.Received,  bombasticus,
                 50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
             ),
             STransferRequest(
-                1, SDirection.Received, "Gimme", null, "Cash",
+                1, SDirection.Received, chadGPT,
                 12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
             )
         ),
@@ -207,6 +210,7 @@ private object MockRepository : Repository() {
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendCancelTransferRequest(id: Int) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     init {
         init()

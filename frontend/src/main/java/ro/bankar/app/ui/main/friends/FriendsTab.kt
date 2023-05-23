@@ -52,8 +52,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -77,8 +75,6 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -90,16 +86,16 @@ import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.SurfaceList
-import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackBar
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
+import ro.bankar.app.ui.main.friend.FriendCard
 import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.nameFromCode
-import ro.bankar.app.ui.safeDecodeFromString
+import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.SCountries
+import ro.bankar.banking.SCountries
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import kotlin.math.absoluteValue
@@ -356,40 +352,19 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
     }
 
-    object SPublicUserSaver : Saver<SPublicUser?, String> {
-        override fun restore(value: String): SPublicUser? = Json.safeDecodeFromString(value)
-        override fun SaverScope.save(value: SPublicUser?) = if (value != null) Json.encodeToString(value) else null
-    }
-
     object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
 
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             // Show information about friend request
-            val (requestInfo, setRequestInfo) = rememberSaveable(stateSaver = SPublicUserSaver) { mutableStateOf(null) }
+            val (requestInfo, setRequestInfo) = rememberSaveable(stateSaver = serializableSaver<SPublicUser?>()) { mutableStateOf(null) }
 
             requestInfo?.let {
                 val sheetState = rememberModalBottomSheetState()
                 ModalBottomSheet(onDismissRequest = { setRequestInfo(null) }, sheetState = sheetState) {
                     Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(horizontal = 12.dp)) {
-                            Avatar(image = it.avatar)
-                            Column {
-                                Text(text = it.fullName, style = MaterialTheme.typography.titleLarge)
-                                Text(
-                                    text = "@${it.tag}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = "${model.countryData.nameFromCode(it.countryCode)}\n" +
-                                            stringResource(R.string.joined_on, it.joinDate.format(true)),
-                                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.outline
-                                )
-                            }
-                        }
+                        FriendCard(friend = it, country = model.countryData.nameFromCode(it.countryCode), modifier = Modifier.padding(horizontal = 12.dp))
                         if (it.about.isNotEmpty()) {
                             Surface(
                                 modifier = Modifier

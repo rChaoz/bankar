@@ -57,7 +57,7 @@ fun FriendScreen(
                         Icon(imageVector = Icons.Default.AccountCircle, contentDescription = stringResource(R.string.avatar), modifier = Modifier.size(48.dp))
                     else
                         AsyncImage(model = user.avatar, contentDescription = stringResource(R.string.avatar), modifier = Modifier
-                            .size(32.dp)
+                            .size(48.dp)
                             .clip(CircleShape))
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {

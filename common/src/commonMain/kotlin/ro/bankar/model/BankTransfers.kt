@@ -10,12 +10,23 @@ enum class SDirection { Sent, Received }
 @Serializable
 data class SBankTransfer(
     val direction: SDirection,
+    val accountID: Int,
 
+    val user: SPublicUser?,
     val fullName: String,
     val iban: String,
 
     val amount: Double,
+    /**
+     * If this transfer was exchanged on arrival, this represent the amount that was received by the recipient, and [amount] represents the amount that was sent.
+     */
+    val exchangedAmount: Double?,
     val currency: Currency,
+    /**
+     * If the transfer was exchanged on arrival ([exchangedAmount]` != null`), this will be the currency of the destination account.
+     * Otherwise, this will be the same as [currency].
+     */
+    val exchangedCurrency: Currency,
     val note: String,
 
     val dateTime: LocalDateTime,
@@ -26,9 +37,7 @@ data class STransferRequest(
     val id: Int,
     val direction: SDirection,
 
-    val firstName: String,
-    val middleName: String?,
-    val lastName: String,
+    val user: SPublicUser,
 
     val amount: Double,
     val currency: Currency,
@@ -65,12 +74,3 @@ data class SSendRequestMoney(
         else -> null
     }
 }
-
-/**
- * Accept the money received into the specified account
- */
-@Serializable
-data class SAcceptMoney(
-    val transferRequestID: Int,
-    val accountID: Int
-)

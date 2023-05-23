@@ -121,6 +121,7 @@ fun Amount(
     amount: Double,
     currency: Currency,
     modifier: Modifier = Modifier,
+    color: Color = amount.amountColor,
     withPlusSign: Boolean = false,
     textStyle: TextStyle = MaterialTheme.typography.titleMedium,
     fontWeight: FontWeight = FontWeight.Medium,
@@ -131,6 +132,6 @@ fun Amount(
         modifier = modifier.let { if (shimmer != null) it.shimmer(shimmer) else it },
         style = textStyle,
         fontWeight = fontWeight,
-        color = amount.amountColor
+        color = color
     )
 }

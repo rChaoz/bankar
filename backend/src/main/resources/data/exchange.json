@@ -1,0 +1,32 @@
+{
+  "EUR": [
+    {
+      "first": "RON",
+      "second": 4.91
+    },
+    {
+      "first": "USD",
+      "second": 1.05
+    }
+  ],
+  "RON": [
+    {
+      "first": "USD",
+      "second": 0.21
+    },
+    {
+      "first": "EUR",
+      "second": 0.20
+    }
+  ],
+  "USD": [
+    {
+      "first": "RON",
+      "second": 4.55
+    },
+    {
+      "first": "EUR",
+      "second": 0.91
+    }
+  ]
+}

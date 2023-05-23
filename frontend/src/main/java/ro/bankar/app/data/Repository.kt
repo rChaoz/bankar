@@ -12,6 +12,7 @@ import io.ktor.client.plugins.websocket.receiveDeserialized
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -30,11 +31,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import ro.bankar.banking.SCountries
+import ro.bankar.banking.SExchangeData
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SConversation
-import ro.bankar.model.SCountries
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPasswordData
 import ro.bankar.model.SPublicUser
@@ -45,6 +47,7 @@ import ro.bankar.model.SSocketNotification
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -58,7 +61,9 @@ abstract class RequestFlow<T> protected constructor(
     protected val flow: MutableSharedFlow<EmissionResult<T>> = MutableSharedFlow(replay = 1)
 ) : SharedFlow<RequestFlow.EmissionResult<T>> by flow.asSharedFlow() {
     sealed class EmissionResult<T> {
-        class Fail<T>(val continuation: Continuation<Unit>?) : EmissionResult<T>()
+        class Fail<T>(val continuation: Continuation<Unit>?) : EmissionResult<T>() {
+            val hasRetried = AtomicBoolean(false)
+        }
         class Success<T>(val value: T) : EmissionResult<T>()
     }
 
@@ -82,7 +87,7 @@ fun <T, V> RequestFlow<T>.mapCollectAsStateRetrying(mapFunction: (T) -> V) = pro
         when (it) {
             is RequestFlow.EmissionResult.Fail -> {
                 delay(2.seconds)
-                requestEmit(it.continuation)
+                if (it.hasRetried.compareAndSet(false, true)) requestEmit(it.continuation)
             }
             is RequestFlow.EmissionResult.Success -> value = mapFunction(it.value)
         }
@@ -93,7 +98,7 @@ suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Not
     when (it) {
         is RequestFlow.EmissionResult.Fail -> {
             delay(2.seconds)
-            requestEmit(it.continuation)
+            if (it.hasRetried.compareAndSet(false, true)) requestEmit(it.continuation)
         }
         is RequestFlow.EmissionResult.Success -> collector.emit(it.value)
     }
@@ -109,8 +114,9 @@ abstract class Repository {
     abstract val socketFlow: Flow<SSocketNotification>
     abstract suspend fun openAndMaintainSocket()
 
-    // Country data & password check
+    // Static data & password check
     abstract val countryData: RequestFlow<SCountries>
+    abstract val exchangeData: RequestFlow<SExchangeData>
     abstract suspend fun sendCheckPassword(password: String): SafeStatusResponse<StatusResponse, StatusResponse>
 
     // User profile & friends
@@ -136,11 +142,13 @@ abstract class Repository {
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): SafeStatusResponse<StatusResponse, StatusResponse>
 
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
         countryData.requestEmit()
+        exchangeData.requestEmit()
         // Home page (and profile)
         profile.requestEmit()
         accounts.requestEmit()
@@ -205,8 +213,9 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         }
     }
 
-    // Country data & password check
+    // Static data & password check
     override val countryData = createFlow<SCountries>("data/countries.json")
+    override val exchangeData = createFlow<SExchangeData>("data/exchange.json")
     override suspend fun sendCheckPassword(password: String) = client.safePost<StatusResponse, StatusResponse> {
         url("verifyPassword")
         setBody(SPasswordData(password))
@@ -273,6 +282,13 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
 
     override suspend fun sendCancelTransferRequest(id: Int) = client.safeGet<StatusResponse, StatusResponse> {
         url("transfer/cancel/$id")
+    }
+
+    override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = client.safeGet<StatusResponse, StatusResponse> {
+        url(path = "transfer/respond/$id") {
+            parameter("action", if (accept) "accept" else "decline")
+            parameter("accountID", sourceAccountID)
+        }
     }
 
     // Utility functions

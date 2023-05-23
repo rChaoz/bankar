@@ -188,4 +188,13 @@
     <string name="failed_to_send_message">Eroare la trimiterea mesajului. Se reîncearcă…</string>
     <string name="send">Trimite</string>
     <string name="type_a_message">Scrie un mesaj…</string>
+    <string name="no_accounts_send_receive">Nu ai niciun cont bancar încă. Deschide un cont bancar pentru a putea trimite și primi bani.</string>
+    <string name="no_bank_accounts_found">Nu a fost găsit niciun cont bancar</string>
+    <string name="conversion_rate">"Rata de conversie: "</string>
+    <string name="you_will_receive">"Vei primi: "</string>
+    <string name="you_will_send">"Vei trimite: "</string>
+    <string name="exchange_not_available">Schimbul valutar din %s în %s nu este disponibil.</string>
+    <string name="no_accounts_found">Nu s-a găsit niciun cont</string>
+    <string name="balance_after_receiving">Sold după primire:</string>
+    <string name="credit_after_receiving">"Credit disponibil după primire: "</string>
 </resources>

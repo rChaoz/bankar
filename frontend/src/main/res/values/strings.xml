@@ -188,4 +188,13 @@
     <string name="failed_to_send_message">Failed to send message. Retrying…</string>
     <string name="send">Send</string>
     <string name="type_a_message">Type a message…</string>
+    <string name="no_accounts_send_receive">You don\'t have any bank accounts yet. Open a bank account to be able to send and receive money.</string>
+    <string name="no_bank_accounts_found">No bank accounts found</string>
+    <string name="conversion_rate">"Conversion rate: "</string>
+    <string name="you_will_receive">"You will receive: "</string>
+    <string name="you_will_send">"You will send: "</string>
+    <string name="exchange_not_available">Exchange is not available from %s to %s.</string>
+    <string name="no_accounts_found">No accounts found</string>
+    <string name="balance_after_receiving">Balance after receiving:</string>
+    <string name="credit_after_receiving">"Available credit after receiving: "</string>
 </resources>

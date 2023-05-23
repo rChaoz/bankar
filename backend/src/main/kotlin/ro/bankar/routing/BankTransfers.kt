@@ -91,6 +91,38 @@ fun Route.configureBankTransfers() {
             }
         }
 
+        get("respond/{id}") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val accept = when (call.request.queryParameters["action"]) {
+                "accept" -> true
+                "decline" -> false
+                else -> {
+                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_action"))
+                    return@get
+                }
+            }
+            val accountID = call.request.queryParameters["accountID"]?.toIntOrNull()
+
+            newSuspendedTransaction {
+                val request = call.parameters["id"]?.toIntOrNull()?.let { id -> user.receivedTransferRequests.find { it.id.value == id } } ?: run {
+                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_id")); return@newSuspendedTransaction
+                }
+                val otherAccount = user.bankAccounts.find { it.id.value == accountID }
+                if (accept && otherAccount == null) {
+                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_account")); return@newSuspendedTransaction
+                }
+                // Handle the request
+                val sourceUserID = request.sourceUser.id
+                if (accept) {
+                    if (otherAccount!!.currency != request.sourceAccount.currency) request.acceptExchanging(otherAccount)
+                    else request.accept(otherAccount)
+                } else request.decline()
+                sendNotificationToUser(sourceUserID, SSocketNotification.STransferNotification)
+
+                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+            }
+        }
+
         get("cancel/{id}") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
 

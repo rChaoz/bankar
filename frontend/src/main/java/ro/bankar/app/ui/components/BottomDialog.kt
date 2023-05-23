@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -42,7 +41,9 @@ fun BottomDialog(
             Surface(
                 shadowElevation = 3.dp,
                 tonalElevation = 1.dp,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 36.dp),
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 36.dp)
+                    .clickable(enabled = false) {}, // prevent clicks from reaching parent
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column {
@@ -67,15 +68,13 @@ fun BottomDialog(
 ) {
     BottomDialog(visible, onDismissRequest, properties, buttonBar = {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceAround
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = onDismissRequest) {
+            TextButton(onClick = onDismissRequest, modifier = Modifier.weight(1f)) {
                 Text(text = stringResource(android.R.string.cancel))
             }
-            Button(onClick = onConfirmButtonClick, enabled = confirmButtonEnabled) {
+            Button(onClick = onConfirmButtonClick, modifier = Modifier.weight(1f), enabled = confirmButtonEnabled) {
                 Text(text = stringResource(confirmButtonText))
             }
         }

@@ -92,8 +92,8 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
                 verticalArrangement = Arrangement.spacedBy(32.dp)
             ) {
                 val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
-                if (model.recentActivity == null) RecentActivityShimmer(shimmer)
-                else RecentActivity(model.recentActivity!!)
+                if (model.recentActivity == null || model.accounts == null) RecentActivityShimmer(shimmer)
+                else RecentActivity(model.recentActivity!!, model.accounts!!)
 
                 if (model.accounts == null) {
                     BankAccountShimmer(shimmer)
