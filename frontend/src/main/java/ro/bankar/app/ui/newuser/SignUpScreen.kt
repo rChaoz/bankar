@@ -747,7 +747,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
                 items = model.countries!!, modifier = Modifier.width(110.dp), dropdownItemGenerator = { item, onClick ->
                     DropdownMenuItem(text = {
                         Column {
-                            Text(text = item.country, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                            Text(text = item.country, style = MaterialTheme.typography.labelMedium)
                             Text(text = item.dialCode)
                         }
                     }, onClick)

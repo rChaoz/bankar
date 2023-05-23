@@ -363,7 +363,6 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
 
     object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
 
-
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {

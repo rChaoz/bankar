@@ -103,7 +103,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             }
 
             // Open web socket
-            LaunchedEffect(true) {
+            LaunchedEffect(repository, lifecycleScope) {
                 lifecycleScope.launch {
                     repository.openAndMaintainSocket()
                 }

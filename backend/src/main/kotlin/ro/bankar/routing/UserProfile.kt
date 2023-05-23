@@ -1,10 +1,10 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authentication
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.put
@@ -19,6 +19,7 @@ import ro.bankar.database.User
 import ro.bankar.database.serializable
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SDirection
+import ro.bankar.model.SSocketNotification
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
@@ -48,6 +49,7 @@ fun Route.configureUserProfiles() {
                         // Send friend request if it doesn't already exist
                         if (otherUser.friendRequests.none { it.id == user.id }) {
                             otherUser.addFriendRequest(user)
+                            sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
                             call.respond(HttpStatusCode.OK, StatusResponse.Success)
                         } else {
                             // Else, notify the user
@@ -66,6 +68,7 @@ fun Route.configureUserProfiles() {
                     else {
                         user.removeFriend(otherUser)
                         otherUser.removeFriend(user)
+                        sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
                         call.respond(HttpStatusCode.OK, StatusResponse.Success)
                     }
                 }
@@ -102,6 +105,7 @@ fun Route.configureUserProfiles() {
                         if (otherUser == null) call.respond(HttpStatusCode.NotFound, StatusResponse("request_not_found"))
                         else {
                             otherUser.friendRequests = SizedCollection(otherUser.friendRequests.filter { it.id != user.id })
+                            sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
                             call.respond(HttpStatusCode.OK, StatusResponse.Success)
                         }
                         return@t
@@ -113,6 +117,7 @@ fun Route.configureUserProfiles() {
                     }
                     // Delete this friend request
                     user.friendRequests = SizedCollection(user.friendRequests.filter { it.id != otherUser.id })
+                    sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
 
                     // If user wants to accept request, for each user add the other as friend
                     if (action == "accept") {

@@ -86,6 +86,7 @@ fun Route.configureBankTransfers() {
             sendRequestMoneyBase { sourceAccount, targetUser, data ->
                 // Create a transfer request
                 TransferRequest.create(sourceAccount, targetUser, (-data.amount).toBigDecimal(), data.note)
+                sendNotificationToUser(targetUser.id, SSocketNotification.STransferNotification)
                 call.respond(HttpStatusCode.OK, StatusResponse("sent_request"))
             }
         }
