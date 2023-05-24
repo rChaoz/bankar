@@ -5,7 +5,6 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import ro.bankar.amount
 
 class AssetAccount(id: EntityID<Int>) : IntEntity(id) {
     @Serializable
@@ -23,6 +22,6 @@ internal object AssetAccounts : IntIdTable() {
 
     val user = reference("user_id", Users)
     val type = enumeration<AssetAccount.Type>("type")
-    val balance = amount("balance")
+    val balance = decimal("balance", 30, 10)
     val asset = varchar("asset", 7)
 }
