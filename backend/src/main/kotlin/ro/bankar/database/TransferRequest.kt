@@ -80,11 +80,6 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable(user: User) =
         serializable(if (targetUser.id == user.id) SDirection.Received else SDirection.Sent)
-
-    override fun delete() {
-        if (amount > BigDecimal.ZERO) sourceAccount.balance += amount
-        super.delete()
-    }
 }
 
 fun SizedIterable<TransferRequest>.serializable(user: User) = map { it.serializable(user) }
@@ -96,6 +91,6 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
 
     val note = varchar("note", 100)
     val party = reference("party", Parties).nullable().default(null)
-    val amount = amount("amount")
+    val amount = amount("amount").check("amount_check") { it greater BigDecimal.ZERO }
     val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)
 }

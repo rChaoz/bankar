@@ -95,10 +95,10 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
                 } else {
                     // Calculate amount that is needed to be exchanged in order to obtain requested amount
                     val exchanged = EXCHANGE_DATA.reverseExchange(otherAccount.currency, request.sourceAccount.currency, -request.amount) ?: return false
-                    if (exchanged < otherAccount.spendable) return false
+                    if (otherAccount.spendable < exchanged) return false
                     otherAccount.balance -= exchanged
-                    request.sourceAccount.balance += request.amount
-                    saveTransfer(otherAccount, request.sourceAccount, exchanged, request.amount)
+                    request.sourceAccount.balance += -request.amount
+                    saveTransfer(otherAccount, request.sourceAccount, exchanged, -request.amount)
                 }
             }
             return true
@@ -145,8 +145,8 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
     val recipientName = varchar("recipient_name", 50)
     val recipientIban = varchar("recipient_iban", 34)
 
-    val amount = amount("amount")
-    val exchangedAmount = amount("exchanged_amount").nullable()
+    val amount = amount("amount").check("amount_positive") { it greater BigDecimal.ZERO }
+    val exchangedAmount = amount("exchanged_amount").check("exchanged_amount_positive") { it greater BigDecimal.ZERO }.nullable()
     val currency = currency("currency")
     val note = varchar("note", 200)
     val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)

@@ -14,6 +14,7 @@ import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SNewBankAccount
+import java.math.BigDecimal
 
 class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankAccount>(BankAccounts) {
@@ -77,8 +78,8 @@ internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     }
     val userID = reference("user_id", Users)
     val type = enumeration<SBankAccountType>("type")
-    val balance = amount("balance").default(0.0.toBigDecimal())
-    val limit = amount("limit").default(0.0.toBigDecimal())
+    val balance = amount("balance").default(BigDecimal.ZERO)
+    val limit = amount("limit").default(BigDecimal.ZERO)
     val currency = currency("currency")
 
     val name = varchar("name", 30)

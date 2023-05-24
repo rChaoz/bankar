@@ -114,8 +114,13 @@ fun Route.configureBankTransfers() {
                 // Handle the request
                 val sourceUserID = request.sourceUser.id
                 if (accept) {
-                    if (otherAccount!!.currency != request.sourceAccount.currency) request.acceptExchanging(otherAccount)
-                    else request.accept(otherAccount)
+                    val result =
+                        if (otherAccount!!.currency != request.sourceAccount.currency) request.acceptExchanging(otherAccount)
+                        else request.accept(otherAccount)
+                    if (!result) {
+                        call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
+                        return@newSuspendedTransaction
+                    }
                 } else request.decline()
                 sendNotificationToUser(sourceUserID, SSocketNotification.STransferNotification)
 

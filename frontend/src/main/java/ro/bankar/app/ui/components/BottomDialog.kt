@@ -43,7 +43,7 @@ fun BottomDialog(
                 tonalElevation = 1.dp,
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 36.dp)
-                    .clickable(enabled = false) {}, // prevent clicks from reaching parent
+                    .clickable(remember { MutableInteractionSource() }, null) {}, // prevent clicks from reaching parent
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column {

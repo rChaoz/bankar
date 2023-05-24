@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -161,8 +163,12 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
             while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
                 if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime < transactions[transactionI].dateTime)) {
                     val transfer = transfers[transferI++]
-                    val amount = if (transfer.direction == SDirection.Sent) -transfer.amount else transfer.amount
-                    Transfer(name = transfer.fullName, time = transfer.dateTime.toInstant(TimeZone.UTC), amount = amount, currency = transfer.currency)
+                    Transfer(
+                        name = transfer.fullName,
+                        time = transfer.dateTime.toInstant(TimeZone.UTC),
+                        amount = if (transfer.direction == SDirection.Sent) -transfer.amount else (transfer.exchangedAmount ?: transfer.amount),
+                        currency = if (transfer.direction == SDirection.Sent) transfer.currency else transfer.exchangedCurrency
+                    )
                 } else {
                     val transaction = transactions[transactionI++]
                     Payment(
@@ -473,7 +479,8 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                     Text(text = stringResource(R.string.decline))
                 }
 
-                Button(enabled = !showLoading && selectedAccount.value != null && exchangeRate != null, onClick = {
+                Button(enabled = !showLoading && selectedAccount.value != null && exchangedAmount != null
+                        && (exchangedAmount!! <= selectedAccount.value!!.spendable || request.amount > 0), onClick = {
                     scope.launch {
                         val account = selectedAccount.value ?: return@launch
                         isLoading = true
@@ -498,11 +505,17 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
         },
     ) {
         LoadingOverlay(showLoading) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 12.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Surface(
                     modifier = Modifier
                         .padding(12.dp)
-                        .fillMaxWidth(), shape = RoundedCornerShape(8.dp), tonalElevation = 1.dp
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    tonalElevation = 4.dp
                 ) {
                     FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
                 }
@@ -518,7 +531,7 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                     Amount(
                         amount = request.amount.absoluteValue,
                         currency = request.currency,
-                        textStyle = MaterialTheme.typography.headlineMedium,
+                        textStyle = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         withPlusSign = request.amount > 0,
                         color = request.amount.amountColor
@@ -532,17 +545,18 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                         pickText = if (request.amount > 0) R.string.choose_account_request else R.string.choose_account_send,
                         showBalance = true
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     val selectedCurrency = selectedAccount.value?.currency ?: Currency.EURO
                     AnimatedVisibility(visible = selectedAccount.value != null && selectedCurrency != request.currency) {
                         val rate = exchangeRate
 
                         Column {
+                            Divider(modifier = Modifier.padding(vertical = 12.dp))
+
                             val fromCurrency = if (request.amount > 0) request.currency else selectedCurrency
                             val toCurrency = if (request.amount > 0) selectedCurrency else request.currency
                             if (rate == null || exchangedAmount == null) Text(
-                                text = stringResource(R.string.exchange_not_available, fromCurrency, toCurrency)
+                                text = stringResource(R.string.exchange_not_available, fromCurrency, toCurrency),
+                                style = MaterialTheme.typography.labelMedium
                             )
                             else {
                                 Row {
@@ -559,7 +573,7 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                                         style = MaterialTheme.typography.labelMedium
                                     )
                                     Text(
-                                        text = toCurrency.format(exchangedAmount ?: 0.0),
+                                        text = selectedCurrency.format(exchangedAmount ?: 0.0),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = request.amount.amountColor
@@ -567,9 +581,9 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                            Row {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 val account = selectedAccount.value
                                 Text(
                                     text = stringResource(
