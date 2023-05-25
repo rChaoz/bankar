@@ -26,8 +26,11 @@ import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SConversation
 import ro.bankar.model.SDirection
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSocketNotification
 import ro.bankar.model.STransferRequest
@@ -70,11 +73,14 @@ private object MockRepository : Repository() {
 
 
     override val countryData = mockFlow<SCountries>(emptyList())
-    override val exchangeData: RequestFlow<SExchangeData> = mockFlow(mapOf(
-        Currency.EURO to listOf(Currency.ROMANIAN_LEU to 4.91, Currency.US_DOLLAR to 1.05),
-        Currency.ROMANIAN_LEU to listOf(Currency.US_DOLLAR to 0.21, Currency.EURO to 0.20),
-        Currency.US_DOLLAR to listOf(Currency.ROMANIAN_LEU to 4.55, Currency.EURO to 0.91),
-    ))
+    override val exchangeData: RequestFlow<SExchangeData> = mockFlow(
+        mapOf(
+            Currency.EURO to listOf(Currency.ROMANIAN_LEU to 4.91, Currency.US_DOLLAR to 1.05),
+            Currency.ROMANIAN_LEU to listOf(Currency.US_DOLLAR to 0.21, Currency.EURO to 0.20),
+            Currency.US_DOLLAR to listOf(Currency.ROMANIAN_LEU to 4.55, Currency.EURO to 0.91),
+        )
+    )
+
     override suspend fun sendCheckPassword(password: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     override val profile = mockFlow(
@@ -100,59 +106,76 @@ private object MockRepository : Repository() {
 
     private val bombasticus = SPublicUser(
         "bombasticus", "Bomba", "Maximus", "Extremus", "RO",
-        LocalDate(1969, 6, 9), "straight up dead ngl", SDirection.Sent, null
+        LocalDate(1969, 6, 9), "straight up dead ngl", null, true
     )
     private val koleci = SPublicUser(
         "koleci.alexandru", "Andi", null, "Koleci", "AL",
-        LocalDate(2001, 2, 15), "", SDirection.Sent, null
+        LocalDate(2001, 2, 15), "", null, true
     )
     private val chadGPT = SPublicUser(
         "chad.gpt", "Chad", "Thundercock", "GPT", "DE",
-        Clock.System.todayIn(TimeZone.UTC), "not your business", SDirection.Sent, null
+        Clock.System.todayIn(TimeZone.UTC), "not your business", null, true
     )
-    override val friends = mockFlow(listOf(bombasticus, koleci, chadGPT))
+
+    private fun SPublicUserBase.friend(lastMessage: String?, unreadCount: Int) =
+        SFriend(tag, firstName, middleName, lastName, countryCode, joinDate, about, avatar,
+            lastMessage?.let { SUserMessage(SDirection.Received, it, Clock.System.nowUTC()) }, unreadCount)
+
+    override val friends = mockFlow(
+        listOf(
+            bombasticus.friend(null, 0),
+            koleci.friend("sall", 1),
+            chadGPT.friend("please respond", 99)
+        )
+    )
 
     override suspend fun sendAddFriend(id: String) = mockStatusResponse<StatusResponse, StatusResponse>()
     override suspend fun sendRemoveFriend(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
     override val friendRequests = mockFlow(
         listOf(
-            SPublicUser(
+            SFriendRequest(
                 "not.a.scammer", "Your", "Computer", "Virus", "NL",
-                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "hello your computer has wirus", SDirection.Received, null
+                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "hello your computer has wirus", null, SDirection.Received
             ),
-            SPublicUser(
+            SFriendRequest(
                 "mary.poppins", "Marry", null, "Poppins", "RO",
-                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 25), "Poppin'", SDirection.Sent, null
+                Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 25), "Poppin'", null, SDirection.Sent
             )
         )
     )
+
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockStatusResponse<StatusResponse, StatusResponse>()
     override fun conversation(tag: String): RequestFlow<SConversation> {
         val today = Clock.System.todayHere()
         val yesterday = today - DatePeriod(days = 1)
-        return mockFlow(listOf(
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
-            SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+        return mockFlow(
+            listOf(
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
 
-            SUserMessage(SDirection.Received, "hello!", yesterday.atTime(17, 25)),
-            SUserMessage(SDirection.Sent, "no.", yesterday.atTime(18, 50)),
+                SUserMessage(SDirection.Received, "hello!", yesterday.atTime(17, 25)),
+                SUserMessage(SDirection.Sent, "no.", yesterday.atTime(18, 50)),
 
 
-            SUserMessage(SDirection.Received, "Hello again!", today.atTime(12, 41)),
-            SUserMessage(SDirection.Sent, "I see you learned how to capitalize the 'H' in 'Hello'. That's acceptable." +
-                    "How are you? Also this a pretty long message, for no apparent reason.", today.atTime(12, 44)),
-            SUserMessage(SDirection.Sent, "Also I forgot to say I hate you", today.atTime(12, 44, 30)),
-            SUserMessage(SDirection.Received, ":(", today.atTime(12, 45)),
-            SUserMessage(SDirection.Received, "u mean", today.atTime(12, 45, 10)),
-            SUserMessage(SDirection.Sent, "unlucky.", today.atTime(15, 0))
-        ).reversed())
+                SUserMessage(SDirection.Received, "Hello again!", today.atTime(12, 41)),
+                SUserMessage(
+                    SDirection.Sent, "I see you learned how to capitalize the 'H' in 'Hello'. That's acceptable." +
+                            "How are you? Also this a pretty long message, for no apparent reason.", today.atTime(12, 44)
+                ),
+                SUserMessage(SDirection.Sent, "Also I forgot to say I hate you", today.atTime(12, 44, 30)),
+                SUserMessage(SDirection.Received, ":(", today.atTime(12, 45)),
+                SUserMessage(SDirection.Received, "u mean", today.atTime(12, 45, 10)),
+                SUserMessage(SDirection.Sent, "unlucky.", today.atTime(15, 0))
+            ).reversed()
+        )
     }
+
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     private val mockRecentActivity = SRecentActivity(
@@ -174,7 +197,7 @@ private object MockRepository : Repository() {
         ),
         listOf(
             STransferRequest(
-                0, SDirection.Received,  bombasticus,
+                0, SDirection.Received, bombasticus,
                 50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
             ),
             STransferRequest(

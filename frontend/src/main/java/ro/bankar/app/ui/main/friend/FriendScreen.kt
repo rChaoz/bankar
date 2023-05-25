@@ -33,14 +33,14 @@ import kotlinx.datetime.Clock
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 import ro.bankar.util.todayHere
 
 @Composable
 fun FriendScreen(
     onDismiss: () -> Unit,
-    user: SPublicUser,
+    user: SPublicUserBase,
     bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
@@ -86,7 +86,7 @@ private fun FriendScreenPreview() {
     AppTheme {
         FriendScreen(onDismiss = {}, user = SPublicUser(
             "koleci", "Alexandru", "Paul", "Koleci",
-            "RO", Clock.System.todayHere(), "", SDirection.Sent, null
+            "RO", Clock.System.todayHere(), "", null, true
         )) {
             Text(text = "Test content")
         }
@@ -99,7 +99,7 @@ private fun FriendScreenPreviewDark() {
     AppTheme {
         FriendScreen(onDismiss = {}, user = SPublicUser(
             "chaoz", "Matei", "Paul", "Trandafir",
-            "RO", Clock.System.todayHere(), "", SDirection.Sent, null
+            "RO", Clock.System.todayHere(), "", null, true
         )) {
             Text(text = "Test content")
         }

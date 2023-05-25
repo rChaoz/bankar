@@ -46,7 +46,7 @@ object SUserValidation {
 /**
  * Common data shared between all serializable User classes
  */
-sealed class SPublicUserBase {
+sealed class SCommonUserBase {
     abstract val tag: String
 
     abstract val firstName: String
@@ -74,7 +74,7 @@ sealed class SPublicUserBase {
 /**
  * Common data shared between SNewUser and SUser
  */
-sealed class SUserBase : SPublicUserBase() {
+sealed class SUserBase : SCommonUserBase() {
     abstract val email: String
     abstract val phone: String
 
@@ -168,9 +168,20 @@ class SUserProfileUpdate(
     }
 }
 
+@Serializable
+sealed class SPublicUserBase: SCommonUserBase() {
+    abstract val joinDate: LocalDate
+    abstract val about: String
+    /**
+     * JPEG compressed image
+     */
+    abstract val avatar: ByteArray?
+
+    // No validate because this type is never sent by the client
+}
+
 /**
- * Data a user receives about other users that have accepted being added as friends,
- * as well as about users that have sent friend requests to them
+ * Data a user receives about other non-friended users, such as users that have sent transfer requests
  */
 @Serializable
 class SPublicUser(
@@ -181,17 +192,50 @@ class SPublicUser(
     override val lastName: String,
 
     override val countryCode: String,
-    val joinDate: LocalDate,
-    val about: String,
-    /**
-     * Only makes sense for friend requests; whether this is an outbound/inbound request
-     */
-    val requestDirection: SDirection,
-    /**
-     * JPEG compressed image
-     */
-    val avatar: ByteArray?
-) : SPublicUserBase() // No validate because this type is never sent by the client
+    override val joinDate: LocalDate,
+    override val about: String,
+    override val avatar: ByteArray?,
+
+    // True if this user is in the user's friend list
+    val isFriend: Boolean
+) : SPublicUserBase()
+
+@Serializable
+class SFriendRequest(
+    override val tag: String,
+
+    override val firstName: String,
+    override val middleName: String?,
+    override val lastName: String,
+
+    override val countryCode: String,
+    override val joinDate: LocalDate,
+    override val about: String,
+    override val avatar: ByteArray?,
+
+    val direction: SDirection
+): SPublicUserBase()
+
+/**
+ * Data a user receives about a friend
+ */
+@Serializable
+class SFriend(
+    override val tag: String,
+
+    override val firstName: String,
+    override val middleName: String?,
+    override val lastName: String,
+
+    override val countryCode: String,
+    override val joinDate: LocalDate,
+    override val about: String,
+    override val avatar: ByteArray?,
+
+    // Information about chatting, to provide message count badges and more
+    val lastMessage: SUserMessage?,
+    val unreadMessageCount: Int,
+): SPublicUserBase()
 
 /**
  * Data sent by client to login

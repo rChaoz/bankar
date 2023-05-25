@@ -1,5 +1,6 @@
 package ro.bankar.database
 
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -7,7 +8,6 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
@@ -16,6 +16,7 @@ import ro.bankar.banking.reverseExchange
 import ro.bankar.currency
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SDirection
+import ro.bankar.util.nowUTC
 import java.math.BigDecimal
 
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
@@ -119,11 +120,13 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var note by BankTransfers.note
     var dateTime by BankTransfers.dateTime
 
-    fun serializable(direction: SDirection): SBankTransfer {
+    fun serializable(direction: SDirection?): SBankTransfer {
+        // If direction is null, sender == recipient, so it doesn't matter which one we take
         val bankAccount = if (direction == SDirection.Sent) sender!! else recipient!!
+        val otherAccount = if (direction == SDirection.Sent) recipient else sender
         return SBankTransfer(
             direction, bankAccount.id.value,
-            (if (direction == SDirection.Sent) recipient else sender)?.user?.publicSerializable(direction),
+            otherAccount?.user?.publicSerializable(otherAccount.user.hasFriend(bankAccount.user)),
             if (direction == SDirection.Sent) recipientName else senderName,
             if (direction == SDirection.Sent) recipientIban else senderIban,
             amount.toDouble(), exchangedAmount?.toDouble(), currency, bankAccount.currency, note, dateTime
@@ -131,7 +134,13 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     }
 
     fun serializable(user: User) =
-        serializable(if (sender?.user?.id == user.id) ro.bankar.model.SDirection.Sent else SDirection.Received)
+        serializable(
+            when (sender?.user?.id) {
+                recipient?.user?.id -> null
+                user.id -> SDirection.Sent
+                else -> SDirection.Received
+            }
+        )
 }
 
 fun SizedIterable<BankTransfer>.serializable(user: User) = map { it.serializable(user) }
@@ -149,5 +158,9 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
     val exchangedAmount = amount("exchanged_amount").check("exchanged_amount_positive") { it greater BigDecimal.ZERO }.nullable()
     val currency = currency("currency")
     val note = varchar("note", 200)
-    val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)
+    val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
+
+    init {
+        check("sender_or_recipient_not_null") { sender.isNotNull() or recipient.isNotNull() }
+    }
 }

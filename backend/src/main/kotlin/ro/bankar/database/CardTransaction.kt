@@ -1,16 +1,17 @@
 package ro.bankar.database
 
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.amount
 import ro.bankar.currency
 import ro.bankar.model.SCardTransaction
+import ro.bankar.util.nowUTC
 
 class CardTransaction(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<CardTransaction>(CardTransactions) {
@@ -37,7 +38,7 @@ internal object CardTransactions : IntIdTable(columnName = "transaction_id") {
     val card = reference("card_id", BankCards)
     val amount = amount("amount")
     val currency = currency("currency")
-    val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)
+    val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
     val details = varchar("details", 500)
     val title = varchar("title", 50)
 }

@@ -126,7 +126,6 @@
     <string name="unable_new_bank_account">Unable to open account: invalid %s</string>
     <string name="date_time_at_place">%s at %s</string>
     <string name="limit_is">Limit:</string>
-    <string name="friend_requests">Friend Requests</string>
     <string name="edit">Edit</string>
     <string name="add_friend">Add friend</string>
     <string name="image_crop">Image crop</string>
@@ -198,4 +197,9 @@
     <string name="balance_after_receiving">Balance after receiving:</string>
     <string name="credit_after_receiving">"Available credit after receiving: "</string>
     <string name="friend_request_exists">A friend request to/from this user already exists</string>
+    <string name="n_unread_messages">%d unread messages</string>
+    <string name="requests">Requests</string>
+    <string name="conversations">Conversations</string>
+    <string name="no_conversations">You don\'t have any conversations yet. Click here to go to friends list and start a conversation!</string>
+    <string name="you_s">"You: "</string>
 </resources>

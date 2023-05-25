@@ -95,6 +95,7 @@ import ro.bankar.banking.reverseExchange
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SDirection
+import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
 import ro.bankar.util.here
@@ -112,7 +113,7 @@ class RecentActivityModel : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>) {
+fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>, onNavigateToFriend: (SPublicUser) -> Unit) {
     val model = viewModel<RecentActivityModel>()
     model.repository = LocalRepository.current
     model.accounts = rememberUpdatedState(accounts)
@@ -152,7 +153,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                         amount = it.amount,
                         currency = it.currency
                     )
-                else ReceivedTransferRequest(it, model)
+                else ReceivedTransferRequest(it, model, onNavigateToFriend)
             }
 
             // Merge display transfers and transactions
@@ -194,7 +195,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
 private fun RecentActivityPreview() {
     AppTheme {
         LocalRepository.current.recentActivity.collectAsStateRetrying().value?.let {
-            RecentActivity(it, emptyList())
+            RecentActivity(it, emptyList(), onNavigateToFriend = {})
         } ?: RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
     }
 }
@@ -203,7 +204,7 @@ private fun RecentActivityPreview() {
 @Composable
 private fun RecentActivityPreviewDark() {
     AppTheme {
-        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList())
+        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList(), onNavigateToFriend = {})
     }
 }
 
@@ -415,7 +416,7 @@ private fun SentTransferRequest(id: Int, fromName: String, amount: Double, curre
 }
 
 @Composable
-private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActivityModel) {
+private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActivityModel, onNavigateToFriend: (SPublicUser) -> Unit) {
     var isDeclining by rememberSaveable { mutableStateOf(false) }
     var dialogVisible by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -510,15 +511,29 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                     .padding(vertical = 12.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Surface(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    tonalElevation = 4.dp
-                ) {
-                    FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
+                if (request.user.isFriend) {
+                    Surface(
+                        onClick = { onNavigateToFriend(request.user) },
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        tonalElevation = 4.dp
+                    ) {
+                        FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        tonalElevation = 4.dp
+                    ) {
+                        FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
+                    }
                 }
+
                 Divider()
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

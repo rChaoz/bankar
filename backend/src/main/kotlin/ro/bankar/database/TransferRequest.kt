@@ -1,17 +1,18 @@
 package ro.bankar.database
 
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.model.SDirection
 import ro.bankar.model.STransferRequest
+import ro.bankar.util.nowUTC
 import java.math.BigDecimal
 
 class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
@@ -68,11 +69,12 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      * Converts this TransferRequest to a serializable object.
      * @param direction Whether this transfer request was sent/received by the user
      */
-    fun serializable(direction: SDirection) = when (direction) {
-        SDirection.Sent -> targetUser
-        SDirection.Received -> sourceUser
-    }.let { STransferRequest(id.value, direction, it.publicSerializable(SDirection.Sent),
-        amount.toDouble(), sourceAccount.currency, note, partyID?.value, dateTime) }
+    fun serializable(direction: SDirection): STransferRequest {
+        val user = if (direction == SDirection.Sent) targetUser else sourceUser
+        val otherUser = if (direction == SDirection.Sent) sourceUser else targetUser
+        return STransferRequest(id.value, direction, otherUser.publicSerializable(user.hasFriend(otherUser)),
+            amount.toDouble(), sourceAccount.currency, note, partyID?.value, dateTime)
+    }
 
     /**
      * Converts this TransferRequest to a serializable object.
@@ -92,5 +94,5 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val note = varchar("note", 100)
     val party = reference("party", Parties).nullable().default(null)
     val amount = amount("amount").check("amount_check") { it greater BigDecimal.ZERO }
-    val dateTime = datetime("datetime").defaultExpression(CurrentDateTime)
+    val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
 }

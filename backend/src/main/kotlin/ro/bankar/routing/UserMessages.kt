@@ -32,6 +32,7 @@ fun Route.configureUserMessaging() {
                 if (recipient == null || recipient !in user.friends)
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
                 else {
+                    user.updateLastOpenedConversationWith(recipient)
                     user.sendMessage(recipient, request.message.trim())
                     // Notify recipient if he is connected
                     sendNotificationToUser(recipient.id, SSocketNotification.SMessageNotification(user.tag))
@@ -48,7 +49,10 @@ fun Route.configureUserMessaging() {
                 val otherUser = User.findByTag(tag)
                 if (otherUser == null || otherUser !in user.friends)
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
-                else call.respond(HttpStatusCode.OK, user.getConversationWith(otherUser).serializable(user))
+                else {
+                    user.updateLastOpenedConversationWith(otherUser)
+                    call.respond(HttpStatusCode.OK, user.getConversationWith(otherUser).serializable(user))
+                }
             }
         }
     }

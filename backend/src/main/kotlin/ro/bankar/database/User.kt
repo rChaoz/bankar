@@ -13,17 +13,21 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.update
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
 import ro.bankar.model.SDirection
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SUser
 import ro.bankar.sha256
+import ro.bankar.util.nowUTC
 import kotlin.time.Duration.Companion.days
 
 class User(id: EntityID<Int>) : IntEntity(id) {
@@ -88,7 +92,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         /**
          * Get a user by session token
          */
-        fun findBySessionToken(token: String) = find { (Users.sessionToken eq token) and (Users.sessionTokenExpiration greater CurrentDateTime) }.firstOrNull()
+        fun findBySessionToken(token: String) = find { (Users.sessionToken eq token) and (Users.sessionTokenExpiration greater Clock.System.nowUTC()) }.firstOrNull()
     }
 
     var email by Users.email
@@ -211,7 +215,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Returns this user's public data as serializable
      */
-    fun publicSerializable(direction: SDirection) = SPublicUser(
+    fun publicSerializable(isFriend: Boolean) = SPublicUser(
         tag,
         firstName,
         middleName,
@@ -219,17 +223,53 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         countryCode,
         joinDate,
         about,
-        direction,
-        avatar?.inputStream?.readBytes()
+        avatar?.inputStream?.readBytes(),
+        isFriend
     )
+
+    /**
+     * Converts this user's public data into a serializable friend request
+     */
+    fun friendRequestSerializable(direction: SDirection) = SFriendRequest(
+        tag,
+        firstName,
+        middleName,
+        lastName,
+        countryCode,
+        joinDate,
+        about,
+        avatar?.inputStream?.readBytes(),
+        direction
+    )
+
+    /**
+     * Converts this user's public data into a serializable object containing public and friend-related information
+     */
+    fun friendSerializable(user: User): SFriend {
+        val lastOpened = FriendPairs.getLastOpenedConversation(user, this)
+        val unreadCount = UserMessage.getConversationBetweenSince(user, this, lastOpened).count().toInt()
+        val lastMessage = UserMessage.getConversationBetween(user, this).firstOrNull()
+        return SFriend(
+            tag,
+            firstName,
+            middleName,
+            lastName,
+            countryCode,
+            joinDate,
+            about,
+            avatar?.inputStream?.readBytes(),
+            lastMessage?.serializable(user),
+            unreadCount
+        )
+    }
+
+    fun updateLastOpenedConversationWith(otherUser: User) = FriendPairs.updateLastOpenedConversation(this, otherUser)
 }
 
 /**
- * Converts a list of Users to a list of serializable objects containing only the public information about the user.
+ * Converts an user's friend list to a serializable list.
  */
-fun SizedIterable<User>.serializable() = map {
-    SPublicUser(it.tag, it.firstName, it.middleName, it.lastName, it.countryCode, it.joinDate, it.about, SDirection.Sent, it.avatar?.inputStream?.readBytes())
-}
+fun SizedIterable<User>.friendsSerializable(user: User) = map { it.friendSerializable(user) }
 
 internal object Users : IntIdTable(columnName = "user_id") {
     val email = varchar("email", 50).uniqueIndex()
@@ -240,7 +280,7 @@ internal object Users : IntIdTable(columnName = "user_id") {
     val passwordHash = binary("password_hash", 256)
     val passwordSalt = binary("password_salt", 256)
     val sessionToken = varchar("session_token", 20).nullable()
-    val sessionTokenExpiration = datetime("session_token_exp").defaultExpression(CurrentDateTime)
+    val sessionTokenExpiration = datetime("session_token_exp").clientDefault { Clock.System.nowUTC() }
 
     val firstName = varchar("first_name", 20)
     val middleName = varchar("middle_name", 20).nullable()
@@ -266,5 +306,12 @@ internal object FriendRequests : Table() {
 internal object FriendPairs : Table() {
     val sourceUser = reference("source_user_id", Users)
     val targetUser = reference("target_user_id", Users)
+    val lastOpenedConversation = datetime("last_opened_conversation").clientDefault { Clock.System.nowUTC() }
     override val primaryKey = PrimaryKey(sourceUser, targetUser)
+
+    fun getLastOpenedConversation(user: User, otherUser: User) =
+        select { (sourceUser eq user.id) and (targetUser eq otherUser.id) }.first()[lastOpenedConversation]
+
+    fun updateLastOpenedConversation(user: User, otherUser: User) =
+        update(where = { (sourceUser eq user.id) and (targetUser eq otherUser.id) }) { it[lastOpenedConversation] = Clock.System.nowUTC() }
 }

@@ -5,12 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.datetime.Clock
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 import ro.bankar.util.todayHere
 
 @Composable
-fun SendMoneyScreen(onDismiss: () -> Unit, user: SPublicUser) {
+fun SendMoneyScreen(onDismiss: () -> Unit, user: SPublicUserBase) {
     SendRequestMoneyScreenBase(onDismiss, user, requesting = false)
 }
 
@@ -21,7 +21,7 @@ private fun SendMoneyScreenPreview() {
         SendMoneyScreen(
             onDismiss = {}, user = SPublicUser(
                 "koleci", "Alexandru", "Paul", "Koleci",
-                "RO", Clock.System.todayHere(), "", SDirection.Sent, null
+                "RO", Clock.System.todayHere(), "", null, true
             )
         )
     }
@@ -34,7 +34,7 @@ private fun SendMoneyScreenPreviewDark() {
         SendMoneyScreen(
             onDismiss = {}, user = SPublicUser(
                 "koleci", "Alexandru", "Paul", "Koleci",
-                "RO", Clock.System.todayHere(), "", SDirection.Sent, null
+                "RO", Clock.System.todayHere(), "", null, true
             )
         )
     }

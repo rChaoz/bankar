@@ -27,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,12 +59,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
@@ -97,15 +103,17 @@ import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.SCountries
 import ro.bankar.model.SDirection
-import ro.bankar.model.SPublicUser
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
+import ro.bankar.model.SPublicUserBase
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
         // Data
-        var friends by mutableStateOf<List<SPublicUser>?>(null)
-        var friendRequests by mutableStateOf<List<SPublicUser>?>(null)
+        var friends by mutableStateOf<List<SFriend>?>(null)
+        var friendRequests by mutableStateOf<List<SFriendRequest>?>(null)
         var countryData by mutableStateOf<SCountries?>(null)
 
         // FAB
@@ -119,13 +127,18 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         var addFriendInput by mutableStateOf("")
         var addFriendError by mutableStateOf<Int?>(null)
 
-        // Navigate to friend
-        lateinit var onNavigateToFriend: (friend: SPublicUser) -> Unit
+        // Go to friends tab
+        lateinit var onGoToFriendsTab: () -> Unit
+
+        // Navigate to friend/conversation
+        lateinit var onNavigateToConversation: (friend: SPublicUserBase) -> Unit
+        lateinit var onNavigateToFriend: (friend: SPublicUserBase) -> Unit
 
         // Swipe to refresh
         lateinit var repository: Repository
         var isRefreshing by mutableStateOf(false)
             private set
+
         fun refresh() = viewModelScope.launch {
             isRefreshing = true
             coroutineScope {
@@ -216,6 +229,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             launch { repository.countryData.collectRetrying { model.countryData = it } }
         }
 
+        model.onNavigateToConversation = { friend -> navigation.navigate(MainNav.Conversation(friend)) }
         model.onNavigateToFriend = { friend -> navigation.navigate(MainNav.Friend(friend)) }
 
         // "Add friend" dialog
@@ -248,7 +262,9 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             }
         }
 
+        val scope = rememberCoroutineScope()
         val pagerState = rememberPagerState(0)
+        model.onGoToFriendsTab = { scope.launch { pagerState.animateScrollToPage(FriendsTabs.Friends.index) } }
         Column(modifier = Modifier.fillMaxSize()) {
             TabRow(selectedTabIndex = pagerState.currentPage, indicator = { list ->
                 val page = pagerState.currentPage
@@ -267,7 +283,6 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                         .offset(x = tab.left * currentP + targetTab.left * targetP - tab.width * targetP / 2)
                 )
             }) {
-                val scope = rememberCoroutineScope()
                 for (tab in tabs) {
                     Tab(
                         selected = pagerState.currentPage == tab.index,
@@ -298,13 +313,81 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     }
 }
 
-private val tabs = listOf(FriendsTabs.Friends, FriendsTabs.FriendRequests)
+private val tabs = listOf(FriendsTabs.Conversations, FriendsTabs.Friends, FriendsTabs.FriendRequests)
 
 private sealed class FriendsTabs(val index: Int, val title: Int) {
     @Composable
     abstract fun Content(model: FriendsTab.Model, repository: Repository)
 
-    object Friends : FriendsTabs(0, R.string.friends) {
+    object Conversations : FriendsTabs(0, R.string.conversations) {
+        @OptIn(ExperimentalMaterial3Api::class)
+        @Composable
+        override fun Content(model: FriendsTab.Model, repository: Repository) {
+            @Suppress("DEPRECATION") val swipeRefreshState = rememberSwipeRefreshState(model.isRefreshing)
+            @Suppress("DEPRECATION") SwipeRefresh(state = swipeRefreshState, onRefresh = model::refresh) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    SurfaceList(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        val conversations = model.friends?.filter { it.lastMessage != null }?.sortedByDescending { it.lastMessage!!.dateTime }
+                        if (conversations == null) ShimmerFriends()
+                        else if (conversations.isEmpty()) InfoCard(onClick = model.onGoToFriendsTab, text = R.string.no_conversations)
+                        else {
+                            for (friend in conversations) Surface(onClick = { model.onNavigateToConversation(friend) }, tonalElevation = 1.dp) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BadgedBox(badge = {
+                                        if (friend.unreadMessageCount > 0)
+                                            Badge(
+                                                modifier = Modifier
+                                                    .offset((-6).dp, 6.dp)
+                                                    .shadow(2.dp, CircleShape)
+                                            ) {
+                                                val desc = stringResource(R.string.n_unread_messages, friend.unreadMessageCount)
+                                                Text(text = friend.unreadMessageCount.toString(), modifier = Modifier.semantics { contentDescription = desc })
+                                            }
+                                    }) {
+                                        Avatar(image = friend.avatar, size = 48.dp)
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = friend.fullName,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Row {
+                                            if (friend.lastMessage!!.direction == SDirection.Sent) Text(
+                                                text = stringResource(R.string.you_s),
+                                                style = MaterialTheme.typography.titleSmall
+                                            )
+                                            Text(
+                                                text = friend.lastMessage!!.message.replace('\n', ' '),
+                                                softWrap = false,
+                                                overflow = TextOverflow.Ellipsis,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = MaterialTheme.colorScheme.outline
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    object Friends : FriendsTabs(1, R.string.friends) {
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             val scrollState = rememberScrollState()
@@ -353,13 +436,13 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
     }
 
-    object FriendRequests : FriendsTabs(1, R.string.friend_requests) {
+    object FriendRequests : FriendsTabs(2, R.string.requests) {
 
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             // Show information about friend request
-            val (requestInfo, setRequestInfo) = rememberSaveable(stateSaver = serializableSaver<SPublicUser?>()) { mutableStateOf(null) }
+            val (requestInfo, setRequestInfo) = rememberSaveable(stateSaver = serializableSaver<SFriendRequest?>()) { mutableStateOf(null) }
 
             requestInfo?.let {
                 val sheetState = rememberModalBottomSheetState()
@@ -414,7 +497,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                         InfoCard(text = R.string.no_friend_requests)
                     } else {
                         // TODO Friend requests clickable to view user profile
-                        val (sentRequests, receivedRequests) = model.friendRequests!!.sortedBy { it.tag }.partition { it.requestDirection == SDirection.Sent }
+                        val (sentRequests, receivedRequests) = model.friendRequests!!.sortedBy { it.tag }.partition { it.direction == SDirection.Sent }
                         val context = LocalContext.current
                         if (sentRequests.isNotEmpty())
                             SentRequests(
@@ -434,7 +517,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
 
         @Composable
-        fun SentRequests(requests: List<SPublicUser>, setRequestInfo: (SPublicUser) -> Unit, onCancelRequest: (String) -> Unit) {
+        fun SentRequests(requests: List<SFriendRequest>, setRequestInfo: (SFriendRequest) -> Unit, onCancelRequest: (String) -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.sent_requests),
@@ -478,7 +561,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
         }
 
         @Composable
-        private fun ReceivedRequests(requests: List<SPublicUser>, setRequestInfo: (SPublicUser) -> Unit, onRespondToRequest: (String, Boolean) -> Unit) {
+        private fun ReceivedRequests(requests: List<SFriendRequest>, setRequestInfo: (SFriendRequest) -> Unit, onRespondToRequest: (String, Boolean) -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.received_requests),

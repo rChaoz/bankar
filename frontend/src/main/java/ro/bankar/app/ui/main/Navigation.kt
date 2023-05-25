@@ -18,7 +18,7 @@ import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
-import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 
 private const val mainTabRoutePrefix = "mainTab"
 private const val friendRoutePrefix = "friend"
@@ -44,10 +44,10 @@ enum class MainNav(val route: String) {
             navArgument("tab") { defaultValue = HomeTab.name }
         )
 
-        fun Friend(user: SPublicUser) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
-        fun Conversation(user: SPublicUser) = "$conversationRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
-        fun SendMoney(user: SPublicUser) = "$sendMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
-        fun RequestMoney(user: SPublicUser) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun Friend(user: SPublicUserBase) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun Conversation(user: SPublicUserBase) = "$conversationRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun SendMoney(user: SPublicUserBase) = "$sendMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun RequestMoney(user: SPublicUserBase) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
     }
 }
 

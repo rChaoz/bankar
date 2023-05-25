@@ -126,7 +126,6 @@
     <string name="unable_new_bank_account">Nu s-a putut deschide contul: %s invalid</string>
     <string name="date_time_at_place">%s la %s</string>
     <string name="limit_is">Limită:</string>
-    <string name="friend_requests">Cereri de prietenie</string>
     <string name="edit">Modifică</string>
     <string name="add_friend">Adaugă prieten</string>
     <string name="image_crop">Decupare imagine</string>
@@ -198,4 +197,9 @@
     <string name="balance_after_receiving">Sold după primire:</string>
     <string name="credit_after_receiving">"Credit disponibil după primire: "</string>
     <string name="friend_request_exists">O cerere de prietenie de la/către acest utilizator deja există</string>
+    <string name="n_unread_messages">%d mesaje necitite</string>
+    <string name="requests">Cereri</string>
+    <string name="conversations">Conversații</string>
+    <string name="no_conversations">Nu ai nicio conversație încă. Apasă aici pentru a te duce la lista de prieteni să începi o conversație!</string>
+    <string name="you_s">"Tu: "</string>
 </resources>

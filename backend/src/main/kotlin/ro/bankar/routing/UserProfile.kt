@@ -16,7 +16,7 @@ import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.FriendRequests
 import ro.bankar.database.User
-import ro.bankar.database.serializable
+import ro.bankar.database.friendsSerializable
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SDirection
 import ro.bankar.model.SSocketNotification
@@ -34,7 +34,7 @@ fun Route.configureUserProfiles() {
         route("friends") {
             get {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
-                call.respond(HttpStatusCode.OK, newSuspendedTransaction { user.friends.serializable() })
+                call.respond(HttpStatusCode.OK, newSuspendedTransaction { user.friends.friendsSerializable(user) })
             }
 
             get("add/{id}") {
@@ -80,7 +80,7 @@ fun Route.configureUserProfiles() {
                         FriendRequests.select { (sourceUser eq user.id) or (targetUser eq user.id) }.map {
                             val isSent = it[sourceUser] == user.id
                             val otherUser = User.findById(if (isSent) it[targetUser] else it[sourceUser])!!
-                            otherUser.publicSerializable(if (isSent) SDirection.Sent else SDirection.Received)
+                            otherUser.friendRequestSerializable(if (isSent) SDirection.Sent else SDirection.Received)
                         }
                     }
                 }

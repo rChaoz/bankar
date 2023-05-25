@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintSet
@@ -109,7 +114,7 @@ fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
     MainScreen(tab, setTab, navigation)
 }
 
-@OptIn(ExperimentalMotionApi::class)
+@OptIn(ExperimentalMotionApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (MainTab<*>) -> Unit, navigation: NavHostController) {
     val tabModel = tab.viewModel()
@@ -205,10 +210,19 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
             bottomBar = {
                 NavigationBar {
                     NavigationBarItem(selected = tab == FriendsTab, onClick = { setTab(FriendsTab) }, icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.baseline_people_24),
-                            contentDescription = stringResource(R.string.friends)
-                        )
+                        val unreadMessages by LocalRepository.current.friends.mapCollectAsStateRetrying { friends -> friends.sumOf { it.unreadMessageCount } }
+                        BadgedBox(badge = {
+                            val count = unreadMessages ?: 0
+                            if (count > 0) Badge {
+                                val desc = stringResource(R.string.n_unread_messages, count)
+                                Text(text = count.toString(), modifier = Modifier.semantics { contentDescription = desc })
+                            }
+                        }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.baseline_people_24),
+                                contentDescription = stringResource(R.string.friends)
+                            )
+                        }
                     }, label = {
                         Text(text = stringResource(R.string.friends))
                     })

@@ -93,7 +93,7 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
             ) {
                 val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
                 if (model.recentActivity == null || model.accounts == null) RecentActivityShimmer(shimmer)
-                else RecentActivity(model.recentActivity!!, model.accounts!!)
+                else RecentActivity(model.recentActivity!!, model.accounts!!, onNavigateToFriend = { navigation.navigate(MainNav.Friend(it)) })
 
                 if (model.accounts == null) {
                     BankAccountShimmer(shimmer)

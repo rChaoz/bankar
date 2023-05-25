@@ -9,7 +9,10 @@ enum class SDirection { Sent, Received }
 
 @Serializable
 data class SBankTransfer(
-    val direction: SDirection,
+    /**
+     * If null, this is a transfer between an user's own accounts
+     */
+    val direction: SDirection?,
     val accountID: Int,
 
     val user: SPublicUser?,
@@ -18,7 +21,8 @@ data class SBankTransfer(
 
     val amount: Double,
     /**
-     * If this transfer was exchanged on arrival, this represent the amount that was received by the recipient, and [amount] represents the amount that was sent.
+     * If this transfer was exchanged on arrival, this represent the amount that was received by the recipient,
+     * and [amount] represents the amount that was sent.
      */
     val exchangedAmount: Double?,
     val currency: Currency,

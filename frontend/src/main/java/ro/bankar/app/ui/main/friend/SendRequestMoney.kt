@@ -67,7 +67,7 @@ import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
-import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SSendRequestMoney
 import kotlin.math.max
 import kotlin.math.min
@@ -128,7 +128,7 @@ class SendRequestMoneyModel : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUser, requesting: Boolean) {
+fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUserBase, requesting: Boolean) {
     // Get data
     val repository = LocalRepository.current
     val model = viewModel<SendRequestMoneyModel>()

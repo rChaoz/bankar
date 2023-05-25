@@ -55,6 +55,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -66,8 +68,10 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SConversation
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSocketNotification
+import ro.bankar.util.here
 import ro.bankar.util.todayHere
 import kotlin.time.Duration.Companion.seconds
 
@@ -102,7 +106,7 @@ class ConversationScreenModel : ViewModel() {
 }
 
 @Composable
-fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUser) {
+fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUserBase) {
     val model = viewModel<ConversationScreenModel>()
     val repository = LocalRepository.current
     model.repository = repository
@@ -113,6 +117,8 @@ fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUser) {
                 model.conversationFlow = it
                 it.requestEmit()
             }.collectRetrying {
+                // See below
+                model.repository.friends.requestEmit()
                 // Check what messages are new
                 val newMessages = it.take(it.size - (model.conversation?.size ?: 0))
                 model.conversation = it
@@ -128,6 +134,8 @@ fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUser) {
                 model.conversationFlow.requestEmit()
             }
         }
+        // Update unseen messages count on opening/ closing any conversation
+        model.repository.friends.requestEmit()
     }
 
     FriendScreen(onDismiss, user) {
@@ -196,7 +204,7 @@ fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUser) {
                                 || conv[it - 1].dateTime.hour != item.dateTime.hour || conv[it - 1].dateTime.minute != item.dateTime.minute
                             )
                                 Text(
-                                    text = item.dateTime.format(),
+                                    text = item.dateTime.toInstant(TimeZone.UTC).here().format(),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.outline,
                                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -274,7 +282,7 @@ private fun ConversationScreenPreview() {
         ConversationScreen(
             onDismiss = {}, user = SPublicUser(
                 "koleci", "Alexandru", "Paul", "Koleci",
-                "RO", Clock.System.todayHere(), "", SDirection.Sent, null
+                "RO", Clock.System.todayHere(), "", null, true
             )
         )
     }

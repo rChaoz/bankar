@@ -45,13 +45,13 @@ import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 import ro.bankar.util.todayHere
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendProfileScreen(profile: SPublicUser, navigation: NavHostController) {
+fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsStateRetrying()
     NavScreen(onDismiss = { navigation.popBackStack() }, title = R.string.friend_profile) {
@@ -177,7 +177,7 @@ private fun FriendProfileScreenPreview() {
         FriendProfileScreen(
             navigation = rememberMockNavController(), profile = SPublicUser(
                 "maximus", "Andi", "Paul", "Koleci", "RO",
-                Clock.System.todayHere(), "bing chilling; iaurti!", SDirection.Sent, null
+                Clock.System.todayHere(), "bing chilling; iaurti!", null, true
             )
         )
     }

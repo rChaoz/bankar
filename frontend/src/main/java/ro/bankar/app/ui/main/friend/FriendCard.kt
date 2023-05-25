@@ -15,10 +15,10 @@ import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.format
-import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
 
 @Composable
-fun FriendCard(friend: SPublicUser, country: String, modifier: Modifier = Modifier) {
+fun FriendCard(friend: SPublicUserBase, country: String, modifier: Modifier = Modifier) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier) {
         Avatar(image = friend.avatar)
         Column {

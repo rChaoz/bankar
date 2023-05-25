@@ -37,9 +37,10 @@ import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SConversation
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SPasswordData
-import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSendRequestMoney
@@ -124,8 +125,8 @@ abstract class Repository {
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
     abstract suspend fun sendAddFriend(id: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract suspend fun sendRemoveFriend(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
-    abstract val friends: RequestFlow<List<SPublicUser>>
-    abstract val friendRequests: RequestFlow<List<SPublicUser>>
+    abstract val friends: RequestFlow<List<SFriend>>
+    abstract val friendRequests: RequestFlow<List<SFriendRequest>>
     abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract suspend fun sendCancelFriendRequest(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract fun conversation(tag: String): RequestFlow<SConversation>
@@ -202,7 +203,10 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
                                 friendRequests.requestEmit()
                             }
                             SSocketNotification.SRecentActivityNotification -> recentActivity.emitNow()
-                            else -> socketMutableFlow.emit(data)
+                            is SSocketNotification.SMessageNotification -> {
+                                friends.requestEmit()
+                                socketMutableFlow.emit(data)
+                            }
                         }
                     }
                 }
@@ -237,8 +241,8 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         url("profile/friends/remove/$tag")
     }
 
-    override val friends = createFlow<List<SPublicUser>>("profile/friends")
-    override val friendRequests = createFlow<List<SPublicUser>>("profile/friend_requests")
+    override val friends = createFlow<List<SFriend>>("profile/friends")
+    override val friendRequests = createFlow<List<SFriendRequest>>("profile/friend_requests")
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = client.safeGet<StatusResponse, StatusResponse> {
         url("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
     }
