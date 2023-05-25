@@ -1,7 +1,9 @@
 package ro.bankar.app.ui.main.friend
 
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -11,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +24,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +52,7 @@ fun FriendScreen(
     bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
+    dropdownMenuContent: (@Composable ColumnScope.(hide: () -> Unit) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     Scaffold(
@@ -69,6 +78,17 @@ fun FriendScreen(
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(text = "@${user.tag}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.surfaceVariant)
+                    }
+                    if (dropdownMenuContent != null) {
+                        Box {
+                            var expanded by remember { mutableStateOf(false) }
+                            IconButton(onClick = { expanded = true }) {
+                                Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                            }
+                            DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+                                dropdownMenuContent { expanded = false }
+                            }
+                        }
                     }
                 }
             }

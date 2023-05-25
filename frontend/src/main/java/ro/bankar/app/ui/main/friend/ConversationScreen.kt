@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -64,6 +67,8 @@ import ro.bankar.app.data.RequestFlow
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectRetrying
 import ro.bankar.app.ui.format
+import ro.bankar.app.ui.main.MainNav
+import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SConversation
 import ro.bankar.model.SDirection
@@ -106,7 +111,7 @@ class ConversationScreenModel : ViewModel() {
 }
 
 @Composable
-fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUserBase) {
+fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
     val model = viewModel<ConversationScreenModel>()
     val repository = LocalRepository.current
     model.repository = repository
@@ -138,7 +143,18 @@ fun ConversationScreen(onDismiss: () -> Unit, user: SPublicUserBase) {
         model.repository.friends.requestEmit()
     }
 
-    FriendScreen(onDismiss, user) {
+    FriendScreen(onDismiss = { navigation.popBackStack() }, user, dropdownMenuContent = {
+        DropdownMenuItem(
+            leadingIcon = { Icon(painter = painterResource(R.drawable.transfer), contentDescription = null) },
+            text = { Text(text = stringResource(R.string.send_money)) },
+            onClick = { it(); navigation.navigate(MainNav.SendMoney(user)) }
+        )
+        DropdownMenuItem(
+            leadingIcon = { Icon(painter = painterResource(R.drawable.transfer_request), contentDescription = null) },
+            text = { Text(text = stringResource(R.string.request_money)) },
+            onClick = { it(); navigation.navigate(MainNav.RequestMoney(user)) }
+        )
+    }) {
         val conv = model.conversation
         if (conv != null) {
             Column {
@@ -280,10 +296,10 @@ private fun Path.rightMarkerMessageShape(size: Size, cornerSize: Float) {
 private fun ConversationScreenPreview() {
     AppTheme(useDarkTheme = false) {
         ConversationScreen(
-            onDismiss = {}, user = SPublicUser(
+            user = SPublicUser(
                 "koleci", "Alexandru", "Paul", "Koleci",
                 "RO", Clock.System.todayHere(), "", null, true
-            )
+            ), navigation = rememberMockNavController()
         )
     }
 }

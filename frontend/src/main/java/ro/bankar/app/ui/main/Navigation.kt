@@ -70,7 +70,7 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
             FriendProfileScreen(profile = Json.decodeFromString(it.arguments!!.getString("friend")!!), navigation = controller)
         }
         composable(MainNav.Conversation.route) {
-            ConversationScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), onDismiss = controller::popBackStack)
+            ConversationScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), navigation = controller)
         }
         composable(MainNav.SendMoney.route) {
             SendMoneyScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), onDismiss = controller::popBackStack)
