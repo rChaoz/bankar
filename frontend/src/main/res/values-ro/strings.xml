@@ -197,4 +197,5 @@
     <string name="no_accounts_found">Nu s-a găsit niciun cont</string>
     <string name="balance_after_receiving">Sold după primire:</string>
     <string name="credit_after_receiving">"Credit disponibil după primire: "</string>
+    <string name="friend_request_exists">O cerere de prietenie de la/către acest utilizator deja există</string>
 </resources>

@@ -186,6 +186,8 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         friends = SizedCollection(friends.filter { it.id != other.id })
     }
 
+    fun hasFriend(other: User) = friends.any { it.id == other.id }
+
     /**
      * Send a message to a user
      */

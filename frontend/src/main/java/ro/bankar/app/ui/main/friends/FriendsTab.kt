@@ -151,6 +151,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                     "user_not_found" -> R.string.user_not_found
                     "user_is_friend" -> R.string.user_already_friend
                     "cant_friend_self" -> R.string.cant_friend_self
+                    "exists" -> R.string.friend_request_exists
                     else -> R.string.unknown_error
                 }
 

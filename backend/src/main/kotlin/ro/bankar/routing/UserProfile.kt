@@ -43,18 +43,15 @@ fun Route.configureUserProfiles() {
                 newSuspendedTransaction {
                     val otherUser = User.findByAnything(id)
                     if (otherUser == null) call.respond(HttpStatusCode.NotFound, StatusResponse("user_not_found"))
-                    else if (user.friends.any { it.id == otherUser.id }) call.respond(HttpStatusCode.Conflict, StatusResponse("user_is_friend"))
+                    else if (user.hasFriend(otherUser)) call.respond(HttpStatusCode.Conflict, StatusResponse("user_is_friend"))
                     else if (otherUser.id == user.id) call.respond(HttpStatusCode.BadRequest, StatusResponse("cant_friend_self"))
+                    else if (otherUser.friendRequests.any { it.id == user.id } || user.friendRequests.any { it.id == otherUser.id })
+                        call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
                     else {
-                        // Send friend request if it doesn't already exist
-                        if (otherUser.friendRequests.none { it.id == user.id }) {
-                            otherUser.addFriendRequest(user)
-                            sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
-                            call.respond(HttpStatusCode.OK, StatusResponse.Success)
-                        } else {
-                            // Else, notify the user
-                            call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
-                        }
+                        // Send the friend request
+                        otherUser.addFriendRequest(user)
+                        sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
+                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
                     }
                 }
             }

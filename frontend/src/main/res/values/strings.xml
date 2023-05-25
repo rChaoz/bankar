@@ -197,4 +197,5 @@
     <string name="no_accounts_found">No accounts found</string>
     <string name="balance_after_receiving">Balance after receiving:</string>
     <string name="credit_after_receiving">"Available credit after receiving: "</string>
+    <string name="friend_request_exists">A friend request to/from this user already exists</string>
 </resources>
