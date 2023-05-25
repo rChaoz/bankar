@@ -40,7 +40,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,14 +58,9 @@ import androidx.constraintlayout.compose.MotionLayout
 import androidx.constraintlayout.compose.Visibility
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.launch
-import ro.bankar.app.LocalDataStore
-import ro.bankar.app.Nav
 import ro.bankar.app.R
-import ro.bankar.app.USER_SESSION
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.mapCollectAsStateRetrying
-import ro.bankar.app.removePreference
 import ro.bankar.app.ui.components.NoImage
 import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.components.SurfaceList
@@ -234,17 +228,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     }, label = {
                         Text(text = stringResource(R.string.home))
                     })
-                    // TODO Debug Only: Click Settings to sign out
-                    val dataStore = LocalDataStore.current
-                    val scope = rememberCoroutineScope()
-                    NavigationBarItem(selected = false, onClick = {
-                        scope.launch {
-                            dataStore.removePreference(USER_SESSION)
-                            navigation.navigate(Nav.NewUser.route) {
-                                popUpTo(Nav.Main.route) { inclusive = true }
-                            }
-                        }
-                    }, icon = {
+                    NavigationBarItem(selected = false, onClick = {}, icon = {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(R.string.settings)

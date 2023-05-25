@@ -92,6 +92,8 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             val repository = remember(sessionToken) {
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
+                        // Erase session token
+                        lifecycleScope.launch { dataStore.removePreference(USER_SESSION) }
                         val stack = controller.currentBackStack.value
                         // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
                         if (stack.size < 2 || stack[1].destination.route == Nav.Main.route)
@@ -103,10 +105,8 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             }
 
             // Open web socket
-            LaunchedEffect(repository, lifecycleScope) {
-                lifecycleScope.launch {
-                    repository.openAndMaintainSocket()
-                }
+            LaunchedEffect(repository) {
+                repository.openAndMaintainSocket()
             }
 
             // Track user inactivity

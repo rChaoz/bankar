@@ -203,4 +203,7 @@
     <string name="no_conversations">Nu ai nicio conversație încă. Apasă aici pentru a te duce la lista de prieteni să începi o conversație!</string>
     <string name="you_s">"Tu: "</string>
     <string name="create_party">Creează echipă</string>
+    <string name="logout">Deconectare</string>
+    <string name="confirm_logout">Esti sigur(ă) că vrei să te deconectezi?</string>
+    <string name="yes">Da</string>
 </resources>

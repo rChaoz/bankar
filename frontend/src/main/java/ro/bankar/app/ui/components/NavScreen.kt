@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
@@ -38,6 +39,8 @@ import ro.bankar.app.R
 fun NavScreen(
     onDismiss: () -> Unit,
     title: Int,
+    buttonIcon: (@Composable () -> Unit)? = null,
+    onIconButtonClick: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
@@ -50,9 +53,7 @@ fun NavScreen(
         topBar = {
             Surface(color = MaterialTheme.colorScheme.secondary) {
                 Row(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDismiss) {
@@ -62,9 +63,13 @@ fun NavScreen(
                         text = stringResource(title),
                         style = MaterialTheme.typography.displaySmall,
                         softWrap = false,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    if (buttonIcon != null) {
+                        IconButton(onClick = onIconButtonClick, content = buttonIcon)
+                    } else Spacer(modifier = Modifier.width(8.dp))
                 }
             }
         },
@@ -85,6 +90,8 @@ fun NavScreen(
 fun NavScreen(
     onDismiss: () -> Unit,
     title: Int,
+    buttonIcon: (@Composable () -> Unit)? = null,
+    onButtonIconClick: () -> Unit = {},
     confirmText: Int,
     confirmEnabled: Boolean = true,
     onConfirm: () -> Unit,
@@ -94,7 +101,7 @@ fun NavScreen(
     fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    NavScreen(onDismiss, title, bottomBar = {
+    NavScreen(onDismiss, title, buttonIcon, onButtonIconClick, bottomBar = {
         Column {
             Divider()
             Row(

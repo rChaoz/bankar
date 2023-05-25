@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,6 +61,11 @@ import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
+import com.maxkeppeker.sheets.core.models.base.SelectionButton
+import com.maxkeppeker.sheets.core.models.base.UseCaseState
+import com.maxkeppeler.sheets.info.InfoDialog
+import com.maxkeppeler.sheets.info.models.InfoBody
+import com.maxkeppeler.sheets.info.models.InfoSelection
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
@@ -70,6 +77,7 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectAsStateRetrying
+import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
@@ -79,6 +87,7 @@ import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.SUserValidation
 import java.io.ByteArrayOutputStream
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(onDismiss: () -> Unit) {
     val repository = LocalRepository.current
@@ -123,14 +132,37 @@ fun ProfileScreen(onDismiss: () -> Unit) {
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
     val textMod = if (data == null) Modifier.shimmer(shimmer) else Modifier
 
-    NavScreen(onDismiss, title = R.string.profile, isLoading = isLoading, snackBar = snackBar, isFABVisible = data != null, fabContent = {
-        FloatingActionButton(onClick = { /*TODO*/ }, shape = CircleShape) {
-            Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
+    // Logout confirm dialog
+    val logoutDialogState = remember { UseCaseState() }
+    InfoDialog(state = logoutDialogState, selection = InfoSelection(
+        negativeButton = SelectionButton(android.R.string.cancel),
+        positiveButton = SelectionButton(R.string.yes),
+        onPositiveClick = { repository.logout() }
+    ), body = InfoBody.Default(
+        bodyText = stringResource(R.string.confirm_logout),
+        preBody = { Text(text = stringResource(R.string.logout), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 18.dp)) }
+    ))
+
+    val scrollState = rememberScrollState()
+    var showFAB by remember { mutableStateOf(true) }
+    HideFABOnScroll(state = scrollState, setFABShown = { showFAB = it })
+    NavScreen(
+        onDismiss,
+        title = R.string.profile,
+        buttonIcon = { Icon(painter = painterResource(R.drawable.baseline_logout_24), contentDescription = stringResource(R.string.logout)) },
+        onIconButtonClick = { logoutDialogState.show() },
+        isLoading = isLoading,
+        snackBar = snackBar,
+        isFABVisible = data != null && showFAB,
+        fabContent = {
+            FloatingActionButton(onClick = { /*TODO*/ }, shape = CircleShape) {
+                Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
+            }
         }
-    }) {
+    ) {
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

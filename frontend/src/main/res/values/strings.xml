@@ -203,4 +203,7 @@
     <string name="no_conversations">You don\'t have any conversations yet. Click here to go to friends list and start a conversation!</string>
     <string name="you_s">"You: "</string>
     <string name="create_party">Create party</string>
+    <string name="logout">Logout</string>
+    <string name="confirm_logout">Are you sure you want to log out?</string>
+    <string name="yes">Yes</string>
 </resources>

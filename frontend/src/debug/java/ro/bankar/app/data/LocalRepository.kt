@@ -119,7 +119,8 @@ private object MockRepository : Repository() {
 
     private fun SPublicUserBase.friend(lastMessage: String?, unreadCount: Int) =
         SFriend(tag, firstName, middleName, lastName, countryCode, joinDate, about, avatar,
-            lastMessage?.let { SUserMessage(SDirection.Received, it, Clock.System.nowUTC()) }, unreadCount)
+            lastMessage?.let { SUserMessage(SDirection.Received, it, Clock.System.nowUTC()) }, unreadCount
+        )
 
     override val friends = mockFlow(
         listOf(
@@ -234,6 +235,8 @@ private object MockRepository : Repository() {
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendCancelTransferRequest(id: Int) = mockStatusResponse<StatusResponse, StatusResponse>()
     override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockStatusResponse<StatusResponse, StatusResponse>()
+
+    override fun logout() {}
 
     init {
         init()

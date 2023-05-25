@@ -107,7 +107,7 @@ suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Not
 
 // LocalRepository defined in debug/release source sets
 
-fun repository(scope: CoroutineScope, sessionToken: String, onSessionExpire: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onSessionExpire)
+fun repository(scope: CoroutineScope, sessionToken: String, onLogout: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onLogout)
 
 abstract class Repository {
     // WebSocket for transmitting live data
@@ -145,6 +145,7 @@ abstract class Repository {
     abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): SafeStatusResponse<StatusResponse, StatusResponse>
 
+    abstract fun logout()
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
@@ -160,7 +161,7 @@ abstract class Repository {
     }
 }
 
-private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: String, private val onSessionExpire: () -> Unit) : Repository() {
+private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: String, private val onLogout: () -> Unit) : Repository() {
     private val client = HttpClient(OkHttp) {
         defaultRequest {
             configUrl()
@@ -301,7 +302,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
             when (val r = client.safeRequest<T> { get(url) }) {
                 is SafeResponse.InternalError -> flow.emit(EmissionResult.Fail(continuation))
                 is SafeResponse.Fail -> {
-                    if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onSessionExpire()
+                    if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onLogout()
                     else flow.emit(EmissionResult.Fail(continuation))
                 }
 
@@ -311,6 +312,11 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
                 }
             }
         }
+    }
+
+    override fun logout() {
+        scope.launch { client.safeGet<StatusResponse, StatusResponse> { url("signout") } }
+        onLogout()
     }
 
     init {
