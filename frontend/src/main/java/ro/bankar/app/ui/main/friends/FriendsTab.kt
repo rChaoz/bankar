@@ -111,6 +111,8 @@ import kotlin.math.sign
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
+        var currentTabIndex by mutableStateOf(0)
+
         // Data
         var friends by mutableStateOf<List<SFriend>?>(null)
         var friendRequests by mutableStateOf<List<SFriendRequest>?>(null)
@@ -264,6 +266,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
         val scope = rememberCoroutineScope()
         val pagerState = rememberPagerState(0)
+        model.currentTabIndex = pagerState.currentPage
         model.onGoToFriendsTab = { scope.launch { pagerState.animateScrollToPage(FriendsTabs.Friends.index) } }
         Column(modifier = Modifier.fillMaxSize()) {
             TabRow(selectedTabIndex = pagerState.currentPage, indicator = { list ->
@@ -305,21 +308,25 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
     @Composable
     override fun FABContent(model: Model, navigation: NavHostController) {
-        ExtendedFloatingActionButton(
-            onClick = model::showAddFriendDialog,
-            text = { Text(text = stringResource(R.string.add_friend)) },
+        val tab = tabs[model.currentTabIndex]
+        if (tab.fabText != null) ExtendedFloatingActionButton(
+            onClick = tab.fabAction(model),
+            text = { Text(text = stringResource(tab.fabText)) },
             icon = { Icon(imageVector = Icons.Default.Add, null) }
         )
+        // Otherwise the FAB won't render, no idea why
+        else Box(modifier = Modifier.size(1.dp))
     }
 }
 
 private val tabs = listOf(FriendsTabs.Conversations, FriendsTabs.Friends, FriendsTabs.FriendRequests)
 
-private sealed class FriendsTabs(val index: Int, val title: Int) {
+private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: Int?) {
     @Composable
     abstract fun Content(model: FriendsTab.Model, repository: Repository)
+    abstract fun fabAction(model: FriendsTab.Model): () -> Unit
 
-    object Conversations : FriendsTabs(0, R.string.conversations) {
+    object Conversations : FriendsTabs(0, R.string.conversations, null) {
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
@@ -383,11 +390,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                     }
                 }
             }
-
         }
+        override fun fabAction(model: FriendsTab.Model): () -> Unit = {}
     }
 
-    object Friends : FriendsTabs(1, R.string.friends) {
+    object Friends : FriendsTabs(1, R.string.friends, R.string.create_party) {
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             val scrollState = rememberScrollState()
@@ -434,10 +441,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                 }
             }
         }
+
+        override fun fabAction(model: FriendsTab.Model): () -> Unit = {} // TODO
     }
 
-    object FriendRequests : FriendsTabs(2, R.string.requests) {
-
+    object FriendRequests : FriendsTabs(2, R.string.requests, R.string.add_friend) {
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
@@ -598,8 +606,9 @@ private sealed class FriendsTabs(val index: Int, val title: Int) {
                     }
                 }
             }
-
         }
+
+        override fun fabAction(model: FriendsTab.Model): () -> Unit = model::showAddFriendDialog
     }
 }
 

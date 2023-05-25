@@ -202,4 +202,5 @@
     <string name="conversations">Conversations</string>
     <string name="no_conversations">You don\'t have any conversations yet. Click here to go to friends list and start a conversation!</string>
     <string name="you_s">"You: "</string>
+    <string name="create_party">Create party</string>
 </resources>
