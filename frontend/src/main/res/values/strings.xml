@@ -233,4 +233,6 @@
     <string name="updated_successfully">Updated successfully</string>
     <string name="exit">Exit</string>
     <string name="transaction">Transaction</string>
+    <string name="history">History</string>
+    <string name="actions">Actions</string>
 </resources>

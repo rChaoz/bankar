@@ -18,18 +18,23 @@ import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
+import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SPublicUserBase
 
 private const val mainTabRoutePrefix = "mainTab"
+
 private const val friendRoutePrefix = "friend"
 private const val conversationRoutePrefix = "conversationWith"
 private const val sendMoneyRoutePrefix = "sendMoneyTo"
 private const val requestMoneyRoutePrefix = "requestMoneyFrom"
+
 private const val transactionRoutePrefix = "transaction"
 private const val transferRoutePrefix = "transfer"
 private const val selfTransferRoutePrefix = "selfTransfer"
+
+private const val bankAccountRoutePrefix = "bankAccount"
 
 @Suppress("FunctionName")
 enum class MainNav(val route: String) {
@@ -42,7 +47,7 @@ enum class MainNav(val route: String) {
     Transaction("$transactionRoutePrefix/{transaction}"),
     Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
     // Accounts & recent activity
-    RecentActivity("recentActivity"),
+    RecentActivity("recentActivity"), BankAccount("$bankAccountRoutePrefix/{account}"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}");
@@ -61,6 +66,7 @@ enum class MainNav(val route: String) {
         fun Transaction(data: SCardTransaction) = "$transactionRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun Transfer(data: SBankTransfer) = "$transferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
+        fun BankAccount(data: SBankAccount) = "$bankAccountRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
     }
 }
 
@@ -87,19 +93,26 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
                 onDismiss = controller::popBackStack,
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToFriend = { controller.navigate(MainNav.Friend(it)) },
-                onNavigateToAccount = {} // TODO
+                onNavigateToAccount = { controller.navigate(MainNav.BankAccount(it)) }
             )
         }
         composable(MainNav.SelfTransfer.route) { entry ->
             SelfTransferDetailsScreen(
                 onDismiss = controller::popBackStack,
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
-                onNavigateToAccount = {} // TODO
+                onNavigateToAccount = { controller.navigate(MainNav.BankAccount(it)) }
             )
         }
         // Accounts & recent activity
         composable(MainNav.RecentActivity.route) {
             RecentActivityScreen(onDismiss = controller::popBackStack, navigation = controller)
+        }
+        composable(MainNav.BankAccount.route) {
+            BankAccountScreen(
+                onDismiss = controller::popBackStack,
+                data = Json.decodeFromString(it.arguments!!.getString("account")!!),
+                navigation = controller
+            )
         }
         // Friends
         composable(MainNav.Friend.route) {

@@ -231,4 +231,6 @@
     <string name="updated_successfully">Actualizat cu succes</string>
     <string name="exit">Ieșire</string>
     <string name="transaction">Tranzacție</string>
+    <string name="history">Istoric</string>
+    <string name="actions">Acțiuni</string>
 </resources>

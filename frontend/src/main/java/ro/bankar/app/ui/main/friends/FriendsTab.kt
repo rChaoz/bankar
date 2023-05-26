@@ -15,9 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -40,9 +37,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -91,6 +85,7 @@ import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.PagerTabs
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackBar
@@ -106,8 +101,6 @@ import ro.bankar.model.SDirection
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SPublicUserBase
-import kotlin.math.absoluteValue
-import kotlin.math.sign
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
@@ -264,45 +257,13 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             }
         }
 
-        val scope = rememberCoroutineScope()
         val pagerState = rememberPagerState(0)
+        val scope = rememberCoroutineScope()
         model.currentTabIndex = pagerState.currentPage
         model.onGoToFriendsTab = { scope.launch { pagerState.animateScrollToPage(FriendsTabs.Friends.index) } }
-        Column(modifier = Modifier.fillMaxSize()) {
-            TabRow(selectedTabIndex = pagerState.currentPage, indicator = { list ->
-                val page = pagerState.currentPage
-                val offset = pagerState.currentPageOffsetFraction
 
-                val tab = list[page]
-                val targetTab = list[page + offset.sign.toInt()]
-
-                val targetP = offset.absoluteValue
-                val currentP = 1f - targetP
-
-                TabRowDefaults.Indicator(
-                    modifier = Modifier
-                        .wrapContentSize(Alignment.BottomStart)
-                        .width(tab.width + targetTab.width * targetP)
-                        .offset(x = tab.left * currentP + targetTab.left * targetP - tab.width * targetP / 2)
-                )
-            }) {
-                for (tab in tabs) {
-                    Tab(
-                        selected = pagerState.currentPage == tab.index,
-                        onClick = {
-                            scope.launch { pagerState.animateScrollToPage(tab.index) }
-                        },
-                        text = { Text(text = stringResource(tab.title)) }
-                    )
-                }
-            }
-            HorizontalPager(
-                pageCount = tabs.size,
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                tabs[it].Content(model, repository)
-            }
+        PagerTabs(tabs = tabs.map { it.title }, pagerState = pagerState) {
+            tabs[it].Content(model, repository)
         }
     }
 

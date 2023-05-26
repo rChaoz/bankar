@@ -133,7 +133,7 @@ fun Transfer(data: SBankTransfer, onNavigate: () -> Unit) {
             else ->
                 Column(horizontalAlignment = Alignment.End) {
                     Amount(amount = -data.amount, currency = data.currency, textStyle = MaterialTheme.typography.titleSmall)
-                    Amount(amount = data.exchangedAmount!!, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.titleSmall)
+                    Amount(amount = data.exchangedAmount!!, currency = data.exchangedCurrency, withPlusSign = true, textStyle = MaterialTheme.typography.titleSmall)
                 }
         }
     }

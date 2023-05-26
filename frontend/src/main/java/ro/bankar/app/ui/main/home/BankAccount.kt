@@ -41,12 +41,12 @@ import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 
 @Composable
-fun BankAccount(data: SBankAccount) {
+fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) {
     HomeCard(
-        onClick = {}, // TODO
+        onClick = onNavigate,
         title = data.name,
         icon = { Icon(painter = painterResource(R.drawable.bank_account), contentDescription = stringResource(R.string.bank_account)) },
-        color = if (data.color in accountColors.indices) accountColors[data.color] else accountColors[0]
+        color = accountColors[data.color.coerceIn(accountColors.indices)]
     ) {
         Text(
             text = stringResource(data.type.rString),
@@ -123,7 +123,7 @@ private val sampleAccount = SBankAccount(
 @Composable
 private fun BankAccountPreview() {
     AppTheme {
-        BankAccount(sampleAccount)
+        BankAccount(sampleAccount, onNavigate = {})
     }
 }
 
@@ -131,7 +131,7 @@ private fun BankAccountPreview() {
 @Composable
 private fun BankAccountPreviewDark() {
     AppTheme {
-        BankAccount(sampleAccount)
+        BankAccount(sampleAccount, onNavigate = {})
     }
 }
 
