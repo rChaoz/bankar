@@ -106,7 +106,7 @@ class NewBankAccountModel : ViewModel() {
             )
             when (result) {
                 is SafeStatusResponse.Fail ->
-                    launch { snackBar.showSnackbar(context.getString(R.string.unable_new_bank_account, result.s.param)) }
+                    launch { snackBar.showSnackbar(context.getString(R.string.unable_new_bank_account, result.s.param), withDismissAction = true) }
                 is SafeStatusResponse.InternalError ->
                     launch { snackBar.showSnackbar(context.getString(R.string.connection_error), withDismissAction = true) }
                 is SafeStatusResponse.Success -> {

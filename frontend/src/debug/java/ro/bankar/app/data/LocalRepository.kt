@@ -13,6 +13,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.banking.Currency
@@ -42,6 +43,7 @@ import ro.bankar.util.nowUTC
 import ro.bankar.util.todayHere
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 val LocalRepository = compositionLocalOf<Repository> { MockRepository }
@@ -178,7 +180,7 @@ private object MockRepository : Repository() {
 
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
-    private val mockRecentActivity = SRecentActivity(
+    private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier -> SRecentActivity(
         listOf(
             SBankTransfer(
                 null, 1, 2, koleci, "Kolecii", "testIBAN.",
@@ -190,11 +192,11 @@ private object MockRepository : Repository() {
             ),
             SBankTransfer(
                 null, 1, 2, koleci, "Koleciii", "testIBAN123!!",
-                5.5, null, Currency.US_DOLLAR, Currency.US_DOLLAR, "", Clock.System.nowUTC()
+                5.5, null, Currency.US_DOLLAR, Currency.US_DOLLAR, "", earlier
             ),
             SBankTransfer(
                 SDirection.Sent, 1, null, koleci, "Koleci 2", "testIBAN!!",
-                15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", Clock.System.nowUTC()
+                15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", earlier
             ),
         ),
         listOf(
@@ -204,7 +206,7 @@ private object MockRepository : Repository() {
             ),
             SCardTransaction(
                 2L, 3, "6969",
-                0.01, Currency.EURO, Clock.System.nowUTC(), "200 houses", "yea.."
+                0.01, Currency.EURO, earlier, "200 houses", "yea.."
             )
         ),
         listOf(
@@ -217,7 +219,7 @@ private object MockRepository : Repository() {
                 12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
             )
         ),
-    )
+    )}
 
     override suspend fun sendCancelFriendRequest(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 

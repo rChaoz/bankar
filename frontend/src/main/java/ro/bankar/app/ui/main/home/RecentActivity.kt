@@ -166,7 +166,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
             var transactionI = 0
             // Limit total number of entries to 3
             while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
-                if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime < transactions[transactionI].dateTime))
+                if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime > transactions[transactionI].dateTime))
                     Transfer(transfers[transferI++])
                 else {
                     val transaction = transactions[transactionI++]
@@ -632,8 +632,8 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
             scope.launch {
                 isDeclining = true
                 when (val r = model.repository.sendRespondToTransferRequest(request.id, false, null)) {
-                    is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message)) }
-                    is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error)) }
+                    is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
+                    is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
                     is SafeStatusResponse.Success -> model.repository.recentActivity.emitNow()
                 }
                 isDeclining = false

@@ -186,11 +186,11 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
          */
         fun onCancelRequest(c: Context, tag: String, repository: Repository) = viewModelScope.launch {
             when (val result = repository.sendCancelFriendRequest(tag)) {
-                is SafeStatusResponse.InternalError -> snackBar.showSnackbar(c.getString(result.message))
+                is SafeStatusResponse.InternalError -> snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
                 is SafeStatusResponse.Fail ->
                     // Sometimes, the same request can be removed twice (due to fast click/lag), don't show error, just update screen
                     if (result.s.status == "request_not_found") repository.friendRequests.requestEmit()
-                    else snackBar.showSnackbar(c.getString(R.string.unknown_error))
+                    else snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
 
                 is SafeStatusResponse.Success -> repository.friendRequests.requestEmit()
             }
