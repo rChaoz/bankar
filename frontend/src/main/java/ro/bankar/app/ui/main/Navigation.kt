@@ -41,6 +41,8 @@ enum class MainNav(val route: String) {
     // Details screens
     Transaction("$transactionRoutePrefix/{transaction}"),
     Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
+    // Accounts & recent activity
+    RecentActivity("recentActivity"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}");
@@ -94,6 +96,10 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToAccount = {} // TODO
             )
+        }
+        // Accounts & recent activity
+        composable(MainNav.RecentActivity.route) {
+            RecentActivityScreen(onDismiss = controller::popBackStack, navigation = controller)
         }
         // Friends
         composable(MainNav.Friend.route) {

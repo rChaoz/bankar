@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -40,15 +39,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -64,8 +60,6 @@ import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -78,6 +72,10 @@ import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.FilledIcon
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.RecentActivityRow
+import ro.bankar.app.ui.components.RecentActivityShimmerRow
+import ro.bankar.app.ui.components.Transaction
+import ro.bankar.app.ui.components.Transfer
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackBar
@@ -96,13 +94,10 @@ import ro.bankar.banking.rate
 import ro.bankar.banking.reverseExchange
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
-import ro.bankar.model.SBankTransfer
-import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
-import ro.bankar.util.here
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.sign
@@ -176,7 +171,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                 }
             }
             TextButton(
-                onClick = { /*TODO*/ },
+                onClick = { navigation.navigate(MainNav.RecentActivity.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
@@ -202,135 +197,6 @@ private fun RecentActivityPreview() {
 private fun RecentActivityPreviewDark() {
     AppTheme {
         RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
-    }
-}
-
-@Composable
-fun RecentActivityShimmer(shimmer: Shimmer) {
-    HomeCard(title = stringResource(R.string.recent_activity), shimmer = shimmer, icon = {
-        Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null, modifier = Modifier.shimmer(shimmer))
-    }) {
-        repeat(3) { ShimmerRow(shimmer) }
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(18.dp)
-                .size(80.dp, 16.dp)
-                .grayShimmer(shimmer)
-        )
-    }
-}
-
-@Preview
-@Composable
-fun RecentActivityShimmerPreview() {
-    AppTheme {
-        RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
-    }
-}
-
-@Composable
-private fun ShimmerRow(shimmer: Shimmer) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.clip(CircleShape)) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .grayShimmer(shimmer)
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Box(
-                modifier = Modifier
-                    .size(200.dp, 14.dp)
-                    .grayShimmer(shimmer)
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .size(120.dp, 11.dp)
-                    .grayShimmer(shimmer)
-            )
-        }
-    }
-}
-
-@Suppress("NOTHING_TO_INLINE")
-@Composable
-private inline fun RecentActivityRow(
-    noinline onClick: () -> Unit,
-    noinline icon: @Composable () -> Unit,
-    title: String,
-    subtitle: String,
-    elevated: Boolean = false,
-    noinline trailingContent: @Composable () -> Unit
-) {
-    RecentActivityRow(onClick, icon, title, AnnotatedString(subtitle), elevated, trailingContent)
-}
-
-@Composable
-private fun RecentActivityRowBase(
-    icon: @Composable () -> Unit,
-    title: String,
-    subtitle: AnnotatedString,
-    trailingContent: @Composable () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        icon()
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = subtitle,
-                color = MaterialTheme.colorScheme.outline,
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        trailingContent()
-    }
-}
-
-@Composable
-private fun RecentActivityRow(
-    onClick: () -> Unit,
-    icon: @Composable () -> Unit,
-    title: String,
-    subtitle: AnnotatedString,
-    elevated: Boolean = false,
-    trailingContent: @Composable () -> Unit
-) {
-    Surface(onClick, tonalElevation = if (elevated) 8.dp else 0.dp) {
-        RecentActivityRowBase(icon, title, subtitle, trailingContent)
-    }
-}
-
-@Composable
-private fun RecentActivityRow(
-    icon: @Composable () -> Unit,
-    title: String,
-    subtitle: AnnotatedString,
-    trailingContent: @Composable () -> Unit
-) {
-    Surface(tonalElevation = 8.dp) {
-        RecentActivityRowBase(icon, title, subtitle, trailingContent)
     }
 }
 
@@ -645,47 +511,25 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
 }
 
 @Composable
-private fun Payment(data: SCardTransaction, onNavigate: () -> Unit) {
-    RecentActivityRow(onClick = onNavigate, icon = {
-        FilledIcon(
-            painter = painterResource(R.drawable.payment),
-            contentDescription = stringResource(R.string.payment),
-            color = MaterialTheme.colorScheme.secondary,
+fun RecentActivityShimmer(shimmer: Shimmer) {
+    HomeCard(title = stringResource(R.string.recent_activity), shimmer = shimmer, icon = {
+        Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null, modifier = Modifier.shimmer(shimmer))
+    }) {
+        repeat(3) { RecentActivityShimmerRow(shimmer) }
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(18.dp)
+                .size(80.dp, 16.dp)
+                .grayShimmer(shimmer)
         )
-    }, title = data.title, subtitle = data.dateTime.toInstant(TimeZone.UTC).here().format()) {
-        Amount(-data.amount, data.currency)
     }
 }
 
+@Preview
 @Composable
-private fun Transfer(data: SBankTransfer, onNavigate: () -> Unit) {
-    RecentActivityRow(
-        onClick = onNavigate,
-        icon = {
-            FilledIcon(
-                painter = painterResource(if (data.direction != null) R.drawable.transfer else R.drawable.self_transfer),
-                contentDescription = stringResource(R.string.transfer),
-                color = MaterialTheme.colorScheme.secondary,
-            )
-        },
-        title = when {
-            data.direction == SDirection.Received -> stringResource(R.string.from_s, data.fullName)
-            data.direction == SDirection.Sent -> stringResource(R.string.to_s, data.fullName)
-            data.exchangedAmount == null -> stringResource(R.string.self_transfer)
-            else -> stringResource(R.string.exchange)
-        },
-        subtitle = data.dateTime.toInstant(TimeZone.UTC).here().format()
-    ) {
-        when {
-            data.direction != null ->
-                Amount(if (data.direction == SDirection.Sent) -data.relevantAmount else data.relevantAmount, data.currency, withPlusSign = true)
-            data.exchangedAmount == null ->
-                Amount(data.amount, data.currency, color = MaterialTheme.colorScheme.onSurface)
-            else ->
-                Column(horizontalAlignment = Alignment.End) {
-                    Amount(amount = -data.amount, currency = data.currency, textStyle = MaterialTheme.typography.titleSmall)
-                    Amount(amount = data.exchangedAmount!!, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.titleSmall)
-                }
-        }
+private fun RecentActivityShimmerPreview() {
+    AppTheme {
+        RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
     }
 }
