@@ -121,12 +121,11 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var dateTime by BankTransfers.dateTime
 
     fun serializable(direction: SDirection?): SBankTransfer {
-        // If direction is null, bankAccount will be source account and otherAccount will be target account (of the same user)
-        val bankAccount = if (direction != SDirection.Received) sender!! else recipient!!
-        val otherAccount = if (direction != SDirection.Received) recipient else sender
+        val bankAccount = if (direction == SDirection.Sent) sender!! else recipient!!
+        val sourceAccount = if (direction == SDirection.Sent) recipient else sender
         return SBankTransfer(
-            direction, bankAccount.id.value, if (direction == null) null else otherAccount!!.id.value,
-            otherAccount?.user?.publicSerializable(otherAccount.user.hasFriend(bankAccount.user)),
+            direction, bankAccount.id.value, if (direction != null) null else sourceAccount!!.id.value,
+            sourceAccount?.user?.publicSerializable(sourceAccount.user.hasFriend(bankAccount.user)),
             if (direction == SDirection.Sent) recipientName else senderName,
             if (direction == SDirection.Sent) recipientIban else senderIban,
             amount.toDouble(), exchangedAmount?.toDouble(), currency, bankAccount.currency, note, dateTime

@@ -12,11 +12,9 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -39,8 +37,7 @@ import ro.bankar.util.nowUTC
 
 @Composable
 fun PaymentDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
-    val snackBar = remember { SnackbarHostState() }
-    NavScreen(onDismiss, title = R.string.payment, snackBar = snackBar) {
+    NavScreen(onDismiss, title = R.string.payment) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 12.dp)) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -72,14 +69,21 @@ fun PaymentDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
                     Surface(
                         onClick = {},
                         modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = MaterialTheme.shapes.extraSmall
                     ) {
-                        Text(
-                            text = stringResource(R.string.card_last_4_template, data.cardLastFour),
-                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 20.dp),
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(18.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_card_24),
+                                contentDescription = stringResource(R.string.card),
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Text(text = stringResource(R.string.card_last_4_template, data.cardLastFour), fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

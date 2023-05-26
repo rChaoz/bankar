@@ -213,4 +213,12 @@
     <string name="paid_with">Paid with</string>
     <string name="card_last_4_template" translatable="false">•••• •••• •••• %s</string>
     <string name="reference">Reference</string>
+    <string name="not_user">Not a user on this platform</string>
+    <string name="iban" translatable="false">IBAN</string>
+    <string name="received_amount">"Received amount: "</string>
+    <string name="sent_exchanged_amount">"Sent exchanged amount: "</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
+    <string name="not_a_friend">Not a friend</string>
+    <string name="card">Card</string>
 </resources>

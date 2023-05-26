@@ -2,6 +2,7 @@ package ro.bankar.model
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import ro.bankar.banking.Currency
 
 @Serializable
@@ -17,7 +18,7 @@ data class SBankTransfer(
     /**
      * Non-null if [direction] is null.
      */
-    val destinationAccountID: Int?,
+    val sourceAccountID: Int?,
 
     val user: SPublicUser?,
     val fullName: String,
@@ -43,7 +44,12 @@ data class SBankTransfer(
      * Amount that is relevant to the user: sent amount/[amount] if direction is `Sent`; received amount/[exchangedAmount] if direction is `Received`.
      * This will be the exchanged amount if this is a self-transfer (exchange operation).
      */
-    val relevantAmount = if (direction == SDirection.Sent) amount else (exchangedAmount ?: amount)
+    @Transient val relevantAmount = if (direction == SDirection.Sent) amount else (exchangedAmount ?: amount)
+
+    /**
+     * Currency associated with [relevantAmount]
+     */
+    @Transient val relevantCurrency = if (direction == SDirection.Sent) currency else exchangedCurrency
 }
 
 @Serializable

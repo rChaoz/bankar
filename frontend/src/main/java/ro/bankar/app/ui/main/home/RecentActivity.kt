@@ -167,7 +167,9 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
             // Limit total number of entries to 3
             while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
                 if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime > transactions[transactionI].dateTime))
-                    Transfer(transfers[transferI++])
+                    transfers[transferI++].let { Transfer(it, onNavigate = {
+                        navigation.navigate(if (it.sourceAccountID == null) MainNav.Transfer(it) else MainNav.SelfTransfer(it))
+                    })}
                 else {
                     val transaction = transactions[transactionI++]
                     Payment(transaction, onNavigate = { navigation.navigate(MainNav.Payment(transaction)) })
@@ -656,9 +658,9 @@ private fun Payment(data: SCardTransaction, onNavigate: () -> Unit) {
 }
 
 @Composable
-private fun Transfer(data: SBankTransfer) {
+private fun Transfer(data: SBankTransfer, onNavigate: () -> Unit) {
     RecentActivityRow(
-        onClick = {},
+        onClick = onNavigate,
         icon = {
             FilledIcon(
                 painter = painterResource(if (data.direction != null) R.drawable.transfer else R.drawable.self_transfer),

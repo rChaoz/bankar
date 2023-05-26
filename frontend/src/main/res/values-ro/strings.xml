@@ -212,4 +212,11 @@
     <string name="split_bill">Împarte nota</string>
     <string name="paid_with">Plătit cu</string>
     <string name="reference">Referință</string>
+    <string name="not_user">Nu este utilizator pe această platformă</string>
+    <string name="received_amount">"Suma primită: "</string>
+    <string name="sent_exchanged_amount">"Suma trimisă schimbată: "</string>
+    <string name="from">De la</string>
+    <string name="to">Către</string>
+    <string name="not_a_friend">Nu este prieten</string>
+    <string name="card">Card</string>
 </resources>
