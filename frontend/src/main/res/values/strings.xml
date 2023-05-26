@@ -92,7 +92,6 @@
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
     <string name="party_invite_from">Invite from %s</string>
-    <string name="payment">Payment</string>
     <string name="transfer">Transfer</string>
     <string name="from_s">From %s</string>
     <string name="to_s">To %s</string>
@@ -106,7 +105,7 @@
     <string name="crypto">Crypto</string>
     <string name="no_bank_accounts">You don\'t have a bank account yet.\nClick here to create one now!</string>
     <string name="create">Create</string>
-    <string name="no_recent_activity">You don\'t have any recent payments or transfers</string>
+    <string name="no_recent_activity">You don\'t have any recent transactions or transfers</string>
     <string name="what_account_type">What type of bank account would you like to open?</string>
     <string name="account_debit">Debit</string>
     <string name="account_credit">Credit</string>
@@ -233,4 +232,5 @@
     <string name="please_enter_password">Please enter your password</string>
     <string name="updated_successfully">Updated successfully</string>
     <string name="exit">Exit</string>
+    <string name="transaction">Transaction</string>
 </resources>

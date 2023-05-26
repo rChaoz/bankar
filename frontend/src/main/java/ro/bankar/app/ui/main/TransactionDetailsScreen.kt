@@ -36,8 +36,8 @@ import ro.bankar.util.here
 import ro.bankar.util.nowUTC
 
 @Composable
-fun PaymentDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
-    NavScreen(onDismiss, title = R.string.payment) {
+fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
+    NavScreen(onDismiss, title = R.string.transaction) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 12.dp)) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -115,7 +115,7 @@ fun PaymentDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
 @Composable
 private fun TransactionDetailsScreenPreview() {
     AppTheme {
-        PaymentDetailsScreen(
+        TransactionDetailsScreen(
             onDismiss = {}, data = SCardTransaction(
                 21837129371927L, 1, "4838", 25.67,
                 Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "TacoBell", "taco bell lore"

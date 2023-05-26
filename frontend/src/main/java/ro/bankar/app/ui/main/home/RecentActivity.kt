@@ -172,7 +172,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                     })}
                 else {
                     val transaction = transactions[transactionI++]
-                    Payment(transaction, onNavigate = { navigation.navigate(MainNav.Payment(transaction)) })
+                    Transaction(transaction, onNavigate = { navigation.navigate(MainNav.Transaction(transaction)) })
                 }
             }
             TextButton(

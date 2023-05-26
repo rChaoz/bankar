@@ -92,7 +92,6 @@
     <string name="accept">Acceptă</string>
     <string name="decline">Respinge</string>
     <string name="party_invite_from">Invitație de la %s</string>
-    <string name="payment">Plată</string>
     <string name="transfer">Transfer</string>
     <string name="from_s">De la %s</string>
     <string name="to_s">Către %s</string>
@@ -231,4 +230,5 @@
     <string name="please_enter_password">Te rugăm să îți introduci parola</string>
     <string name="updated_successfully">Actualizat cu succes</string>
     <string name="exit">Ieșire</string>
+    <string name="transaction">Tranzacție</string>
 </resources>

@@ -27,7 +27,7 @@ private const val friendRoutePrefix = "friend"
 private const val conversationRoutePrefix = "conversationWith"
 private const val sendMoneyRoutePrefix = "sendMoneyTo"
 private const val requestMoneyRoutePrefix = "requestMoneyFrom"
-private const val paymentRoutePrefix = "transaction"
+private const val transactionRoutePrefix = "transaction"
 private const val transferRoutePrefix = "transfer"
 private const val selfTransferRoutePrefix = "selfTransfer"
 
@@ -39,7 +39,7 @@ enum class MainNav(val route: String) {
     Friends("$mainTabRoutePrefix/${FriendsTab.name}"), Home("$mainTabRoutePrefix/${HomeTab.name}"),
     NewBankAccount("createAccount"),
     // Details screens
-    Payment("$paymentRoutePrefix/{transaction}"),
+    Transaction("$transactionRoutePrefix/{transaction}"),
     Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
@@ -56,7 +56,7 @@ enum class MainNav(val route: String) {
         fun Conversation(user: SPublicUserBase) = "$conversationRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun SendMoney(user: SPublicUserBase) = "$sendMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun RequestMoney(user: SPublicUserBase) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
-        fun Payment(data: SCardTransaction) = "$paymentRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
+        fun Transaction(data: SCardTransaction) = "$transactionRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun Transfer(data: SBankTransfer) = "$transferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
     }
@@ -77,8 +77,8 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
             NewBankAccountScreen(onDismiss = controller::popBackStack)
         }
         // Details screens
-        composable(MainNav.Payment.route) {
-            PaymentDetailsScreen(onDismiss = controller::popBackStack, data = Json.decodeFromString(it.arguments!!.getString("transaction")!!))
+        composable(MainNav.Transaction.route) {
+            TransactionDetailsScreen(onDismiss = controller::popBackStack, data = Json.decodeFromString(it.arguments!!.getString("transaction")!!))
         }
         composable(MainNav.Transfer.route) { entry ->
             ExternalTransferDetailsScreen(
