@@ -23,6 +23,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import ro.bankar.app.ui.components.ButtonRow
 import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.VerifiableField
+import ro.bankar.app.ui.components.VerifiableState
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.rString
 import ro.bankar.app.ui.theme.AppTheme
@@ -70,7 +72,7 @@ class NewBankAccountModel : ViewModel() {
             else getString(R.string.invalid_bank_account_name, it.first, it.last)
         }
     }
-    var color by mutableStateOf(0)
+    var color = mutableStateOf(0)
     var currency = verifiableStateOf(Currency.ROMANIAN_LEU, R.string.no_credit_for_currency) {
         accountType != SBankAccountType.Credit || currencyCreditData != null
     }
@@ -102,7 +104,7 @@ class NewBankAccountModel : ViewModel() {
         viewModelScope.launch {
             val result = repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value.trim().ifEmpty { context.getString(R.string.s_account, context.getString(accountType.rString)) },
-                    color, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
+                    color.value, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
             )
             when (result) {
                 is SafeStatusResponse.Fail ->
@@ -189,44 +191,8 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
                     )
                 }
             }
-            Text(text = stringResource(R.string.personalize_new_account))
-            var accountNameFocused by remember { mutableStateOf(false) }
-            OutlinedTextField(
-                value = if (accountNameFocused) model.name.value else stringResource(R.string.s_account, stringResource(model.accountType.rString)),
-                onValueChange = { model.name.value = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged {
-                        accountNameFocused = it.isFocused
-                        if (it.isFocused) model.name.clearError()
-                        else if (model.name.value.isNotEmpty()) model.name.check(context)
-                    },
-                singleLine = true,
-                label = { Text(text = stringResource(R.string.account_name)) },
-                isError = model.name.hasError,
-                supportingText = { Text(text = model.name.error ?: "") }
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                for ((index, color) in accountColors.withIndex()) {
-                    OutlinedIconToggleButton(
-                        checked = index == model.color,
-                        onCheckedChange = { model.color = index },
-                        colors = IconButtonDefaults.outlinedIconToggleButtonColors(checkedContainerColor = color.copy(alpha = .4f)),
-                        border = null
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .background(color, CircleShape)
-                        )
-                    }
-                }
-            }
+            BankAccountPersonalisation(title = R.string.personalize_new_account, name = model.name,
+                color = model.color, accountType = model.accountType)
         }
     }
 }
@@ -236,5 +202,55 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
 private fun NewBankAccountPreview() {
     AppTheme {
         NewBankAccountScreen(onDismiss = {})
+    }
+}
+
+@Composable
+fun BankAccountPersonalisation(
+    title: Int,
+    name: VerifiableState<String>,
+    color: MutableState<Int>,
+    accountType: SBankAccountType,
+    modifier: Modifier = Modifier
+) = Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Text(text = stringResource(title))
+    var accountNameFocused by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    OutlinedTextField(
+        value = if (accountNameFocused) name.value else stringResource(R.string.s_account, stringResource(accountType.rString)),
+        onValueChange = { name.value = it },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged {
+                accountNameFocused = it.isFocused
+                if (it.isFocused) name.clearError()
+                else if (name.value.isNotEmpty()) name.check(context)
+            },
+        singleLine = true,
+        label = { Text(text = stringResource(R.string.account_name)) },
+        isError = name.hasError,
+        supportingText = { Text(text = name.error ?: "") }
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        for ((index, c) in accountColors.withIndex()) {
+            OutlinedIconToggleButton(
+                checked = index == color.value,
+                onCheckedChange = { color.value = index },
+                colors = IconButtonDefaults.outlinedIconToggleButtonColors(checkedContainerColor = c.copy(alpha = .4f)),
+                border = null
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(c, CircleShape)
+                )
+            }
+        }
     }
 }

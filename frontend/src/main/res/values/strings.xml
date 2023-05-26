@@ -235,4 +235,10 @@
     <string name="transaction">Transaction</string>
     <string name="history">History</string>
     <string name="actions">Actions</string>
+    <string name="share_iban">Share IBAN</string>
+    <string name="create_statement">Create statement</string>
+    <string name="download_pdf">Download PDF</string>
+    <string name="customize">Customise</string>
+    <string name="change_name_and_color">Change name and color</string>
+    <string name="personalize_your_account">Personalize your account:</string>
 </resources>

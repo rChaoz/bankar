@@ -233,4 +233,10 @@
     <string name="transaction">Tranzacție</string>
     <string name="history">Istoric</string>
     <string name="actions">Acțiuni</string>
+    <string name="share_iban">Partajează IBAN</string>
+    <string name="create_statement">Creează extras de cont</string>
+    <string name="download_pdf">Descarcă PDF</string>
+    <string name="customize">Personalizare</string>
+    <string name="change_name_and_color">Schimbă numele și culoarea</string>
+    <string name="personalize_your_account">Personalizează-ți contul:</string>
 </resources>

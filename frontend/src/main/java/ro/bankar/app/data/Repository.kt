@@ -31,11 +31,13 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
+import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SConversation
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
@@ -142,6 +144,7 @@ abstract class Repository {
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
+    abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): SafeResponse<StatusResponse>
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
@@ -277,6 +280,12 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
             url("accounts/new")
             setBody(account)
         }
+
+    override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = client.safeRequest<StatusResponse> {
+        post("accounts/$id/customise") {
+            setBody(SNewBankAccount(SBankAccountType.Debit, name, color, Currency.ROMANIAN_LEU, 0.0))
+        }
+    }
 
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
         post("transfer/send") {

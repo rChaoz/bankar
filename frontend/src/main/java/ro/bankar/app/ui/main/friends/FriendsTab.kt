@@ -7,11 +7,15 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -352,6 +356,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                 }
             }
         }
+
         override fun fabAction(model: FriendsTab.Model): () -> Unit = {}
     }
 
@@ -407,7 +412,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
     }
 
     object FriendRequests : FriendsTabs(2, R.string.requests, R.string.add_friend) {
-        @OptIn(ExperimentalMaterial3Api::class)
+        @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
         @Composable
         override fun Content(model: FriendsTab.Model, repository: Repository) {
             // Show information about friend request
@@ -416,7 +421,12 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
             requestInfo?.let {
                 val sheetState = rememberModalBottomSheetState()
                 ModalBottomSheet(onDismissRequest = { setRequestInfo(null) }, sheetState = sheetState) {
-                    Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .padding(vertical = 12.dp)
+                            .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         FriendCard(friend = it, country = model.countryData.nameFromCode(it.countryCode), modifier = Modifier.padding(horizontal = 12.dp))
                         if (it.about.isNotEmpty()) {
                             Surface(

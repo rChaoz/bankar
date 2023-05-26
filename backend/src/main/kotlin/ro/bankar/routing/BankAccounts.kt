@@ -1,10 +1,10 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.auth.authentication
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -14,7 +14,11 @@ import ro.bankar.database.BankAccount
 import ro.bankar.database.BankCard
 import ro.bankar.database.CREDIT_DATA
 import ro.bankar.database.serializable
-import ro.bankar.model.*
+import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.NotFoundResponse
+import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SNewBankCard
+import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
 
 fun Route.configureBankAccounts() {
@@ -53,6 +57,24 @@ fun Route.configureBankAccounts() {
                 }
                 if (accountData == null) call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "account_id"))
                 else call.respond(HttpStatusCode.OK, accountData)
+            }
+            post("customise") {
+                val user = call.authentication.principal<UserPrincipal>()!!.user
+                val accountID = call.parameters["id"]?.toIntOrNull()
+                val data = call.receive<SNewBankAccount>()
+
+                data.validate(CREDIT_DATA)?.takeIf { it == "color" || it == "name" }?.let {
+                    call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@post
+                }
+                newSuspendedTransaction {
+                    val account = user.bankAccounts.find { it.id.value == accountID }
+                    if (account == null) call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "account_id"))
+                    else {
+                        account.name = data.name
+                        account.color = data.color
+                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                    }
+                }
             }
             // Create new bank card
             post("new") {

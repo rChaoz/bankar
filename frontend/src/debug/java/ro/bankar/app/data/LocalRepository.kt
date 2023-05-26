@@ -246,6 +246,7 @@ private object MockRepository : Repository() {
     )
 
     override suspend fun sendCreateAccount(account: SNewBankAccount) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
+    override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = mockResponse<StatusResponse>()
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendCancelTransferRequest(id: Int) = mockStatusResponse<StatusResponse, StatusResponse>()
