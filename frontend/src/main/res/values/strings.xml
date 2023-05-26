@@ -206,4 +206,6 @@
     <string name="logout">Logout</string>
     <string name="confirm_logout">Are you sure you want to log out?</string>
     <string name="yes">Yes</string>
+    <string name="exchange">Exchange</string>
+    <string name="self_tranfer">Self transfer</string>
 </resources>

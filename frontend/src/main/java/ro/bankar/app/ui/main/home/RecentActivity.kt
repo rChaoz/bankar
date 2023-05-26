@@ -94,6 +94,7 @@ import ro.bankar.banking.rate
 import ro.bankar.banking.reverseExchange
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
@@ -162,15 +163,9 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
             var transactionI = 0
             // Limit total number of entries to 3
             while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
-                if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime < transactions[transactionI].dateTime)) {
-                    val transfer = transfers[transferI++]
-                    Transfer(
-                        name = transfer.fullName,
-                        time = transfer.dateTime.toInstant(TimeZone.UTC),
-                        amount = if (transfer.direction == SDirection.Sent) -transfer.amount else (transfer.exchangedAmount ?: transfer.amount),
-                        currency = if (transfer.direction == SDirection.Sent) transfer.currency else transfer.exchangedCurrency
-                    )
-                } else {
+                if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime < transactions[transactionI].dateTime))
+                    Transfer(transfers[transferI++])
+                else {
                     val transaction = transactions[transactionI++]
                     Payment(
                         title = transaction.title, time = transaction.dateTime.toInstant(TimeZone.UTC),
@@ -267,18 +262,6 @@ private fun ShimmerRow(shimmer: Shimmer) {
 @Suppress("NOTHING_TO_INLINE")
 @Composable
 private inline fun RecentActivityRow(
-    noinline icon: @Composable () -> Unit,
-    title: String,
-    subtitle: String,
-    elevated: Boolean = false,
-    noinline trailingContent: @Composable () -> Unit
-) {
-    RecentActivityRow(icon, title, AnnotatedString(subtitle), elevated, trailingContent)
-}
-
-@Suppress("NOTHING_TO_INLINE")
-@Composable
-private inline fun RecentActivityRow(
     noinline onClick: () -> Unit,
     noinline icon: @Composable () -> Unit,
     title: String,
@@ -342,17 +325,16 @@ private fun RecentActivityRow(
     icon: @Composable () -> Unit,
     title: String,
     subtitle: AnnotatedString,
-    elevated: Boolean = false,
     trailingContent: @Composable () -> Unit
 ) {
-    Surface(tonalElevation = if (elevated) 8.dp else 0.dp) {
+    Surface(tonalElevation = 8.dp) {
         RecentActivityRowBase(icon, title, subtitle, trailingContent)
     }
 }
 
 @Composable
 private fun PartyInvite(fromName: String, amount: Double, currency: Currency, place: String) {
-    RecentActivityRow(elevated = true, icon = {
+    RecentActivityRow(elevated = true, onClick = {}, icon = {
         FilledIcon(
             painter = painterResource(id = R.drawable.share_bill),
             contentDescription = null,
@@ -372,7 +354,7 @@ private fun PartyInvite(fromName: String, amount: Double, currency: Currency, pl
 private fun SentTransferRequest(id: Int, fromName: String, amount: Double, currency: Currency) {
     var isLoading by remember { mutableStateOf(false) }
 
-    RecentActivityRow(elevated = true, icon = {
+    RecentActivityRow(icon = {
         FilledIcon(
             painter = painterResource(R.drawable.transfer_request),
             contentDescription = stringResource(R.string.transfer_request),
@@ -674,19 +656,34 @@ private fun Payment(title: String, time: Instant, amount: Double, currency: Curr
 }
 
 @Composable
-private fun Transfer(name: String, time: Instant, amount: Double, currency: Currency) {
+private fun Transfer(data: SBankTransfer) {
     RecentActivityRow(
         onClick = {},
         icon = {
             FilledIcon(
-                painter = painterResource(R.drawable.transfer),
+                painter = painterResource(if (data.direction != null) R.drawable.transfer else R.drawable.self_transfer),
                 contentDescription = stringResource(R.string.transfer),
                 color = MaterialTheme.colorScheme.secondary,
             )
         },
-        title = stringResource(if (amount > 0) R.string.from_s else R.string.to_s, name),
-        subtitle = time.here().format()
+        title = when {
+            data.direction == SDirection.Received -> stringResource(R.string.from_s, data.fullName)
+            data.direction == SDirection.Sent -> stringResource(R.string.to_s, data.fullName)
+            data.exchangedAmount == null -> stringResource(R.string.self_tranfer)
+            else -> stringResource(R.string.exchange)
+        },
+        subtitle = data.dateTime.toInstant(TimeZone.UTC).here().format()
     ) {
-        Amount(amount, currency, withPlusSign = true)
+        when {
+            data.direction != null ->
+                Amount(if (data.direction == SDirection.Sent) -data.relevantAmount else data.relevantAmount, data.currency, withPlusSign = true)
+            data.exchangedAmount == null ->
+                Amount(data.amount, data.currency, color = MaterialTheme.colorScheme.onSurface)
+            else ->
+                Column(horizontalAlignment = Alignment.End) {
+                    Amount(amount = -data.amount, currency = data.currency, textStyle = MaterialTheme.typography.titleSmall)
+                    Amount(amount = data.exchangedAmount!!, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.titleSmall)
+                }
+        }
     }
 }

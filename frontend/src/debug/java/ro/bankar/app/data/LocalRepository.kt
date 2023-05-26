@@ -38,7 +38,6 @@ import ro.bankar.model.SUser
 import ro.bankar.model.SUserMessage
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
-import ro.bankar.util.nowHere
 import ro.bankar.util.nowUTC
 import ro.bankar.util.todayHere
 import kotlin.coroutines.Continuation
@@ -182,18 +181,30 @@ private object MockRepository : Repository() {
     private val mockRecentActivity = SRecentActivity(
         listOf(
             SBankTransfer(
-                SDirection.Received, 1, koleci, "Koleci 1", "test_iban",
-                25.215, null, Currency.EURO, Currency.EURO, "ia bani", Clock.System.nowHere()
+                null, 1, 2, koleci, "Kolecii", "testIBAN.",
+                100.0, 20.01, Currency.ROMANIAN_LEU, Currency.EURO, "", Clock.System.nowUTC()
             ),
             SBankTransfer(
-                SDirection.Sent, 1, koleci, "Koleci 2", "testIBAN!!",
-                15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", Clock.System.nowHere()
+                SDirection.Received, 1, null, koleci, "Koleci 1", "test_iban",
+                25.215, null, Currency.EURO, Currency.EURO, "ia bani", Clock.System.nowUTC()
+            ),
+            SBankTransfer(
+                null, 1, 2, koleci, "Koleciii", "testIBAN123!!",
+                5.5, null, Currency.US_DOLLAR, Currency.US_DOLLAR, "", Clock.System.nowUTC()
+            ),
+            SBankTransfer(
+                SDirection.Sent, 1, null, koleci, "Koleci 2", "testIBAN!!",
+                15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", Clock.System.nowUTC()
             ),
         ),
         listOf(
             SCardTransaction(
                 1L, 2, "1373",
                 23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun"
+            ),
+            SCardTransaction(
+                2L, 3, "6969",
+                0.01, Currency.EURO, Clock.System.nowUTC(), "200 houses", "yea.."
             )
         ),
         listOf(

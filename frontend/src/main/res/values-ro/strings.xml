@@ -206,4 +206,6 @@
     <string name="logout">Deconectare</string>
     <string name="confirm_logout">Esti sigur(ă) că vrei să te deconectezi?</string>
     <string name="yes">Da</string>
+    <string name="exchange">Schimb valutar</string>
+    <string name="self_tranfer">Transfer între conturi proprii</string>
 </resources>

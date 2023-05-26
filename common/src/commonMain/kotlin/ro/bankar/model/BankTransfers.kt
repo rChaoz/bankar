@@ -14,6 +14,10 @@ data class SBankTransfer(
      */
     val direction: SDirection?,
     val accountID: Int,
+    /**
+     * Non-null if [direction] is null.
+     */
+    val destinationAccountID: Int?,
 
     val user: SPublicUser?,
     val fullName: String,
@@ -34,7 +38,13 @@ data class SBankTransfer(
     val note: String,
 
     val dateTime: LocalDateTime,
-)
+) {
+    /**
+     * Amount that is relevant to the user: sent amount/[amount] if direction is `Sent`; received amount/[exchangedAmount] if direction is `Received`.
+     * This will be the exchanged amount if this is a self-transfer (exchange operation).
+     */
+    val relevantAmount = if (direction == SDirection.Sent) amount else (exchangedAmount ?: amount)
+}
 
 @Serializable
 data class STransferRequest(
