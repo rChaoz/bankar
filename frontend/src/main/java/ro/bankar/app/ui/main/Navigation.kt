@@ -18,6 +18,7 @@ import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
+import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SPublicUserBase
 
 private const val mainTabRoutePrefix = "mainTab"
@@ -25,6 +26,7 @@ private const val friendRoutePrefix = "friend"
 private const val conversationRoutePrefix = "conversationWith"
 private const val sendMoneyRoutePrefix = "sendMoneyTo"
 private const val requestMoneyRoutePrefix = "requestMoneyFrom"
+private const val paymentRoutePrefix = "transaction"
 
 @Suppress("FunctionName")
 enum class MainNav(val route: String) {
@@ -33,6 +35,8 @@ enum class MainNav(val route: String) {
     // Home
     Friends("$mainTabRoutePrefix/${FriendsTab.name}"), Home("$mainTabRoutePrefix/${HomeTab.name}"),
     NewBankAccount("createAccount"),
+    // Details screens
+    Payment("$paymentRoutePrefix/{transaction}"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}");
@@ -48,6 +52,7 @@ enum class MainNav(val route: String) {
         fun Conversation(user: SPublicUserBase) = "$conversationRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun SendMoney(user: SPublicUserBase) = "$sendMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun RequestMoney(user: SPublicUserBase) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun Payment(data: SCardTransaction) = "$paymentRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
     }
 }
 
@@ -64,6 +69,10 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         }
         composable(MainNav.NewBankAccount.route) {
             NewBankAccountScreen(onDismiss = controller::popBackStack)
+        }
+        // Details screens
+        composable(MainNav.Payment.route) {
+            PaymentDetailsScreen(onDismiss = controller::popBackStack, data = Json.decodeFromString(it.arguments!!.getString("transaction")!!))
         }
         // Friends
         composable(MainNav.Friend.route) {

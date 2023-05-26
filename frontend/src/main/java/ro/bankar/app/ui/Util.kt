@@ -100,9 +100,10 @@ fun LocalDate.format(long: Boolean = false) = toJavaLocalDate().format(if (long)
 fun LocalTime.format() = toJavaLocalTime().format(timeFormatter)!!
 
 fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
-    if (date == Clock.System.todayHere()) time.format()
-    else if (vague) date.format(long)
-    else "${date.format(long)} • ${time.format()}"
+    if (long) "${date.format(true)} • ${time.format()}"
+    else if (date == Clock.System.todayHere()) time.format()
+    else if (vague) date.format()
+    else "${date.format()} • ${time.format()}"
 
 // Currency formatting
 fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =

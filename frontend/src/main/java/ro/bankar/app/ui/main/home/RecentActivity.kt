@@ -53,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.maxkeppeker.sheets.core.models.base.UseCaseState
 import com.maxkeppeler.sheets.state.StateDialog
 import com.maxkeppeler.sheets.state.models.State
@@ -63,7 +64,6 @@ import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
@@ -81,8 +81,10 @@ import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackBar
+import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.friend.FriendCard
 import ro.bankar.app.ui.nameFromCode
+import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
@@ -95,6 +97,7 @@ import ro.bankar.banking.reverseExchange
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
+import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
@@ -114,7 +117,7 @@ class RecentActivityModel : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>, onNavigateToFriend: (SPublicUser) -> Unit) {
+fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>, navigation: NavHostController) {
     val model = viewModel<RecentActivityModel>()
     model.repository = LocalRepository.current
     model.accounts = rememberUpdatedState(accounts)
@@ -146,15 +149,15 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                     place = it.note
                 )
             }
-            otherRequests.forEach {
-                if (it.direction == SDirection.Sent)
+            otherRequests.forEach { request ->
+                if (request.direction == SDirection.Sent)
                     SentTransferRequest(
-                        id = it.id,
-                        fromName = "${it.user.firstName} ${it.user.lastName}",
-                        amount = it.amount,
-                        currency = it.currency
+                        id = request.id,
+                        fromName = "${request.user.firstName} ${request.user.lastName}",
+                        amount = request.amount,
+                        currency = request.currency
                     )
-                else ReceivedTransferRequest(it, model, onNavigateToFriend)
+                else ReceivedTransferRequest(request, model, onNavigateToFriend = { navigation.navigate(MainNav.Friend(it)) })
             }
 
             // Merge display transfers and transactions
@@ -167,10 +170,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                     Transfer(transfers[transferI++])
                 else {
                     val transaction = transactions[transactionI++]
-                    Payment(
-                        title = transaction.title, time = transaction.dateTime.toInstant(TimeZone.UTC),
-                        amount = transaction.amount, currency = transaction.currency
-                    )
+                    Payment(transaction, onNavigate = { navigation.navigate(MainNav.Payment(transaction)) })
                 }
             }
             TextButton(
@@ -190,7 +190,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
 private fun RecentActivityPreview() {
     AppTheme {
         LocalRepository.current.recentActivity.collectAsStateRetrying().value?.let {
-            RecentActivity(it, emptyList(), onNavigateToFriend = {})
+            RecentActivity(it, emptyList(), rememberMockNavController())
         } ?: RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
     }
 }
@@ -199,7 +199,7 @@ private fun RecentActivityPreview() {
 @Composable
 private fun RecentActivityPreviewDark() {
     AppTheme {
-        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList(), onNavigateToFriend = {})
+        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
     }
 }
 
@@ -336,7 +336,7 @@ private fun RecentActivityRow(
 private fun PartyInvite(fromName: String, amount: Double, currency: Currency, place: String) {
     RecentActivityRow(elevated = true, onClick = {}, icon = {
         FilledIcon(
-            painter = painterResource(id = R.drawable.share_bill),
+            painter = painterResource(id = R.drawable.split_bill),
             contentDescription = null,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -643,15 +643,15 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
 }
 
 @Composable
-private fun Payment(title: String, time: Instant, amount: Double, currency: Currency) {
-    RecentActivityRow(onClick = {}, icon = {
+private fun Payment(data: SCardTransaction, onNavigate: () -> Unit) {
+    RecentActivityRow(onClick = onNavigate, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.payment),
             contentDescription = stringResource(R.string.payment),
             color = MaterialTheme.colorScheme.secondary,
         )
-    }, title = title, subtitle = time.here().format()) {
-        Amount(-amount, currency)
+    }, title = data.title, subtitle = data.dateTime.toInstant(TimeZone.UTC).here().format()) {
+        Amount(-data.amount, data.currency)
     }
 }
 

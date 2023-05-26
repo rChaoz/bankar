@@ -208,4 +208,9 @@
     <string name="yes">Yes</string>
     <string name="exchange">Exchange</string>
     <string name="self_tranfer">Self transfer</string>
+    <string name="details">Details</string>
+    <string name="split_bill">Split bill</string>
+    <string name="paid_with">Paid with</string>
+    <string name="card_last_4_template" translatable="false">•••• •••• •••• %s</string>
+    <string name="reference">Reference</string>
 </resources>
