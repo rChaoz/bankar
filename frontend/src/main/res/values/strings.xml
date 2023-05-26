@@ -207,7 +207,7 @@
     <string name="confirm_logout">Are you sure you want to log out?</string>
     <string name="yes">Yes</string>
     <string name="exchange">Exchange</string>
-    <string name="self_tranfer">Self transfer</string>
+    <string name="self_transfer">Self transfer</string>
     <string name="details">Details</string>
     <string name="split_bill">Split bill</string>
     <string name="paid_with">Paid with</string>
@@ -221,4 +221,10 @@
     <string name="to">To</string>
     <string name="not_a_friend">Not a friend</string>
     <string name="card">Card</string>
+    <string name="exchanged_to">exchanged to</string>
+    <string name="from_account">From account</string>
+    <string name="to_account">To account</string>
+    <string name="no_message">No message</string>
+    <string name="no_note">No note</string>
+    <string name="note">Note</string>
 </resources>

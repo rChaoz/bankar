@@ -671,7 +671,7 @@ private fun Transfer(data: SBankTransfer, onNavigate: () -> Unit) {
         title = when {
             data.direction == SDirection.Received -> stringResource(R.string.from_s, data.fullName)
             data.direction == SDirection.Sent -> stringResource(R.string.to_s, data.fullName)
-            data.exchangedAmount == null -> stringResource(R.string.self_tranfer)
+            data.exchangedAmount == null -> stringResource(R.string.self_transfer)
             else -> stringResource(R.string.exchange)
         },
         subtitle = data.dateTime.toInstant(TimeZone.UTC).here().format()

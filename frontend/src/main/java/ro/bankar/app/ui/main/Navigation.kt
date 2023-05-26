@@ -29,6 +29,7 @@ private const val sendMoneyRoutePrefix = "sendMoneyTo"
 private const val requestMoneyRoutePrefix = "requestMoneyFrom"
 private const val paymentRoutePrefix = "transaction"
 private const val transferRoutePrefix = "transfer"
+private const val selfTransferRoutePrefix = "selfTransfer"
 
 @Suppress("FunctionName")
 enum class MainNav(val route: String) {
@@ -38,7 +39,8 @@ enum class MainNav(val route: String) {
     Friends("$mainTabRoutePrefix/${FriendsTab.name}"), Home("$mainTabRoutePrefix/${HomeTab.name}"),
     NewBankAccount("createAccount"),
     // Details screens
-    Payment("$paymentRoutePrefix/{transaction}"), Transfer("$transferRoutePrefix/{transfer}"),
+    Payment("$paymentRoutePrefix/{transaction}"),
+    Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}");
@@ -56,7 +58,7 @@ enum class MainNav(val route: String) {
         fun RequestMoney(user: SPublicUserBase) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun Payment(data: SCardTransaction) = "$paymentRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun Transfer(data: SBankTransfer) = "$transferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
-        fun SelfTransfer(data: SBankTransfer): String = TODO()
+        fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
     }
 }
 
@@ -83,6 +85,13 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
                 onDismiss = controller::popBackStack,
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToFriend = { controller.navigate(MainNav.Friend(it)) },
+                onNavigateToAccount = {} // TODO
+            )
+        }
+        composable(MainNav.SelfTransfer.route) { entry ->
+            SelfTransferDetailsScreen(
+                onDismiss = controller::popBackStack,
+                data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToAccount = {} // TODO
             )
         }

@@ -207,7 +207,7 @@
     <string name="confirm_logout">Esti sigur(ă) că vrei să te deconectezi?</string>
     <string name="yes">Da</string>
     <string name="exchange">Schimb valutar</string>
-    <string name="self_tranfer">Transfer între conturi proprii</string>
+    <string name="self_transfer">Transfer între conturi proprii</string>
     <string name="details">Detalii</string>
     <string name="split_bill">Împarte nota</string>
     <string name="paid_with">Plătit cu</string>
@@ -219,4 +219,10 @@
     <string name="to">Către</string>
     <string name="not_a_friend">Nu este prieten</string>
     <string name="card">Card</string>
+    <string name="exchanged_to">schimbat în</string>
+    <string name="from_account">De la contul</string>
+    <string name="to_account">Către contul</string>
+    <string name="no_message">Fară mesaj</string>
+    <string name="no_note">Fară notă</string>
+    <string name="note">Notă</string>
 </resources>

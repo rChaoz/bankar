@@ -2,7 +2,6 @@ package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,8 +27,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.valentinilk.shimmer.ShimmerBounds
-import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
@@ -40,10 +37,8 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.data.mapCollectAsStateRetrying
-import ro.bankar.app.ui.components.AccountCard
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
-import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.friend.FriendCard
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.nameFromCode
@@ -142,33 +137,8 @@ fun ExternalTransferDetailsScreen(
                 }
                 Divider()
             }
-            Surface(modifier = Modifier.padding(horizontal = 12.dp), tonalElevation = 1.dp, shape = MaterialTheme.shapes.small) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(text = stringResource(R.string.bank_account), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    bankAccount?.let {
-                        Surface(
-                            onClick = { onNavigateToAccount(it) },
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .fillMaxWidth(.8f),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.extraSmall
-                        ) {
-                            AccountCard(account = it, modifier = Modifier.padding(8.dp))
-                        }
-                    } ?: Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .fillMaxWidth(.8f)
-                            .height(50.dp)
-                            .grayShimmer(rememberShimmer(shimmerBounds = ShimmerBounds.View))
-                    )
-                }
-            }
+            TransferAccountCard(text = R.string.bank_account, bankAccount, onNavigateToAccount)
+
             Surface(modifier = Modifier.padding(horizontal = 12.dp), tonalElevation = 1.dp, shape = MaterialTheme.shapes.small) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
@@ -176,7 +146,8 @@ fun ExternalTransferDetailsScreen(
                         .fillMaxWidth()
                 ) {
                     Text(text = stringResource(R.string.message), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(text = data.note)
+                    if (data.note.isNotEmpty()) Text(text = data.note)
+                    else Text(text = stringResource(R.string.no_message), fontStyle = FontStyle.Italic)
                 }
             }
         }
