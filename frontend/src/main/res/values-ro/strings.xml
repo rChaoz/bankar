@@ -225,4 +225,10 @@
     <string name="no_message">Fară mesaj</string>
     <string name="no_note">Fară notă</string>
     <string name="note">Notă</string>
+    <string name="you_have_unsaved">Ai modificări nesalvate! Sigur vrei să iesi?</string>
+    <string name="save">Salvează</string>
+    <string name="are_you_sure">Ești sigur?</string>
+    <string name="please_enter_password">Te rugăm să îți introduci parola</string>
+    <string name="updated_successfully">Actualizat cu succes</string>
+    <string name="exit">Ieșire</string>
 </resources>

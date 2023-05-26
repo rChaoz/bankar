@@ -160,6 +160,23 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     }
 
     /**
+     * Update data from given object
+     */
+    fun update(data: SNewUser) {
+        email = data.email
+        // No tag/phone update, those are separate
+        firstName = data.firstName.trim()
+        middleName = data.middleName?.trim()
+        lastName = data.lastName.trim()
+        dateOfBirth = data.dateOfBirth
+
+        countryCode = data.countryCode
+        state = data.state
+        city = data.city.trim()
+        address = data.address.trim()
+    }
+
+    /**
      * Sign out and disable this account
      */
     fun disable() {

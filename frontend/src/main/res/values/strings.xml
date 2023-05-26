@@ -227,4 +227,10 @@
     <string name="no_message">No message</string>
     <string name="no_note">No note</string>
     <string name="note">Note</string>
+    <string name="you_have_unsaved">You have unsaved changes! Are you sure you want to exit?</string>
+    <string name="save">Save</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="please_enter_password">Please enter your password</string>
+    <string name="updated_successfully">Updated successfully</string>
+    <string name="exit">Exit</string>
 </resources>

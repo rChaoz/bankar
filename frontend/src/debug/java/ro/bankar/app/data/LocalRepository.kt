@@ -30,6 +30,7 @@ import ro.bankar.model.SDirection
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SNewUser
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SRecentActivity
@@ -104,6 +105,7 @@ private object MockRepository : Repository() {
     )
 
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
+    override suspend fun sendUpdate(data: SNewUser) = mockResponse<StatusResponse>()
 
     private val bombasticus = SPublicUser(
         "bombasticus", "Bomba", "Maximus", "Extremus", "RO",

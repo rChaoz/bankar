@@ -10,6 +10,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.sessions.clear
 import io.ktor.server.sessions.get
@@ -195,6 +196,23 @@ fun Route.configureUserAccounts() {
                     user.disable()
                     call.respond(HttpStatusCode.OK, StatusResponse.Success)
                 } else call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect"))
+            }
+        }
+
+        put("updateAccount") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val data = call.receive<SNewUser>()
+            if (!user.verifyPassword(data.password)) {
+                call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect_password")); return@put
+            }
+            // Validate data
+            data.validate(COUNTRY_DATA)?.takeIf { it != "tag" && it != "phone" }?.let {
+                call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@put
+            }
+
+            newSuspendedTransaction {
+                user.update(data)
+                call.respond(HttpStatusCode.OK, StatusResponse.Success)
             }
         }
     }

@@ -40,6 +40,7 @@ import ro.bankar.model.SConversation
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SNewUser
 import ro.bankar.model.SPasswordData
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSendMessage
@@ -123,6 +124,7 @@ abstract class Repository {
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
+    abstract suspend fun sendUpdate(data: SNewUser): SafeResponse<StatusResponse>
     abstract suspend fun sendAddFriend(id: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract suspend fun sendRemoveFriend(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract val friends: RequestFlow<List<SFriend>>
@@ -232,6 +234,10 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         put("profile/update") {
             setBody(data)
         }
+    }
+
+    override suspend fun sendUpdate(data: SNewUser) = client.safeRequest<StatusResponse> {
+        put("updateAccount") { setBody(data) }
     }
 
     override suspend fun sendAddFriend(id: String) = client.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {

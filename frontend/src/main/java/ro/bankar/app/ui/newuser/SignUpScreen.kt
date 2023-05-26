@@ -176,7 +176,7 @@ class SignUpModel : ViewModel() {
 
     // Second step
     val firstName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
-    val middleName = verifiableStateOf("", R.string.invalid_name) { it.isEmpty() || SUserValidation.nameRegex.matches(it.trim()) }
+    val middleName = verifiableStateOf("", R.string.invalid_name) { it.isBlank() || SUserValidation.nameRegex.matches(it.trim()) }
     val lastName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
     val dateOfBirth = verifiableStateOf(Clock.System.todayHere() - DatePeriod(18)) {
         val age = Clock.System.todayHere() - it
