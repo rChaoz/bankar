@@ -92,6 +92,6 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
 
     val note = varchar("note", 100)
     val partyMember = reference("party_member", PartyMembers, onDelete = ReferenceOption.CASCADE).nullable()
-    val amount = amount("amount").check("amount_check") { it greater BigDecimal.ZERO }
+    val amount = amount("amount")
     val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
 }
