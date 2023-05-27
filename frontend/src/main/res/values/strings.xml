@@ -174,7 +174,7 @@
     <string name="error">Error</string>
     <string name="message_too_long">Message too long</string>
     <string name="money_sent_successfully">Money sent and have arrived in your friend\'s account!</string>
-    <string name="money_sent_request">Money send, your friend now has to accept the transfer request.</string>
+    <string name="money_sent_request">Money sent, your friend now has to accept the transfer request.</string>
     <string name="message">Message</string>
     <string name="requesting">"Requesting: "</string>
     <string name="sent">"Sent: "</string>
@@ -250,4 +250,12 @@
     <string name="finish">Finish</string>
     <string name="note_cannot_be_empty">Note cannot be empty</string>
     <string name="note_too_long">Note too long</string>
+    <string name="party">Party</string>
+    <string name="party_host">Party host</string>
+    <string name="you_are_party_host">You are the party host</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_declined">Declined</string>
+    <string name="status_accepted">Accepted</string>
+    <string name="party_invitation">Party invitation</string>
+    <string name="view_party">View party</string>
 </resources>

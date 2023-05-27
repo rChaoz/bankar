@@ -132,6 +132,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         // Navigate to friend/conversation
         lateinit var onNavigateToConversation: (friend: SPublicUserBase) -> Unit
         lateinit var onNavigateToFriend: (friend: SPublicUserBase) -> Unit
+        lateinit var onCreateParty: () -> Unit
 
         // Swipe to refresh
         lateinit var repository: Repository
@@ -230,6 +231,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
         model.onNavigateToConversation = { friend -> navigation.navigate(MainNav.Conversation(friend)) }
         model.onNavigateToFriend = { friend -> navigation.navigate(MainNav.Friend(friend)) }
+        model.onCreateParty = { navigation.navigate(MainNav.CreateParty.route) }
 
         // "Add friend" dialog
         val context = LocalContext.current
@@ -275,7 +277,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     override fun FABContent(model: Model, navigation: NavHostController) {
         val tab = tabs[model.currentTabIndex]
         if (tab.fabText != null) ExtendedFloatingActionButton(
-            onClick = tab.fabAction(model),
+            onClick = { tab.fabAction(model) },
             text = { Text(text = stringResource(tab.fabText)) },
             icon = { Icon(imageVector = Icons.Default.Add, null) }
         )
@@ -289,7 +291,7 @@ private val tabs = listOf(FriendsTabs.Conversations, FriendsTabs.Friends, Friend
 private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: Int?) {
     @Composable
     abstract fun Content(model: FriendsTab.Model, repository: Repository)
-    abstract fun fabAction(model: FriendsTab.Model): () -> Unit
+    abstract fun fabAction(model: FriendsTab.Model)
 
     object Conversations : FriendsTabs(0, R.string.conversations, null) {
         @OptIn(ExperimentalMaterial3Api::class)
@@ -357,7 +359,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
             }
         }
 
-        override fun fabAction(model: FriendsTab.Model): () -> Unit = {}
+        override fun fabAction(model: FriendsTab.Model) {}
     }
 
     object Friends : FriendsTabs(1, R.string.friends, R.string.create_party) {
@@ -408,7 +410,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
             }
         }
 
-        override fun fabAction(model: FriendsTab.Model): () -> Unit = {} // TODO
+        override fun fabAction(model: FriendsTab.Model) = model.onCreateParty()
     }
 
     object FriendRequests : FriendsTabs(2, R.string.requests, R.string.add_friend) {
@@ -475,7 +477,6 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                     else if (model.friendRequests!!.isEmpty()) {
                         InfoCard(text = R.string.no_friend_requests)
                     } else {
-                        // TODO Friend requests clickable to view user profile
                         val (sentRequests, receivedRequests) = model.friendRequests!!.sortedBy { it.tag }.partition { it.direction == SDirection.Sent }
                         val context = LocalContext.current
                         if (sentRequests.isNotEmpty())
@@ -579,7 +580,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
             }
         }
 
-        override fun fabAction(model: FriendsTab.Model): () -> Unit = model::showAddFriendDialog
+        override fun fabAction(model: FriendsTab.Model) = model.showAddFriendDialog()
     }
 }
 

@@ -5,7 +5,9 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.SizedIterable
 import ro.bankar.amount
+import ro.bankar.model.SPartyMember
 
 class PartyMember(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<PartyMember>(PartyMembers)
@@ -15,7 +17,17 @@ class PartyMember(id: EntityID<Int>) : IntEntity(id) {
     var amount by PartyMembers.amount
     var transfer by BankTransfer optionalReferencedOn PartyMembers.transfer
     var request by TransferRequest optionalReferencedOn PartyMembers.request
+
+    fun serializable(user: User) = SPartyMember(
+        this.user.publicSerializable(this.user.id != user.id), amount.toDouble(), when {
+            transfer != null -> SPartyMember.Status.Accepted
+            request != null -> SPartyMember.Status.Pending
+            else -> SPartyMember.Status.Declined
+        }
+    )
 }
+
+fun SizedIterable<PartyMember>.serializable(user: User) = map { it.serializable(user) }
 
 internal object PartyMembers : IntIdTable() {
     val party = reference("party", Parties, onDelete = ReferenceOption.CASCADE)

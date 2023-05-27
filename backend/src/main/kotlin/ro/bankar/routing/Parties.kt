@@ -6,6 +6,7 @@ import io.ktor.server.auth.authentication
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -41,6 +42,18 @@ fun Route.configureParties() {
                 Party.create(data.note, account, party)
                 for (pair in party) sendNotificationToUser(pair.first.id, SSocketNotification.SRecentActivityNotification)
                 call.respond(HttpStatusCode.Created, StatusResponse.Success)
+            }
+        }
+
+        get("{id}") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            newSuspendedTransaction {
+                val party = call.parameters["id"]?.toIntOrNull()?.let { Party.findById(it) }?.takeIf {
+                    it.hostAccount.user.id == user.id || it.members.any { member -> member.user.id == user.id }
+                } ?: run {
+                    call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "party")); return@newSuspendedTransaction
+                }
+                call.respond(HttpStatusCode.OK, party.serializable(user))
             }
         }
     }

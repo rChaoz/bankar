@@ -31,6 +31,8 @@ import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SNewUser
+import ro.bankar.model.SPartyInformation
+import ro.bankar.model.SPartyMember
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SRecentActivity
@@ -183,8 +185,15 @@ private object MockRepository : Repository() {
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<StatusResponse>()
+    override fun partyData(id: Int) = mockFlow(SPartyInformation(
+        bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", listOf(
+            SPartyMember(koleci, 105.23, SPartyMember.Status.Pending),
+            SPartyMember(bombasticus, 51.01, SPartyMember.Status.Declined),
+            SPartyMember(chadGPT, 999.99, SPartyMember.Status.Accepted)
+        )
+    ))
 
-    private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier -> SRecentActivity(
+        private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier -> SRecentActivity(
         listOf(
             SBankTransfer(
                 null, 1, 2, koleci, "Kolecii", "testIBAN.",

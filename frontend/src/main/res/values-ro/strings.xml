@@ -248,4 +248,12 @@
     <string name="finish">Finalizare</string>
     <string name="note_cannot_be_empty">Nota nu poate fi goală</string>
     <string name="note_too_long">Nota este prea lungă</string>
+    <string name="party">Echipă</string>
+    <string name="party_host">Gazdă echipă</string>
+    <string name="you_are_party_host">Tu ești gazda echipei</string>
+    <string name="status_pending">În așteptare</string>
+    <string name="status_declined">Respins</string>
+    <string name="status_accepted">Acceptat</string>
+    <string name="party_invitation">Invitație în echipă</string>
+    <string name="view_party">Vezi echipa</string>
 </resources>

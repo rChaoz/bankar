@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
@@ -18,9 +19,11 @@ import java.math.BigDecimal
 
 class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<TransferRequest>(TransferRequests) {
-        fun findRecent(user: User) =
-            find { (TransferRequests.sourceUser eq user.id) or (TransferRequests.targetUser eq user.id) }
-                .orderBy(TransferRequests.dateTime to SortOrder.DESC)
+        fun findRecent(user: User) = with(TransferRequests) {
+            find {
+                ((sourceUser eq user.id) and partyMember.isNull()) or (targetUser eq user.id)
+            }.orderBy(dateTime to SortOrder.DESC)
+        }
 
         fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, partyMember: PartyMember? = null): TransferRequest? {
             if (sourceAccount.spendable < amount) return null

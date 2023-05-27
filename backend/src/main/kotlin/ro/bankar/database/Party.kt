@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import ro.bankar.amount
+import ro.bankar.model.SPartyInformation
 import java.math.BigDecimal
 
 class Party(id: EntityID<Int>) : IntEntity(id) {
@@ -14,6 +15,7 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
             val total = data.sumOf { it.second }
             val party = new {
                 this.total = total
+                this.note = note
                 hostAccount = targetAccount
             }
             // Create transfer requests & party member information
@@ -31,7 +33,13 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
 
     var hostAccount by BankAccount referencedOn Parties.hostAccount
     var total by Parties.total
+    var note by Parties.note
     val members by PartyMember referrersOn PartyMembers.party
+
+    fun serializable(user: User) = SPartyInformation(
+        hostAccount.user.takeIf { it.id != user.id }?.publicSerializable(true),
+        total.toDouble(), hostAccount.currency, note, members.serializable(user)
+    )
 }
 
 internal object Parties : IntIdTable() {

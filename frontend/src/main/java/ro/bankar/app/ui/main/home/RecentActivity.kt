@@ -21,6 +21,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -136,12 +137,12 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
         if (recentActivity.isEmpty()) InfoCard(text = R.string.no_recent_activity, tonalElevation = 0.dp)
         else {
             val (partyInvites, otherRequests) = recentActivity.transferRequests.partition { it.partyID != null }
-            partyInvites.forEach {
-                PartyInvite(
-                    fromName = "${it.user.firstName} ${it.user.lastName}",
-                    amount = it.amount,
-                    currency = it.currency,
-                    place = it.note
+            partyInvites.forEach { invitation ->
+                ReceivedTransferRequest(
+                    invitation,
+                    model,
+                    onNavigateToFriend = { navigation.navigate(MainNav.Friend(it)) },
+                    onNavigateToParty = { navigation.navigate(MainNav.ViewParty(it)) }
                 )
             }
             otherRequests.forEach { request ->
@@ -152,7 +153,12 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                         amount = request.amount,
                         currency = request.currency
                     )
-                else ReceivedTransferRequest(request, model, onNavigateToFriend = { navigation.navigate(MainNav.Friend(it)) })
+                else ReceivedTransferRequest(
+                    request,
+                    model,
+                    onNavigateToFriend = { navigation.navigate(MainNav.Friend(it)) },
+                    onNavigateToParty = { navigation.navigate(MainNav.ViewParty(it)) }
+                )
             }
 
             // Merge display transfers and transactions
@@ -162,9 +168,11 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
             // Limit total number of entries to 3
             while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
                 if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime > transactions[transactionI].dateTime))
-                    transfers[transferI++].let { Transfer(it, onNavigate = {
-                        navigation.navigate(if (it.sourceAccountID == null) MainNav.Transfer(it) else MainNav.SelfTransfer(it))
-                    })}
+                    transfers[transferI++].let {
+                        Transfer(it, onNavigate = {
+                            navigation.navigate(if (it.sourceAccountID == null) MainNav.Transfer(it) else MainNav.SelfTransfer(it))
+                        })
+                    }
                 else {
                     val transaction = transactions[transactionI++]
                     Transaction(transaction, onNavigate = { navigation.navigate(MainNav.Transaction(transaction)) })
@@ -197,24 +205,6 @@ private fun RecentActivityPreview() {
 private fun RecentActivityPreviewDark() {
     AppTheme {
         RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
-    }
-}
-
-@Composable
-private fun PartyInvite(fromName: String, amount: Double, currency: Currency, place: String) {
-    RecentActivityRow(elevated = true, onClick = {}, icon = {
-        FilledIcon(
-            painter = painterResource(id = R.drawable.split_bill),
-            contentDescription = null,
-            color = MaterialTheme.colorScheme.primary,
-        )
-    }, title = stringResource(R.string.party_invite_from, fromName), subtitle = buildAnnotatedString {
-        pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
-        append(currency.format(amount))
-        pop()
-        append(" • ", place)
-    }) {
-        AcceptDeclineButtons(onAccept = {}, onDecline = {})
     }
 }
 
@@ -266,7 +256,12 @@ private fun SentTransferRequest(id: Int, fromName: String, amount: Double, curre
 }
 
 @Composable
-private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActivityModel, onNavigateToFriend: (SPublicUser) -> Unit) {
+private fun ReceivedTransferRequest(
+    request: STransferRequest,
+    model: RecentActivityModel,
+    onNavigateToFriend: (SPublicUser) -> Unit,
+    onNavigateToParty: (Int) -> Unit
+) {
     var isDeclining by rememberSaveable { mutableStateOf(false) }
     var dialogVisible by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -307,7 +302,7 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                 }
 
                 val context = LocalContext.current
-                Button(
+                FilledTonalButton(
                     enabled = !showLoading, onClick = {
                         scope.launch {
                             isLoading = true
@@ -322,34 +317,33 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                             }
                             isLoading = false
                         }
-                    }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    }, modifier = Modifier.weight(1f)
                 ) {
                     Text(text = stringResource(R.string.decline))
                 }
 
-                Button(enabled = !showLoading && selectedAccount.value != null && exchangedAmount != null
-                        && (exchangedAmount!! <= selectedAccount.value!!.spendable || request.amount > 0), onClick = {
-                    scope.launch {
-                        val account = selectedAccount.value ?: return@launch
-                        isLoading = true
-                        // Use toasts instead of snackbar because snackbar isn't visible over dialog
-                        when (val r = model.repository.sendRespondToTransferRequest(request.id, true, account.id)) {
-                            is SafeStatusResponse.InternalError -> Toast.makeText(context, r.message, Toast.LENGTH_SHORT).show()
-                            is SafeStatusResponse.Fail -> Toast.makeText(context, context.getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
-                            is SafeStatusResponse.Success -> {
-                                coroutineScope {
-                                    launch { model.repository.accounts.emitNow() }
-                                    launch { model.repository.recentActivity.emitNow() }
+                Button(
+                    enabled = !showLoading && selectedAccount.value != null && exchangedAmount != null
+                            && (exchangedAmount!! <= selectedAccount.value!!.spendable || request.amount > 0), onClick = {
+                        scope.launch {
+                            val account = selectedAccount.value ?: return@launch
+                            isLoading = true
+                            // Use toasts instead of snackbar because snackbar isn't visible over dialog
+                            when (val r = model.repository.sendRespondToTransferRequest(request.id, true, account.id)) {
+                                is SafeStatusResponse.InternalError -> Toast.makeText(context, r.message, Toast.LENGTH_SHORT).show()
+                                is SafeStatusResponse.Fail -> Toast.makeText(context, context.getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
+                                is SafeStatusResponse.Success -> {
+                                    coroutineScope {
+                                        launch { model.repository.accounts.emitNow() }
+                                        launch { model.repository.recentActivity.emitNow() }
+                                    }
+                                    dialogVisible = false
                                 }
-                                dialogVisible = false
                             }
+                            isLoading = false
                         }
-                        isLoading = false
-                    }
-                }, modifier = Modifier.weight(1f)) {
+                    }, modifier = Modifier.weight(1f)
+                ) {
                     Text(text = stringResource(R.string.accept))
                 }
             }
@@ -361,9 +355,14 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                     .padding(vertical = 12.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                if (request.partyID != null) Text(
+                    text = stringResource(R.string.party_invitation),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
                 if (request.user.isFriend) {
                     Surface(
-                        onClick = { onNavigateToFriend(request.user) },
+                        onClick = { dialogVisible = false; onNavigateToFriend(request.user) },
                         modifier = Modifier
                             .padding(12.dp)
                             .fillMaxWidth(),
@@ -383,23 +382,42 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
                         FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
                     }
                 }
+                if (request.partyID != null) {
+                    OutlinedButton(
+                        onClick = { dialogVisible = false; onNavigateToParty(request.partyID!!) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        Text(text = stringResource(R.string.view_party))
+                    }
+                }
 
                 Divider()
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
                         .padding(12.dp)
+                        .fillMaxWidth()
                 ) {
-                    Text(text = stringResource(if (request.amount > 0) R.string.has_sent else R.string.has_requested))
-                    Amount(
-                        amount = request.amount.absoluteValue,
-                        currency = request.currency,
-                        textStyle = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        withPlusSign = request.amount > 0,
-                        color = request.amount.amountColor
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(text = stringResource(if (request.amount > 0) R.string.has_sent else R.string.has_requested))
+                        Amount(
+                            amount = request.amount.absoluteValue,
+                            currency = request.currency,
+                            textStyle = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            withPlusSign = request.amount > 0,
+                            color = request.amount.amountColor
+                        )
+                    }
+                    if (request.note.isNotBlank()) Text(
+                        text = "\"${request.note}\"",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Light,
+                        modifier = Modifier.padding(horizontal = 20.dp)
                     )
                 }
                 Divider()
@@ -481,17 +499,32 @@ private fun ReceivedTransferRequest(request: STransferRequest, model: RecentActi
         }
     }
 
-    RecentActivityRow(elevated = true, onClick = { if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show() else dialogVisible = true }, icon = {
-        FilledIcon(
-            painter = painterResource(R.drawable.transfer_request),
-            contentDescription = stringResource(R.string.transfer_request),
-            color = MaterialTheme.colorScheme.tertiary,
-        )
-    }, title = stringResource(R.string.from_s, "${request.user.firstName} ${request.user.lastName}"), subtitle = buildAnnotatedString {
-        append(stringResource(if (request.amount > 0) R.string.has_sent else R.string.has_requested))
-        pushStyle(SpanStyle(color = request.amount.amountColor))
-        append(request.currency.format(abs(request.amount)))
-    }) {
+    RecentActivityRow(
+        elevated = true,
+        onClick = { if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show() else dialogVisible = true },
+        icon = {
+            FilledIcon(
+                painter = painterResource(if (request.partyID == null) R.drawable.transfer_request else R.drawable.split_bill),
+                contentDescription = stringResource(if (request.partyID == null) R.string.transfer_request else R.string.party_invitation),
+                color = if (request.partyID == null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = stringResource(
+            if (request.partyID == null) R.string.from_s else R.string.party_invite_from, "${request.user.firstName} ${request.user.lastName}"
+        ),
+        subtitle = buildAnnotatedString {
+            if (request.partyID == null) {
+                append(stringResource(if (request.amount > 0) R.string.has_sent else R.string.has_requested))
+                pushStyle(SpanStyle(color = request.amount.amountColor))
+                append(request.currency.format(abs(request.amount)))
+            } else {
+                pushStyle(SpanStyle(color = MaterialTheme.customColors.red))
+                append(request.currency.format(request.amount))
+                pop()
+                append(" • ", request.note)
+            }
+        }
+    ) {
         val context = LocalContext.current
         val snackBar = LocalSnackBar.current
 

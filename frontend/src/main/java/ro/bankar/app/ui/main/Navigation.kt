@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.google.accompanist.navigation.animation.composable
@@ -18,6 +19,7 @@ import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
+import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
@@ -35,6 +37,7 @@ private const val transferRoutePrefix = "transfer"
 private const val selfTransferRoutePrefix = "selfTransfer"
 
 private const val bankAccountRoutePrefix = "bankAccount"
+private const val viewPartyRoutePrefix = "viewParty"
 
 @Suppress("FunctionName")
 enum class MainNav(val route: String) {
@@ -50,13 +53,22 @@ enum class MainNav(val route: String) {
     RecentActivity("recentActivity"), BankAccount("$bankAccountRoutePrefix/{account}"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
-    SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}");
+    SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}"),
+    // Parties
+    CreateParty("createParty?amount={amount}&currency={currency}"), ViewParty("$viewPartyRoutePrefix/{id}");
 
     companion object {
         const val route = "main"
         const val tabsRoute = "$mainTabRoutePrefix/{tab}"
         val tabArguments = listOf(
             navArgument("tab") { defaultValue = HomeTab.name }
+        )
+        val createPartyArguments = listOf(
+            navArgument("amount") { defaultValue = 0f; type = NavType.FloatType },
+            navArgument("currency") { nullable = true }
+        )
+        val viewPartyArguments = listOf(
+            navArgument("id") { type = NavType.IntType }
         )
 
         fun Friend(user: SPublicUserBase) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
@@ -67,6 +79,7 @@ enum class MainNav(val route: String) {
         fun Transfer(data: SBankTransfer) = "$transferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun BankAccount(data: SBankAccount) = "$bankAccountRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
+        fun ViewParty(id: Int) = "$viewPartyRoutePrefix/$id"
     }
 }
 
@@ -126,6 +139,17 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         }
         composable(MainNav.RequestMoney.route) {
             RequestMoneyScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), onDismiss = controller::popBackStack)
+        }
+        // Parties
+        composable(MainNav.CreateParty.route, arguments = MainNav.createPartyArguments) { entry ->
+            val amount = entry.arguments!!.getFloat("amount")
+            val currency = entry.arguments!!.getString("currency")?.let { Currency.from(it) }
+            CreatePartyScreen(onDismiss = controller::popBackStack, amount.toDouble(), currency)
+        }
+        composable(MainNav.ViewParty.route, arguments = MainNav.viewPartyArguments) { entry ->
+            ViewPartyScreen(onDismiss = controller::popBackStack, partyID = entry.arguments!!.getInt("id"), onNavigateToFriend = {
+                controller.navigate(MainNav.Friend(it))
+            })
         }
     }
 }

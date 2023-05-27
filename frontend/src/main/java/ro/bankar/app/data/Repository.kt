@@ -45,6 +45,7 @@ import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SNewUser
+import ro.bankar.model.SPartyInformation
 import ro.bankar.model.SPasswordData
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSendMessage
@@ -140,6 +141,7 @@ abstract class Repository {
 
     // Parties
     abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): SafeResponse<StatusResponse>
+    abstract fun partyData(id: Int): RequestFlow<SPartyInformation>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -280,6 +282,8 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
                 setBody(SCreateParty(account, note, amounts))
             }
         }
+
+    override fun partyData(id: Int) = createFlow<SPartyInformation>("party/$id")
 
 
     // Recent activity

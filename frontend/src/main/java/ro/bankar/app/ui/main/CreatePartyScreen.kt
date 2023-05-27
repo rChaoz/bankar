@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ro.bankar.app.R
@@ -82,6 +84,7 @@ import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.banking.Currency
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SFriend
@@ -141,14 +144,24 @@ class CreatePartyScreenModel : ViewModel() {
 }
 
 @Composable
-fun CreatePartyScreen(onDismiss: () -> Unit) {
+fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, currency: Currency?) {
     // Create model
     val model = viewModel<CreatePartyScreenModel>()
     model.onDismiss = onDismiss
+    model.snackbar = remember { SnackbarHostState() }
 
     // Get friends list
     val repository = LocalRepository.current
-    LaunchedEffect(true) { repository.friends.collectRetrying { model.allFriends = it } }
+    LaunchedEffect(true) {
+        if (initialAmount != 0.0) model.total.value = initialAmount.toString()
+        launch { repository.friends.collectRetrying { model.allFriends = it } }
+        if (currency != null) launch {
+            repository.accounts.collectRetrying { accounts ->
+                accounts.find { it.currency == currency }?.let { model.account.value = it }
+                cancel()
+            }
+        }
+    }
     // Back button should go back to previous step
     BackHandler(enabled = model.step != CreatePartyStep.AccountAndTotal) { model.step = CreatePartyStep.values()[model.step.ordinal - 1] }
 
@@ -157,7 +170,8 @@ fun CreatePartyScreen(onDismiss: () -> Unit) {
             if (model.isLoading) return@NavScreen
             if (model.step != CreatePartyStep.AccountAndTotal) model.step = CreatePartyStep.values()[model.step.ordinal - 1] else onDismiss()
         },
-        title = R.string.create_party
+        title = R.string.create_party,
+        snackBar = model.snackbar
     ) {
         AnimatedContent(
             targetState = model.step,
@@ -430,6 +444,6 @@ private fun ChooseAmountsStep(model: CreatePartyScreenModel) {
 @Composable
 private fun CreatePartyScreenPreview() {
     AppTheme {
-        CreatePartyScreen(onDismiss = {})
+        CreatePartyScreen(onDismiss = {}, 0.0, null)
     }
 }
