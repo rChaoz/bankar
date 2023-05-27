@@ -58,4 +58,6 @@ data class SNewBankAccount(
             else -> null
         }
     }
+
+    fun validateCustomise(): String? = if (name.length !in nameLengthRange) "name" else null
 }

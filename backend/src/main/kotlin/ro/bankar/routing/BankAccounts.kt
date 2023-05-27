@@ -63,7 +63,7 @@ fun Route.configureBankAccounts() {
                 val accountID = call.parameters["id"]?.toIntOrNull()
                 val data = call.receive<SNewBankAccount>()
 
-                data.validate(CREDIT_DATA)?.takeIf { it == "color" || it == "name" }?.let {
+                data.validateCustomise()?.let {
                     call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@post
                 }
                 newSuspendedTransaction {

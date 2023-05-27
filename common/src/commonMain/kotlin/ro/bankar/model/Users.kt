@@ -119,6 +119,21 @@ class SNewUser(
     override val address: String,
 ) : SUserBase() {
     override fun validate(data: SCountries) = super.validate(data) ?: if (!SUserValidation.passwordRegex.matches(password)) "password" else null
+
+    fun validateUpdate(data: SCountries) = with(SUserValidation) {
+        val country = data.find { it.code == countryCode }
+        when {
+            !emailRegex.matches(email) -> "email"
+            !nameRegex.matches(firstName) -> "firstName"
+            middleName.let { it != null && !nameRegex.matches(it) } -> "middleName"
+            !nameRegex.matches(lastName) -> "lastName"
+            country == null -> "countryCode"
+            state !in country.states -> "state"
+            city.length !in cityLengthRange -> "city"
+            address.length !in addressLengthRange -> "address"
+            else -> null
+        }
+    }
 }
 
 /**

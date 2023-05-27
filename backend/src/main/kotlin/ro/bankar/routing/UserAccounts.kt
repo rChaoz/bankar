@@ -206,7 +206,7 @@ fun Route.configureUserAccounts() {
                 call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect_password")); return@put
             }
             // Validate data
-            data.validate(COUNTRY_DATA)?.takeIf { it != "tag" && it != "phone" }?.let {
+            data.validateUpdate(COUNTRY_DATA)?.let {
                 call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@put
             }
 
