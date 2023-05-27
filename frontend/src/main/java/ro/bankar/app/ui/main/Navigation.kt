@@ -19,7 +19,6 @@ import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
-import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
@@ -37,6 +36,7 @@ private const val transferRoutePrefix = "transfer"
 private const val selfTransferRoutePrefix = "selfTransfer"
 
 private const val bankAccountRoutePrefix = "bankAccount"
+private const val createPartyRoutePrefix = "createParty"
 private const val viewPartyRoutePrefix = "viewParty"
 
 @Suppress("FunctionName")
@@ -55,7 +55,7 @@ enum class MainNav(val route: String) {
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}"),
     // Parties
-    CreateParty("createParty?amount={amount}&currency={currency}"), ViewParty("$viewPartyRoutePrefix/{id}");
+    CreateParty("$createPartyRoutePrefix?amount={amount}&account={account}"), ViewParty("$viewPartyRoutePrefix/{id}");
 
     companion object {
         const val route = "main"
@@ -65,7 +65,7 @@ enum class MainNav(val route: String) {
         )
         val createPartyArguments = listOf(
             navArgument("amount") { defaultValue = 0f; type = NavType.FloatType },
-            navArgument("currency") { nullable = true }
+            navArgument("account") { defaultValue = -1; type = NavType.IntType }
         )
         val viewPartyArguments = listOf(
             navArgument("id") { type = NavType.IntType }
@@ -79,6 +79,7 @@ enum class MainNav(val route: String) {
         fun Transfer(data: SBankTransfer) = "$transferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun BankAccount(data: SBankAccount) = "$bankAccountRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
+        fun CreateParty(amount: Double, account: Int) = "$createPartyRoutePrefix?amount=$amount&account=$account"
         fun ViewParty(id: Int) = "$viewPartyRoutePrefix/$id"
     }
 }
@@ -99,14 +100,19 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         }
         // Details screens
         composable(MainNav.Transaction.route) {
-            TransactionDetailsScreen(onDismiss = controller::popBackStack, data = Json.decodeFromString(it.arguments!!.getString("transaction")!!))
+            TransactionDetailsScreen(
+                onDismiss = controller::popBackStack,
+                data = Json.decodeFromString(it.arguments!!.getString("transaction")!!),
+                onCreateParty = { amount, account -> controller.navigate(MainNav.CreateParty(amount, account)) }
+            )
         }
         composable(MainNav.Transfer.route) { entry ->
             ExternalTransferDetailsScreen(
                 onDismiss = controller::popBackStack,
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToFriend = { controller.navigate(MainNav.Friend(it)) },
-                onNavigateToAccount = { controller.navigate(MainNav.BankAccount(it)) }
+                onNavigateToAccount = { controller.navigate(MainNav.BankAccount(it)) },
+                onCreateParty = { amount, account -> controller.navigate(MainNav.CreateParty(amount, account)) }
             )
         }
         composable(MainNav.SelfTransfer.route) { entry ->
@@ -143,8 +149,8 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         // Parties
         composable(MainNav.CreateParty.route, arguments = MainNav.createPartyArguments) { entry ->
             val amount = entry.arguments!!.getFloat("amount")
-            val currency = entry.arguments!!.getString("currency")?.let { Currency.from(it) }
-            CreatePartyScreen(onDismiss = controller::popBackStack, amount.toDouble(), currency)
+            val account = entry.arguments!!.getInt("account")
+            CreatePartyScreen(onDismiss = controller::popBackStack, amount.toDouble(), account)
         }
         composable(MainNav.ViewParty.route, arguments = MainNav.viewPartyArguments) { entry ->
             ViewPartyScreen(onDismiss = controller::popBackStack, partyID = entry.arguments!!.getInt("id"), onNavigateToFriend = {

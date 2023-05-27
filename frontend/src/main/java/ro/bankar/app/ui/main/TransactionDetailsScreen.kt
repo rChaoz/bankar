@@ -36,7 +36,7 @@ import ro.bankar.util.here
 import ro.bankar.util.nowUTC
 
 @Composable
-fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
+fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCreateParty: (Double, Int) -> Unit) {
     NavScreen(onDismiss, title = R.string.transaction) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 12.dp)) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -50,7 +50,7 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(text = data.title, style = MaterialTheme.typography.titleLarge)
                 }
-                FilledIconButton(onClick = { /*TODO*/ }, modifier = Modifier.size(48.dp)) {
+                FilledIconButton(onClick = { onCreateParty(data.amount, data.accountID) }, modifier = Modifier.size(48.dp)) {
                     Icon(
                         modifier = Modifier.size(32.dp),
                         painter = painterResource(R.drawable.split_bill),
@@ -117,9 +117,9 @@ private fun TransactionDetailsScreenPreview() {
     AppTheme {
         TransactionDetailsScreen(
             onDismiss = {}, data = SCardTransaction(
-                21837129371927L, 1, "4838", 25.67,
+                21837129371927L, 1, 1, "4838", 25.67,
                 Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "TacoBell", "taco bell lore"
-            )
+            ), onCreateParty = { _, _ -> }
         )
     }
 }

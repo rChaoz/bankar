@@ -64,6 +64,9 @@ fun Route.configureParties() {
                 if (party == null || party.hostAccount.user.id != user.id) {
                     call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "party")); return@newSuspendedTransaction
                 }
+                for (member in party.members) {
+                    sendNotificationToUser(member.user.id, SSocketNotification.SRecentActivityNotification)
+                }
                 party.delete()
                 call.respond(HttpStatusCode.OK, StatusResponse.Success)
             }

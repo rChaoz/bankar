@@ -28,7 +28,9 @@ class CardTransaction(id: EntityID<Int>) : IntEntity(id) {
     var details by CardTransactions.details
     var title by CardTransactions.title
 
-    fun serializable() = SCardTransaction(reference, card.id.value, card.cardNumber.toString().takeLast(4), amount.toDouble(), currency, dateTime, details, title)
+    fun serializable() = SCardTransaction(
+        reference, card.id.value, card.bankAccount.id.value, card.cardNumber.toString().takeLast(4), amount.toDouble(), currency, dateTime, details, title
+    )
 }
 
 fun SizedIterable<CardTransaction>.serializable() = map(CardTransaction::serializable)

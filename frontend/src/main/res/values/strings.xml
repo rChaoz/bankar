@@ -260,4 +260,5 @@
     <string name="view_party">View party</string>
     <string name="cancel_party">Cancel party</string>
     <string name="my_party">My party</string>
+    <string name="you_brackets_s">(You) %s</string>
 </resources>

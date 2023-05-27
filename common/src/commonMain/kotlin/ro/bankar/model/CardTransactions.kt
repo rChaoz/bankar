@@ -8,6 +8,7 @@ import ro.bankar.banking.Currency
 data class SCardTransaction(
     val reference: Long,
     val cardID: Int,
+    val accountID: Int,
     val cardLastFour: String,
 
     val amount: Double,

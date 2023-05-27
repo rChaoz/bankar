@@ -72,8 +72,8 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
      * @param direction Whether this transfer request was sent/received by the user
      */
     fun serializable(direction: SDirection): STransferRequest {
-        val user = if (direction == SDirection.Sent) targetUser else sourceUser
-        val otherUser = if (direction == SDirection.Sent) sourceUser else targetUser
+        val user = if (direction == SDirection.Sent) sourceUser else targetUser
+        val otherUser = if (direction == SDirection.Sent) targetUser else sourceUser
         return STransferRequest(id.value, direction, otherUser.publicSerializable(user.hasFriend(otherUser)),
             amount.toDouble(), sourceAccount.currency, note, partyMember?.party?.id?.value, dateTime)
     }

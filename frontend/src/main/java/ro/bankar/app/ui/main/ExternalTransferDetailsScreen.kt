@@ -58,6 +58,7 @@ fun ExternalTransferDetailsScreen(
     data: SBankTransfer,
     onNavigateToFriend: (SPublicUserBase) -> Unit,
     onNavigateToAccount: (SBankAccount) -> Unit,
+    onCreateParty: (Double, Int) -> Unit
 ) {
     val countryData by LocalRepository.current.countryData.collectAsStateRetrying()
     val bankAccount by LocalRepository.current.accounts.mapCollectAsStateRetrying { accounts -> accounts.find { it.id == data.accountID } }
@@ -83,7 +84,8 @@ fun ExternalTransferDetailsScreen(
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
-                    FilledIconButton(onClick = { /*TODO*/ }, modifier = Modifier.size(48.dp)) {
+                    if (data.direction == SDirection.Sent)
+                        FilledIconButton(onClick = { onCreateParty(data.amount, data.accountID) }, modifier = Modifier.size(48.dp)) {
                         Icon(
                             modifier = Modifier.size(32.dp),
                             painter = painterResource(R.drawable.split_bill),
@@ -162,7 +164,7 @@ private fun ExternalTransferDetailsScreenPreview() {
             onDismiss = {}, data = SBankTransfer(
                 SDirection.Sent, 1, null, null, "Koleci Alexandru", "RO7832479823420", 25.0, 122.3,
                 Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
-            ), onNavigateToFriend = {}, onNavigateToAccount = {}
+            ), onNavigateToFriend = {}, onNavigateToAccount = {}, onCreateParty = { _, _ -> }
         )
     }
 }
@@ -178,7 +180,7 @@ private fun ExternalTransferDetailsScreenPreviewDark() {
                     Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "toastin' around", null, true
                 ), "Big Toaster", "RO7832479823420", 25.0, 122.3,
                 Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
-            ), onNavigateToFriend = {}, onNavigateToAccount = {}
+            ), onNavigateToFriend = {}, onNavigateToAccount = {}, onCreateParty = { _, _ -> }
         )
     }
 }

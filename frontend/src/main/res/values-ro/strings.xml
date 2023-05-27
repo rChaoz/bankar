@@ -258,4 +258,5 @@
     <string name="view_party">Vezi echipa</string>
     <string name="cancel_party">Anulează echipa</string>
     <string name="my_party">Echipa mea</string>
+    <string name="you_brackets_s">(Tu) %s</string>
 </resources>

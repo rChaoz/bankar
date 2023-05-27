@@ -222,11 +222,11 @@ private object MockRepository : Repository() {
             ),
             listOf(
                 SCardTransaction(
-                    1L, 2, "1373",
+                    1L, 2, 1, "1373",
                     23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun"
                 ),
                 SCardTransaction(
-                    2L, 3, "6969",
+                    2L, 3, 1, "6969",
                     0.01, Currency.EURO, earlier, "200 houses", "yea.."
                 )
             ),

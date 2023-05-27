@@ -144,8 +144,8 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                             Text(text = party.currency.format(party.total))
                         }
 
-                        Surface(shape = MaterialTheme.shapes.small) {
-                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Surface(shape = MaterialTheme.shapes.small, tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(text = stringResource(R.string.note), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                 Text(text = party.note)
                             }
@@ -190,7 +190,7 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                             PartyMember(member, currency = party.currency)
                         }
                         else Surface {
-                            PartyMember(member, currency = party.currency)
+                            PartyMember(member, currency = party.currency, showYou = true)
                         }
                     }
                 }
@@ -200,7 +200,7 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
 }
 
 @Composable
-private fun PartyMember(member: SPartyMember, currency: Currency) {
+private fun PartyMember(member: SPartyMember, currency: Currency, showYou: Boolean = false) {
     Row(
         modifier = Modifier.padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -209,7 +209,7 @@ private fun PartyMember(member: SPartyMember, currency: Currency) {
         Avatar(image = member.profile.avatar, size = 48.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = member.profile.firstName,
+                text = if (showYou) stringResource(R.string.you_brackets_s, member.profile.firstName) else member.profile.firstName,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium

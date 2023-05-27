@@ -84,11 +84,11 @@ import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.banking.Currency
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SFriend
 import ro.bankar.model.SSendRequestMoney
+import kotlin.math.min
 
 enum class CreatePartyStep {
     AccountAndTotal, PickFriends, ChooseAmounts
@@ -144,7 +144,7 @@ class CreatePartyScreenModel : ViewModel() {
 }
 
 @Composable
-fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, currency: Currency?) {
+fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, account: Int) {
     // Create model
     val model = viewModel<CreatePartyScreenModel>()
     model.onDismiss = onDismiss
@@ -153,11 +153,14 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, currency: Cu
     // Get friends list
     val repository = LocalRepository.current
     LaunchedEffect(true) {
-        if (initialAmount != 0.0) model.total.value = initialAmount.toString()
+        if (initialAmount != 0.0) model.total.value = initialAmount.toString().let {
+            val index = it.indexOf('.')
+            if (index == -1) it else it.substring(0, min(it.length, index + 3))
+        }
         launch { repository.friends.collectRetrying { model.allFriends = it } }
-        if (currency != null) launch {
+        if (account != -1) launch {
             repository.accounts.collectRetrying { accounts ->
-                accounts.find { it.currency == currency }?.let { model.account.value = it }
+                accounts.find { it.id == account }?.let { model.account.value = it }
                 cancel()
             }
         }
@@ -444,6 +447,6 @@ private fun ChooseAmountsStep(model: CreatePartyScreenModel) {
 @Composable
 private fun CreatePartyScreenPreview() {
     AppTheme {
-        CreatePartyScreen(onDismiss = {}, 0.0, null)
+        CreatePartyScreen(onDismiss = {}, 0.0, -1)
     }
 }

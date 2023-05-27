@@ -216,7 +216,11 @@ private fun RecentActivityPreviewDark() {
 @Composable
 private fun CreatedParty(party: SPartyPreview, onNavigate: () -> Unit) {
     RecentActivityRow(onClick = onNavigate, icon = {
-        Icon(painter = painterResource(R.drawable.split_bill), contentDescription = null)
+        FilledIcon(
+            painter = painterResource(R.drawable.split_bill),
+            contentDescription = null,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }, title = stringResource(R.string.my_party), subtitle = AnnotatedString(party.note)) {
         Column(horizontalAlignment = Alignment.End) {
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
