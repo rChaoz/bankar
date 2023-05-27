@@ -40,6 +40,7 @@ import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SConversation
+import ro.bankar.model.SCreateParty
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
@@ -136,6 +137,9 @@ abstract class Repository {
     abstract suspend fun sendCancelFriendRequest(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract fun conversation(tag: String): RequestFlow<SConversation>
     abstract suspend fun sendFriendMessage(recipientTag: String, message: String): SafeStatusResponse<StatusResponse, StatusResponse>
+
+    // Parties
+    abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): SafeResponse<StatusResponse>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -268,6 +272,14 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         url("messaging/send")
         setBody(SSendMessage(message, recipientTag))
     }
+
+    // Parties
+    override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) =
+        client.safeRequest<StatusResponse>(HttpStatusCode.Created) {
+            post("party/create") {
+                setBody(SCreateParty(account, note, amounts))
+            }
+        }
 
 
     // Recent activity

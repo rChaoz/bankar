@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
@@ -21,19 +22,18 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
             find { (TransferRequests.sourceUser eq user.id) or (TransferRequests.targetUser eq user.id) }
                 .orderBy(TransferRequests.dateTime to SortOrder.DESC)
 
-        fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, party: Party? = null): Boolean {
-            if (sourceAccount.spendable < amount) return false
+        fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, partyMember: PartyMember? = null): TransferRequest? {
+            if (sourceAccount.spendable < amount) return null
             // Lock funds
             if (amount > BigDecimal.ZERO) sourceAccount.balance -= amount
-            new {
+            return new {
                 this.sourceAccount = sourceAccount
                 sourceUser = sourceAccount.user
                 targetUser = target
-                this.party = party
+                this.partyMember = partyMember
                 this.amount = amount
                 this.note = note.trim()
             }
-            return true
         }
     }
 
@@ -41,8 +41,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     var sourceAccount by BankAccount referencedOn TransferRequests.sourceAccount
     var targetUser by User referencedOn TransferRequests.targetUser
 
-    private val partyID by TransferRequests.party
-    var party by Party optionalReferencedOn TransferRequests.party
+    var partyMember by PartyMember optionalReferencedOn TransferRequests.partyMember
     var amount by TransferRequests.amount
     var dateTime by TransferRequests.dateTime
     var note by TransferRequests.note
@@ -73,7 +72,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
         val user = if (direction == SDirection.Sent) targetUser else sourceUser
         val otherUser = if (direction == SDirection.Sent) sourceUser else targetUser
         return STransferRequest(id.value, direction, otherUser.publicSerializable(user.hasFriend(otherUser)),
-            amount.toDouble(), sourceAccount.currency, note, partyID?.value, dateTime)
+            amount.toDouble(), sourceAccount.currency, note, partyMember?.party?.id?.value, dateTime)
     }
 
     /**
@@ -92,7 +91,7 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val targetUser = reference("target_user_id", Users)
 
     val note = varchar("note", 100)
-    val party = reference("party", Parties).nullable().default(null)
+    val partyMember = reference("party_member", PartyMembers, onDelete = ReferenceOption.CASCADE).nullable()
     val amount = amount("amount").check("amount_check") { it greater BigDecimal.ZERO }
     val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
 }

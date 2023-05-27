@@ -30,7 +30,7 @@ fun VerifiableField(
     label: Int,
     type: KeyboardType,
     modifier: Modifier = Modifier,
-    filter: (String) -> Boolean = { true },
+    valueTransform: (String) -> String? = { it },
     id: String? = null,
     enabled: Boolean = true,
     showPassword: Boolean = true,
@@ -50,7 +50,7 @@ fun VerifiableField(
     if (id != null) mod = mod.layoutId(id)
     OutlinedTextField(
         value = verifiableState.value,
-        onValueChange = { if (filter(it)) verifiableState.value = it },
+        onValueChange = { valueTransform(it)?.let{ verifiableState.value = it } },
         modifier = mod,
         enabled = enabled,
         singleLine = !multiLine,

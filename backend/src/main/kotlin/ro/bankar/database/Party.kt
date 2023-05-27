@@ -5,19 +5,37 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import ro.bankar.amount
-import ro.bankar.currency
+import java.math.BigDecimal
 
 class Party(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<Party>(Parties)
+    companion object : IntEntityClass<Party>(Parties) {
+        fun create(note: String, targetAccount: BankAccount, data: List<Pair<User, BigDecimal>>) {
+            // Create party
+            val total = data.sumOf { it.second }
+            val party = new {
+                this.total = total
+                hostAccount = targetAccount
+            }
+            // Create transfer requests & party member information
+            for (pair in data) {
+                val member = PartyMember.new {
+                    this.party = party
+                    this.user = pair.first
+                    this.amount = pair.second
+                }
+                val transfer = TransferRequest.create(targetAccount, pair.first, -pair.second, note, member)!!
+                member.request = transfer
+            }
+        }
+    }
 
-    val host by User referencedOn Parties.host
-    val total by Parties.total
-    val currency by Parties.currency
+    var hostAccount by BankAccount referencedOn Parties.hostAccount
+    var total by Parties.total
     val members by PartyMember referrersOn PartyMembers.party
 }
 
 internal object Parties : IntIdTable() {
-    val host = reference("host", Users)
+    val hostAccount = reference("host", BankAccounts)
     val total = amount("total")
-    val currency = currency("currency")
+    val note = varchar("note", 100)
 }

@@ -44,6 +44,8 @@ import ro.bankar.model.SBankAccountType
 import ro.bankar.util.todayHere
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
 
@@ -129,3 +131,21 @@ class SerializableSaver<T>(private val serializer: KSerializer<T>) : Saver<T, St
  * Obtains a saver for a type. The type must be a class annotated with [@Serializable][Serializable].
  */
 inline fun <reified T> serializableSaver() = SerializableSaver(serializer<T>())
+
+/**
+ * onValueChanged function for number TextField
+ */
+fun processNumberValue(value: String) : String? {
+    // Remove invalid characters
+    val num = value.filter { it.isDigit() || it == '.' }
+    // Reject invalid inputs
+    if (!(num.isEmpty() || num.removeSuffix(".").toIntOrNull() != null || num.toDoubleOrNull() != null)
+        || num.count { it == '.' } > 1
+    ) return null
+    // Remove leading zeros, only allow up to 10 digits before decimal and 2 digits after
+    val decimal = num.indexOf('.')
+    val before = if (decimal == -1) num else num.substring(0, decimal)
+    val after = if (decimal == -1) "" else num.substring(decimal + 1, min(decimal + 3, num.length))
+    if (before.length > 10 || after.length > 2) return null
+    return before.substring(max(0, before.indexOfFirst { it != '0' })) + (if (decimal != -1) "." else "") + after
+}

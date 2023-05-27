@@ -758,7 +758,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
             )
             VerifiableField(
                 model.phone, label = R.string.phone, type = KeyboardType.Phone,
-                enabled = model.step == SignUpStep.PhoneNumber, filter = { it.all(Char::isDigit) },
+                enabled = model.step == SignUpStep.PhoneNumber, valueTransform = { it.filter(Char::isDigit) },
                 modifier = Modifier.weight(1f), isLast = true
             )
         }

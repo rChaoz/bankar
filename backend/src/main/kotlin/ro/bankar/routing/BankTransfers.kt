@@ -73,7 +73,7 @@ fun Route.configureBankTransfers() {
                 }
                 else {
                     // Create a transfer request
-                    if (!TransferRequest.create(sourceAccount, targetUser, data.amount.toBigDecimal(), data.note))
+                    if (TransferRequest.create(sourceAccount, targetUser, data.amount.toBigDecimal(), data.note) == null)
                         call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
                     else {
                         sendNotificationToUser(targetUser.id, SSocketNotification.SRecentActivityNotification)

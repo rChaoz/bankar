@@ -182,6 +182,8 @@ private object MockRepository : Repository() {
 
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
+    override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<StatusResponse>()
+
     private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier -> SRecentActivity(
         listOf(
             SBankTransfer(

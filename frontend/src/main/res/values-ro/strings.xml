@@ -239,4 +239,13 @@
     <string name="customize">Personalizare</string>
     <string name="change_name_and_color">Schimbă numele și culoarea</string>
     <string name="personalize_your_account">Personalizează-ți contul:</string>
+    <string name="remove">Elimină</string>
+    <string name="enter_bill_amount">Introdu suma notei de plată pe care vrei să o împarți:</string>
+    <string name="bill_amount">Suma de plată</string>
+    <string name="total_amount">"Suma totală: "</string>
+    <string name="friend_amounts_total">"Total sume prieteni: "</string>
+    <string name="remaining_amount">"Suma rămasă: "</string>
+    <string name="finish">Finalizare</string>
+    <string name="note_cannot_be_empty">Nota nu poate fi goală</string>
+    <string name="note_too_long">Nota este prea lungă</string>
 </resources>

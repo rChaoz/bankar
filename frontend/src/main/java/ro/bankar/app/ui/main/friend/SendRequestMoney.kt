@@ -62,6 +62,7 @@ import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
+import ro.bankar.app.ui.processNumberValue
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.model.InvalidParamResponse
@@ -69,8 +70,6 @@ import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SSendRequestMoney
-import kotlin.math.max
-import kotlin.math.min
 
 class SendRequestMoneyModel : ViewModel() {
     var accounts by mutableStateOf<List<SBankAccount>?>(null)
@@ -183,20 +182,7 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUserBase, req
             if (account != null) Column {
                 BasicTextField(
                     value = model.amount,
-                    onValueChange = { value ->
-                        // Remove invalid characters
-                        val num = value.filter { it.isDigit() || it == '.' }
-                        // Reject invalid inputs
-                        if (!(num.isEmpty() || num.removeSuffix(".").toIntOrNull() != null || num.toDoubleOrNull() != null)
-                            || num.count { it == '.' } > 1
-                        ) return@BasicTextField
-                        // Remove leading zeros, only allow up to 10 digits before decimal and 2 digits after
-                        val decimal = num.indexOf('.')
-                        val before = if (decimal == -1) num else num.substring(0, decimal)
-                        val after = if (decimal == -1) "" else num.substring(decimal + 1, min(decimal + 3, num.length))
-                        if (before.length > 10 || after.length > 2) return@BasicTextField
-                        model.amount = before.substring(max(0, before.indexOfFirst { it != '0' })) + (if (decimal != -1) "." else "") + after
-                    },
+                    onValueChange = { value -> processNumberValue(value)?.let { model.amount = it } },
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                     textStyle = MaterialTheme.typography.headlineLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

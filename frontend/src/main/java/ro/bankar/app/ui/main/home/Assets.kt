@@ -48,7 +48,7 @@ fun Assets() {
         ) {
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
-                Icon(painter = painterResource(R.drawable.money), contentDescription = null, modifier = Modifier.size(32.dp))
+                Icon(painter = painterResource(R.drawable.cash), contentDescription = null, modifier = Modifier.size(32.dp))
             }, title = R.string.cash, amount = 1234.56, currency = Currency.EURO, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {

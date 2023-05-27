@@ -604,13 +604,13 @@ private fun ShimmerFriends() {
                 Column {
                     Box(
                         modifier = Modifier
-                            .size(120.dp, 15.dp)
+                            .size(180.dp, 15.dp)
                             .grayShimmer(shimmer)
                     )
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
-                            .size(70.dp, 13.dp)
+                            .size(80.dp, 13.dp)
                             .grayShimmer(shimmer)
                     )
                 }

@@ -9,6 +9,7 @@ import io.ktor.server.routing.routing
 import ro.bankar.routing.configureAPIs
 import ro.bankar.routing.configureBankAccounts
 import ro.bankar.routing.configureBankTransfers
+import ro.bankar.routing.configureParties
 import ro.bankar.routing.configureRecentActivity
 import ro.bankar.routing.configureSockets
 import ro.bankar.routing.configureUserAccounts
@@ -26,6 +27,7 @@ fun Application.configureRouting() {
                 configureRecentActivity()
                 configureUserProfiles()
                 configureUserMessaging()
+                configureParties()
 
                 configureBankAccounts()
                 configureBankTransfers()
