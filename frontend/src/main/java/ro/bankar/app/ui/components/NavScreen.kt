@@ -5,11 +5,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,14 +40,14 @@ fun NavScreen(
     buttonIcon: (@Composable () -> Unit)? = null,
     onIconButtonClick: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
-    snackBar: SnackbarHostState = SnackbarHostState(),
+    snackbar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
     isFABVisible: Boolean = true,
     fabContent: @Composable () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     Scaffold(
-        snackbarHost = { SnackbarHost(snackBar) },
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             Surface(color = MaterialTheme.colorScheme.secondary) {
                 Row(
@@ -95,7 +93,8 @@ fun NavScreen(
     confirmText: Int,
     confirmEnabled: Boolean = true,
     onConfirm: () -> Unit,
-    snackBar: SnackbarHostState = SnackbarHostState(),
+    cancelText: Int = android.R.string.cancel,
+    snackbar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
     isFABVisible: Boolean = true,
     fabContent: @Composable () -> Unit = {},
@@ -104,21 +103,14 @@ fun NavScreen(
     NavScreen(onDismiss, title, buttonIcon, onButtonIconClick, bottomBar = {
         Column {
             Divider()
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp), horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(android.R.string.cancel))
+            Row(modifier = Modifier.padding(12.dp)) {
+                TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(cancelText))
                 }
-                Button(
-                    onClick = onConfirm,
-                    enabled = confirmEnabled
-                ) {
+                Button(onClick = onConfirm, enabled = confirmEnabled, modifier = Modifier.weight(1f)) {
                     Text(text = stringResource(confirmText))
                 }
             }
         }
-    }, snackBar, isLoading, isFABVisible, fabContent, content)
+    }, snackbar, isLoading, isFABVisible, fabContent, content)
 }

@@ -4,8 +4,10 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.SizedIterable
 import ro.bankar.amount
 import ro.bankar.model.SPartyInformation
+import ro.bankar.model.SPartyPreview
 import java.math.BigDecimal
 
 class Party(id: EntityID<Int>) : IntEntity(id) {
@@ -29,6 +31,8 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
                 member.request = transfer
             }
         }
+
+        fun byUser(user: User) = find { Parties.hostAccount inList user.bankAccounts.map(BankAccount::id) }
     }
 
     var hostAccount by BankAccount referencedOn Parties.hostAccount
@@ -40,7 +44,13 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
         hostAccount.user.takeIf { it.id != user.id }?.publicSerializable(true),
         total.toDouble(), hostAccount.currency, note, members.serializable(user)
     )
+
+    fun previewSerializable() = SPartyPreview(
+        id.value, total.toDouble(), members.filter { it.transfer != null }.sumOf { it.amount }.toDouble(), hostAccount.currency, note
+    )
 }
+
+fun SizedIterable<Party>.previewSerializable() = map(Party::previewSerializable)
 
 internal object Parties : IntIdTable() {
     val hostAccount = reference("host", BankAccounts)

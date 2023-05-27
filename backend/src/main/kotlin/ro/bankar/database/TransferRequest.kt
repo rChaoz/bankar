@@ -60,7 +60,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     fun acceptExchanging(account: BankAccount) = BankTransfer.transferExchanging(this, account).also { if (it) delete() }
 
     /**
-     * Declines this transfer request, released the locked funds if any
+     * Declines this transfer request, releasing the locked funds if any
      */
     fun decline() {
         if (amount > BigDecimal.ZERO) sourceAccount.balance += amount

@@ -38,3 +38,12 @@ data class SPartyMember(
         Pending, Declined, Accepted
     }
 }
+
+@Serializable
+data class SPartyPreview(
+    val id: Int,
+    val total: Double,
+    val collected: Double,
+    val currency: Currency,
+    val note: String
+)

@@ -35,6 +35,7 @@ import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
 import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
@@ -71,6 +72,7 @@ abstract class RequestFlow<T> protected constructor(
         class Fail<T>(val continuation: Continuation<Unit>?) : EmissionResult<T>() {
             val hasRetried = AtomicBoolean(false)
         }
+
         class Success<T>(val value: T) : EmissionResult<T>()
     }
 
@@ -142,6 +144,7 @@ abstract class Repository {
     // Parties
     abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): SafeResponse<StatusResponse>
     abstract fun partyData(id: Int): RequestFlow<SPartyInformation>
+    abstract suspend fun sendCancelParty(id: Int) : SafeStatusResponse<StatusResponse, NotFoundResponse>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -284,6 +287,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
         }
 
     override fun partyData(id: Int) = createFlow<SPartyInformation>("party/$id")
+    override suspend fun sendCancelParty(id: Int) = client.safeGet<StatusResponse, NotFoundResponse> { url("party/cancel/$id") }
 
 
     // Recent activity

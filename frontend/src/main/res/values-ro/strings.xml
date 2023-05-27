@@ -256,4 +256,6 @@
     <string name="status_accepted">Acceptat</string>
     <string name="party_invitation">Invitație în echipă</string>
     <string name="view_party">Vezi echipa</string>
+    <string name="cancel_party">Anulează echipa</string>
+    <string name="my_party">Echipa mea</string>
 </resources>

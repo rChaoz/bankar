@@ -56,5 +56,17 @@ fun Route.configureParties() {
                 call.respond(HttpStatusCode.OK, party.serializable(user))
             }
         }
+
+        get("cancel/{id}") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            newSuspendedTransaction {
+                val party = call.parameters["id"]?.toIntOrNull()?.let { Party.findById(it) }
+                if (party == null || party.hostAccount.user.id != user.id) {
+                    call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "party")); return@newSuspendedTransaction
+                }
+                party.delete()
+                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+            }
+        }
     }
 }

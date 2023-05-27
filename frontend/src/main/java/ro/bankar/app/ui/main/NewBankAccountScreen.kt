@@ -134,7 +134,7 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
     NavScreen(
         onDismiss,
         title = R.string.open_bank_account,
-        snackBar = snackBar,
+        snackbar = snackBar,
         isLoading = model.creditData == null || model.isLoading,
         confirmText = R.string.open_account,
         confirmEnabled = model.accountType != SBankAccountType.Credit || model.currencyCreditData != null,

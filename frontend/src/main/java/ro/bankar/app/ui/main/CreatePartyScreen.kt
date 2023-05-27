@@ -171,7 +171,7 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, currency: Cu
             if (model.step != CreatePartyStep.AccountAndTotal) model.step = CreatePartyStep.values()[model.step.ordinal - 1] else onDismiss()
         },
         title = R.string.create_party,
-        snackBar = model.snackbar
+        snackbar = model.snackbar
     ) {
         AnimatedContent(
             targetState = model.step,

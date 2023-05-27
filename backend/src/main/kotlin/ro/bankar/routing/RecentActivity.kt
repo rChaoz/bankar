@@ -9,7 +9,9 @@ import io.ktor.server.routing.get
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.BankTransfer
 import ro.bankar.database.CardTransaction
+import ro.bankar.database.Party
 import ro.bankar.database.TransferRequest
+import ro.bankar.database.previewSerializable
 import ro.bankar.database.serializable
 import ro.bankar.model.SRecentActivity
 import ro.bankar.plugins.UserPrincipal
@@ -20,6 +22,8 @@ fun Route.configureRecentActivity() {
         val user = call.authentication.principal<UserPrincipal>()!!.user
         val count = call.request.queryParameters["count"]?.toIntOrNull() ?: 3
         call.respond(HttpStatusCode.OK, newSuspendedTransaction {
+            // Check if user has any created parties
+            val parties = Party.byUser(user)
             // Get the 3 most recent transfers of these accounts
             val recentTransfers = BankTransfer.findRecent(user.bankAccounts, count)
             // As well as the most recent transactions
@@ -28,7 +32,12 @@ fun Route.configureRecentActivity() {
             // Finally get all pending transfer requests
             val recentRequests = TransferRequest.findRecent(user)
             // Serialize all data
-            SRecentActivity(recentTransfers.serializable(user), recentTransactions.serializable(), recentRequests.serializable(user))
+            SRecentActivity(
+                recentTransfers.serializable(user),
+                recentTransactions.serializable(),
+                parties.previewSerializable(),
+                recentRequests.serializable(user)
+            )
         })
     }
 }

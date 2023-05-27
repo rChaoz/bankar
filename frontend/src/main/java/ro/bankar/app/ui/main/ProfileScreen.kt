@@ -307,7 +307,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
         },
         onIconButtonClick = { logoutDialogState.show() },
         isLoading = isLoading || model.isSaving,
-        snackBar = snackBar,
+        snackbar = snackBar,
         isFABVisible = data != null && countryData != null && (model.editing || showFAB),
         fabContent = {
             FloatingActionButton(onClick = {

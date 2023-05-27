@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +97,7 @@ import ro.bankar.banking.reverseExchange
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SDirection
+import ro.bankar.model.SPartyPreview
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
@@ -136,6 +138,9 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
         icon = { Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null) }) {
         if (recentActivity.isEmpty()) InfoCard(text = R.string.no_recent_activity, tonalElevation = 0.dp)
         else {
+            recentActivity.parties.forEach { party ->
+                CreatedParty(party, onNavigate = { navigation.navigate(MainNav.ViewParty(party.id)) })
+            }
             val (partyInvites, otherRequests) = recentActivity.transferRequests.partition { it.partyID != null }
             partyInvites.forEach { invitation ->
                 ReceivedTransferRequest(
@@ -204,7 +209,27 @@ private fun RecentActivityPreview() {
 @Composable
 private fun RecentActivityPreviewDark() {
     AppTheme {
-        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
+        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
+    }
+}
+
+@Composable
+private fun CreatedParty(party: SPartyPreview, onNavigate: () -> Unit) {
+    RecentActivityRow(onClick = onNavigate, icon = {
+        Icon(painter = painterResource(R.drawable.split_bill), contentDescription = null)
+    }, title = stringResource(R.string.my_party), subtitle = AnnotatedString(party.note)) {
+        Column(horizontalAlignment = Alignment.End) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                Amount(amount = party.collected, currency = party.currency, textStyle = MaterialTheme.typography.titleSmall)
+                Text(text = "/", style = MaterialTheme.typography.titleSmall)
+            }
+            Amount(
+                amount = party.total,
+                currency = party.currency,
+                textStyle = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 

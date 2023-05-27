@@ -104,13 +104,14 @@ fun Route.configureBankTransfers() {
             }
             val accountID = call.request.queryParameters["accountID"]?.toIntOrNull()
 
-            newSuspendedTransaction {
+            val party = newSuspendedTransaction {
                 val request = call.parameters["id"]?.toIntOrNull()?.let { id -> user.receivedTransferRequests.find { it.id.value == id } } ?: run {
-                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_id")); return@newSuspendedTransaction
+                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_id")); return@newSuspendedTransaction null
                 }
+                val party = request.partyMember?.party
                 val otherAccount = user.bankAccounts.find { it.id.value == accountID }
                 if (accept && otherAccount == null) {
-                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_account")); return@newSuspendedTransaction
+                    call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_account")); return@newSuspendedTransaction null
                 }
                 // Handle the request
                 val sourceUserID = request.sourceUser.id
@@ -120,13 +121,17 @@ fun Route.configureBankTransfers() {
                         else request.accept(otherAccount)
                     if (!result) {
                         call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
-                        return@newSuspendedTransaction
+                        return@newSuspendedTransaction null
                     }
                 } else request.decline()
                 sendNotificationToUser(sourceUserID, SSocketNotification.STransferNotification)
 
                 call.respond(HttpStatusCode.OK, StatusResponse.Success)
-            }
+                party
+            } ?: return@get
+
+            // Delete the party associated with this request if everyone has responded
+            newSuspendedTransaction { if (party.members.all { it.request == null }) party.delete() }
         }
 
         get("cancel/{id}") {

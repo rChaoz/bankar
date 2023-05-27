@@ -258,4 +258,6 @@
     <string name="status_accepted">Accepted</string>
     <string name="party_invitation">Party invitation</string>
     <string name="view_party">View party</string>
+    <string name="cancel_party">Cancel party</string>
+    <string name="my_party">My party</string>
 </resources>

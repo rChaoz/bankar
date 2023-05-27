@@ -20,6 +20,7 @@ import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
 import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
@@ -33,6 +34,7 @@ import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPartyInformation
 import ro.bankar.model.SPartyMember
+import ro.bankar.model.SPartyPreview
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SRecentActivity
@@ -123,7 +125,8 @@ private object MockRepository : Repository() {
     )
 
     private fun SPublicUserBase.friend(lastMessage: String?, unreadCount: Int) =
-        SFriend(tag, firstName, middleName, lastName, countryCode, joinDate, about, avatar,
+        SFriend(
+            tag, firstName, middleName, lastName, countryCode, joinDate, about, avatar,
             lastMessage?.let { SUserMessage(SDirection.Received, it, Clock.System.nowUTC()) }, unreadCount
         )
 
@@ -185,54 +188,61 @@ private object MockRepository : Repository() {
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
     override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<StatusResponse>()
-    override fun partyData(id: Int) = mockFlow(SPartyInformation(
-        bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", listOf(
-            SPartyMember(koleci, 105.23, SPartyMember.Status.Pending),
-            SPartyMember(bombasticus, 51.01, SPartyMember.Status.Declined),
-            SPartyMember(chadGPT, 999.99, SPartyMember.Status.Accepted)
+    override fun partyData(id: Int) = mockFlow(
+        SPartyInformation(
+            bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", listOf(
+                SPartyMember(koleci, 105.23, SPartyMember.Status.Pending),
+                SPartyMember(bombasticus, 51.01, SPartyMember.Status.Declined),
+                SPartyMember(chadGPT, 999.99, SPartyMember.Status.Accepted)
+            )
         )
-    ))
+    )
 
-        private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier -> SRecentActivity(
-        listOf(
-            SBankTransfer(
-                null, 1, 2, koleci, "Kolecii", "testIBAN.",
-                100.0, 20.01, Currency.ROMANIAN_LEU, Currency.EURO, "", Clock.System.nowUTC()
+    override suspend fun sendCancelParty(id: Int) = mockStatusResponse<StatusResponse, NotFoundResponse>()
+
+    private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier ->
+        SRecentActivity(
+            listOf(
+                SBankTransfer(
+                    null, 1, 2, koleci, "Kolecii", "testIBAN.",
+                    100.0, 20.01, Currency.ROMANIAN_LEU, Currency.EURO, "", Clock.System.nowUTC()
+                ),
+                SBankTransfer(
+                    SDirection.Received, 1, null, koleci, "Koleci 1", "test_iban",
+                    25.215, null, Currency.EURO, Currency.EURO, "ia bani", Clock.System.nowUTC()
+                ),
+                SBankTransfer(
+                    null, 1, 2, koleci, "Koleciii", "testIBAN123!!",
+                    5.5, null, Currency.US_DOLLAR, Currency.US_DOLLAR, "", earlier
+                ),
+                SBankTransfer(
+                    SDirection.Sent, 1, null, koleci, "Koleci 2", "testIBAN!!",
+                    15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", earlier
+                ),
             ),
-            SBankTransfer(
-                SDirection.Received, 1, null, koleci, "Koleci 1", "test_iban",
-                25.215, null, Currency.EURO, Currency.EURO, "ia bani", Clock.System.nowUTC()
+            listOf(
+                SCardTransaction(
+                    1L, 2, "1373",
+                    23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun"
+                ),
+                SCardTransaction(
+                    2L, 3, "6969",
+                    0.01, Currency.EURO, earlier, "200 houses", "yea.."
+                )
             ),
-            SBankTransfer(
-                null, 1, 2, koleci, "Koleciii", "testIBAN123!!",
-                5.5, null, Currency.US_DOLLAR, Currency.US_DOLLAR, "", earlier
+            listOf(SPartyPreview(1, 57.3, 22.8, Currency.ROMANIAN_LEU, "to buy 23784923 grains of sand (real)")),
+            listOf(
+                STransferRequest(
+                    0, SDirection.Received, bombasticus,
+                    50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
+                ),
+                STransferRequest(
+                    1, SDirection.Received, chadGPT,
+                    12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
+                )
             ),
-            SBankTransfer(
-                SDirection.Sent, 1, null, koleci, "Koleci 2", "testIBAN!!",
-                15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", earlier
-            ),
-        ),
-        listOf(
-            SCardTransaction(
-                1L, 2, "1373",
-                23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun"
-            ),
-            SCardTransaction(
-                2L, 3, "6969",
-                0.01, Currency.EURO, earlier, "200 houses", "yea.."
-            )
-        ),
-        listOf(
-            STransferRequest(
-                0, SDirection.Received, bombasticus,
-                50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
-            ),
-            STransferRequest(
-                1, SDirection.Received, chadGPT,
-                12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
-            )
-        ),
-    )}
+        )
+    }
 
     override suspend fun sendCancelFriendRequest(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
 
