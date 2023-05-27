@@ -259,4 +259,10 @@
     <string name="cancel_party">Anulează echipa</string>
     <string name="my_party">Echipa mea</string>
     <string name="you_brackets_s">(Tu) %s</string>
+    <string name="english">Engleză</string>
+    <string name="romanian">Română</string>
+    <string name="language">Limbă</string>
+    <string name="disable_account">Dezactivează Contul</string>
+    <string name="fingerprint">Amprentă</string>
+    <string name="system_default_language">Limba Sistemului</string>
 </resources>

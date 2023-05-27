@@ -261,4 +261,10 @@
     <string name="cancel_party">Cancel party</string>
     <string name="my_party">My party</string>
     <string name="you_brackets_s">(You) %s</string>
+    <string name="english">English</string>
+    <string name="romanian">Romanian</string>
+    <string name="language">Language</string>
+    <string name="disable_account">Disable Account</string>
+    <string name="fingerprint">Fingerprint</string>
+    <string name="system_default_language">System Default Language</string>
 </resources>
