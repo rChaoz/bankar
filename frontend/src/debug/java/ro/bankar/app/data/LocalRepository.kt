@@ -228,6 +228,8 @@ private object MockRepository : Repository() {
 
     override val recentActivity = mockFlow(mockRecentActivity)
     override val allRecentActivity = mockFlow(mockRecentActivity)
+    override fun recentActivityWith(tag: String) = mockFlow(mockRecentActivity.transfers)
+
     override val accounts = mockFlow(
         listOf(
             SBankAccount(

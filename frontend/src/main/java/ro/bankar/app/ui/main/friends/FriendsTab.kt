@@ -423,7 +423,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                 ModalBottomSheet(onDismissRequest = { setRequestInfo(null) }, sheetState = sheetState) {
                     Column(
                         modifier = Modifier
-                            .padding(vertical = 12.dp)
+                            .padding(bottom = 12.dp)
                             .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {

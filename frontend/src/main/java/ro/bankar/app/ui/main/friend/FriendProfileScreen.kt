@@ -40,6 +40,7 @@ import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
+import ro.bankar.app.ui.components.Transfer
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.nameFromCode
@@ -54,6 +55,8 @@ import ro.bankar.util.todayHere
 fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsStateRetrying()
+    val recentActivity by repository.recentActivityWith(profile.tag).also { it.requestEmit() }.collectAsStateRetrying()
+
     NavScreen(onDismiss = { navigation.popBackStack() }, title = R.string.friend_profile) {
         Column(
             modifier = Modifier
@@ -131,8 +134,7 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // TODO Load transfers
-                    Text(
+                    if (recentActivity == null) Text(
                         text = stringResource(R.string.no_friend_recent_transfers),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.outline,
@@ -141,6 +143,9 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                             .padding(20.dp)
                             .fillMaxWidth()
                     )
+                    else for (transfer in recentActivity!!) {
+                        Transfer(data = transfer, onNavigate = { navigation.navigate(MainNav.Transfer(transfer)) })
+                    }
                 }
             }
         }

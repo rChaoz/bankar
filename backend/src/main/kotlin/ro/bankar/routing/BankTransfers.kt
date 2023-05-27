@@ -18,6 +18,7 @@ import ro.bankar.database.TransferRequest
 import ro.bankar.database.User
 import ro.bankar.database.serializable
 import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SSendRequestMoney
 import ro.bankar.model.SSocketNotification
 import ro.bankar.model.StatusResponse
@@ -32,7 +33,7 @@ fun Route.configureBankTransfers() {
             newSuspendedTransaction {
                 val targetUser = User.findByTag(tag)
 
-                if (targetUser == null || targetUser !in user.friends) call.respond(HttpStatusCode.BadRequest, StatusResponse("user_not_found"))
+                if (targetUser == null || targetUser !in user.friends) call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "friend_tag"))
                 else call.respond(HttpStatusCode.OK, BankTransfer.findBetween(user, targetUser).serializable(user))
             }
         }

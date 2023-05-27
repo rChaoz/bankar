@@ -76,7 +76,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To preven
     if (showMenuSheet) ModalBottomSheet(sheetState = menuSheetState, onDismissRequest = { showMenuSheet = false }) {
         Column(
             modifier = Modifier
-                .padding(top = 12.dp)
+                .padding(bottom = 12.dp)
                 .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues())
         ) {
             val iban = buildString(data.iban.length * 5 / 4 + 1) {
@@ -162,7 +162,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To preven
         LoadingOverlay(isCustomiseLoading) {
             Column(
                 modifier = Modifier
-                    .padding(vertical = 12.dp)
+                    .padding(bottom = 12.dp)
                     .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,6 +51,7 @@ import ro.bankar.util.todayHere
 fun FriendScreen(
     onDismiss: () -> Unit,
     user: SPublicUserBase,
+    onClickOnUser: (() -> Unit)? = null,
     bottomBar: @Composable () -> Unit = {},
     snackBar: SnackbarHostState = SnackbarHostState(),
     isLoading: Boolean = false,
@@ -58,29 +61,18 @@ fun FriendScreen(
     Scaffold(
         topBar = {
             Surface(color = MaterialTheme.colorScheme.secondary) {
-                Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.padding(vertical = 8.dp)) {
                         Icon(imageVector = Icons.Default.ArrowBack, stringResource(R.string.back), modifier = Modifier.size(32.dp))
                     }
-                    if (user.avatar == null)
-                        Icon(imageVector = Icons.Default.AccountCircle, contentDescription = stringResource(R.string.avatar), modifier = Modifier.size(48.dp))
-                    else
-                        AsyncImage(model = user.avatar, contentDescription = stringResource(R.string.avatar), modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = user.fullName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(text = "@${user.tag}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.surfaceVariant)
+                    if (onClickOnUser == null) BarUserProfile(user, modifier = Modifier.weight(1f))
+                    else Surface(onClick = onClickOnUser, color = Color.Transparent, modifier = Modifier
+                        .weight(1f)
+                        .wrapContentWidth(Alignment.Start)) {
+                        BarUserProfile(user)
                     }
                     if (dropdownMenuContent != null) {
-                        Box {
+                        Box(modifier = Modifier.padding(vertical = 8.dp)) {
                             var expanded by remember { mutableStateOf(false) }
                             IconButton(onClick = { expanded = true }) {
                                 Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
@@ -100,14 +92,39 @@ fun FriendScreen(
     }
 }
 
+@Composable
+private fun BarUserProfile(user: SPublicUserBase, modifier: Modifier = Modifier) =
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.padding(top = 8.dp, bottom = 8.dp, start = 2.dp, end = 8.dp)) {
+        if (user.avatar == null)
+            Icon(imageVector = Icons.Default.AccountCircle, contentDescription = stringResource(R.string.avatar), modifier = Modifier.size(48.dp))
+        else
+            AsyncImage(
+                model = user.avatar, contentDescription = stringResource(R.string.avatar), modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+            )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column {
+            Text(
+                text = user.fullName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(text = "@${user.tag}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.surfaceVariant)
+        }
+    }
+
 @Preview
 @Composable
 private fun FriendScreenPreview() {
     AppTheme {
-        FriendScreen(onDismiss = {}, user = SPublicUser(
+        FriendScreen(onDismiss = {}, onClickOnUser = {}, user = SPublicUser(
             "koleci", "Alexandru", "Paul", "Koleci",
             "RO", Clock.System.todayHere(), "", null, true
-        )) {
+        )
+        ) {
             Text(text = "Test content")
         }
     }
@@ -120,7 +137,7 @@ private fun FriendScreenPreviewDark() {
         FriendScreen(onDismiss = {}, user = SPublicUser(
             "chaoz", "Matei", "Paul", "Trandafir",
             "RO", Clock.System.todayHere(), "", null, true
-        )) {
+        ), dropdownMenuContent = {}) {
             Text(text = "Test content")
         }
     }

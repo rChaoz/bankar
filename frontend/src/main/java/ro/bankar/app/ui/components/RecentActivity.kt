@@ -127,7 +127,11 @@ fun Transfer(data: SBankTransfer, onNavigate: () -> Unit) {
     ) {
         when {
             data.direction != null ->
-                Amount(if (data.direction == SDirection.Sent) -data.relevantAmount else data.relevantAmount, data.currency, withPlusSign = true)
+                Amount(
+                    if (data.direction == SDirection.Sent) -data.relevantAmount else data.relevantAmount,
+                    if (data.direction == SDirection.Sent) data.currency else data.exchangedCurrency,
+                    withPlusSign = true
+                )
             data.exchangedAmount == null ->
                 Amount(data.amount, data.currency, color = MaterialTheme.colorScheme.onSurface)
             else ->

@@ -38,6 +38,7 @@ import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SConversation
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
@@ -139,6 +140,7 @@ abstract class Repository {
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
     abstract val allRecentActivity: RequestFlow<SRecentActivity>
+    abstract fun recentActivityWith(tag: String): RequestFlow<List<SBankTransfer>>
 
     // Bank accounts
     abstract val accounts: RequestFlow<List<SBankAccount>>
@@ -271,6 +273,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     // Recent activity
     override val recentActivity = createFlow<SRecentActivity>("recent")
     override val allRecentActivity = createFlow<SRecentActivity>("recent?count=100000")
+    override fun recentActivityWith(tag: String) = createFlow<List<SBankTransfer>>("transfer/list/$tag")
 
     // Bank accounts
     override val accounts = createFlow<List<SBankAccount>>("accounts")

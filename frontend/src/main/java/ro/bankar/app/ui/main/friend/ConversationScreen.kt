@@ -139,7 +139,7 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                 model.conversationFlow.requestEmit()
             }
         }
-        // Update unseen messages count on opening/ closing any conversation
+        // Update unseen messages count on opening/closing any conversation
         model.repository.friends.requestEmit()
     }
 
@@ -154,7 +154,7 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
             text = { Text(text = stringResource(R.string.request_money)) },
             onClick = { it(); navigation.navigate(MainNav.RequestMoney(user)) }
         )
-    }) {
+    }, onClickOnUser = { navigation.navigate(MainNav.Friend(user)) }) {
         val conv = model.conversation
         if (conv != null) {
             Column {
