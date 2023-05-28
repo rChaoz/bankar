@@ -19,6 +19,7 @@ import ro.bankar.app.ui.main.friend.RequestMoneyScreen
 import ro.bankar.app.ui.main.friend.SendMoneyScreen
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
+import ro.bankar.app.ui.main.settings.SettingsTab
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
@@ -41,10 +42,12 @@ private const val viewPartyRoutePrefix = "viewParty"
 
 @Suppress("FunctionName")
 enum class MainNav(val route: String) {
-    // Profile
-    Profile("profile"),
     // Home
-    Friends("$mainTabRoutePrefix/${FriendsTab.name}"), Home("$mainTabRoutePrefix/${HomeTab.name}"),
+    Friends("$mainTabRoutePrefix/${FriendsTab.name}"),
+    Home("$mainTabRoutePrefix/${HomeTab.name}"),
+    Settings("$mainTabRoutePrefix/${SettingsTab.name}"),
+    // Profile & new bank account
+    Profile("profile"),
     NewBankAccount("createAccount"),
     // Details screens
     Transaction("$transactionRoutePrefix/{transaction}"),
@@ -87,13 +90,13 @@ enum class MainNav(val route: String) {
 @OptIn(ExperimentalAnimationApi::class)
 fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
     navigation(startDestination = MainNav.tabsRoute, route = MainNav.route) {
-        // Profile
-        composable(MainNav.Profile.route) {
-            ProfileScreen(onDismiss = controller::popBackStack)
-        }
-        // Home
+        // Main tabs
         composable(MainNav.tabsRoute, arguments = MainNav.tabArguments) { navEntry ->
             MainScreen(MainTabs.first { it.name == navEntry.arguments!!.getString("tab") }, controller)
+        }
+        // Profile & new account
+        composable(MainNav.Profile.route) {
+            ProfileScreen(onDismiss = controller::popBackStack)
         }
         composable(MainNav.NewBankAccount.route) {
             NewBankAccountScreen(onDismiss = controller::popBackStack)

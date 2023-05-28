@@ -24,8 +24,13 @@ import ro.bankar.app.R
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
+
+private val noneOptionAccount = SBankAccount(
+    -1, "", SBankAccountType.Debit, 0.0, 0.0, Currency.ROMANIAN_LEU, "", 0, 0.0
+)
 
 @Composable
 fun AccountsComboBox(
@@ -33,7 +38,8 @@ fun AccountsComboBox(
     accounts: List<SBankAccount>?,
     pickText: Int? = null,
     showBalance: Boolean = false,
-    showNoAccountsFound: Boolean = false,
+    noneOptionText: Int? = null,
+    onPickAccount: (SBankAccount?) -> Unit = {}
 ) {
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
 
@@ -49,14 +55,15 @@ fun AccountsComboBox(
         )
         else ComboBox(
             selectedItemText = selectedAccount.value?.name ?: stringResource(
-                if (showNoAccountsFound) R.string.no_accounts_found else R.string.select_an_account
+                if (accounts.isEmpty()) R.string.no_accounts_found else (noneOptionText ?: R.string.select_an_account)
             ),
-            onSelectItem = { selectedAccount.value = it },
-            items = accounts,
+            onSelectItem = { item -> item.takeIf { it !== noneOptionAccount }.let { selectedAccount.value = it; onPickAccount(it) } },
+            items = if (noneOptionText == null) accounts else listOf(noneOptionAccount) + accounts,
             fillWidth = true
         ) { item, onClick ->
             DropdownMenuItem(text = {
-                AccountCard(account = item)
+                if (item === noneOptionAccount) Text(text = stringResource(noneOptionText!!))
+                else AccountCard(account = item)
             }, onClick)
         }
 

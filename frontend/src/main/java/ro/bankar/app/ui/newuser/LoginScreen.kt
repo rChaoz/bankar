@@ -71,10 +71,10 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ro.bankar.app.KeyUserSession
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
-import ro.bankar.app.USER_SESSION
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.ktorClient
 import ro.bankar.app.data.safePost
@@ -157,7 +157,7 @@ class LoginModel : ViewModel() {
         isLoading = false
         when (result) {
             is SafeStatusResponse.Success -> {
-                result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(USER_SESSION, it) }
+                result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(KeyUserSession, it) }
                 onSuccess()
             }
             is SafeStatusResponse.InternalError -> {

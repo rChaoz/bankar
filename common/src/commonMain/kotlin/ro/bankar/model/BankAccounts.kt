@@ -61,3 +61,6 @@ data class SNewBankAccount(
 
     fun validateCustomise(): String? = if (name.length !in nameLengthRange) "name" else null
 }
+
+@Serializable
+data class SDefaultBankAccount(val id: Int?, val alwaysUse: Boolean)

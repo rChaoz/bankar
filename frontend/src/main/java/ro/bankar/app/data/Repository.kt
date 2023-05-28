@@ -42,6 +42,7 @@ import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SConversation
 import ro.bankar.model.SCreateParty
+import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SNewBankAccount
@@ -152,6 +153,8 @@ abstract class Repository {
     abstract fun recentActivityWith(tag: String): RequestFlow<List<SBankTransfer>>
 
     // Bank accounts
+    abstract val defaultAccount: RequestFlow<SDefaultBankAccount>
+    abstract suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean): SafeStatusResponse<StatusResponse, NotFoundResponse>
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
@@ -167,6 +170,7 @@ abstract class Repository {
     protected fun init() {
         countryData.requestEmit()
         exchangeData.requestEmit()
+        defaultAccount.requestEmit()
         // Home page (and profile)
         profile.requestEmit()
         accounts.requestEmit()
@@ -296,6 +300,9 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     override fun recentActivityWith(tag: String) = createFlow<List<SBankTransfer>>("transfer/list/$tag")
 
     // Bank accounts
+    override val defaultAccount = createFlow<SDefaultBankAccount>("defaultAccount")
+    override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) =
+        client.safePost<StatusResponse, NotFoundResponse> { url("defaultAccount"); setBody(SDefaultBankAccount(id, alwaysUse)) }
     override val accounts = createFlow<List<SBankAccount>>("accounts")
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
     override suspend fun sendCreateAccount(account: SNewBankAccount) =

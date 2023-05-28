@@ -1,5 +1,6 @@
 package ro.bankar.app
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,12 +15,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -33,6 +37,7 @@ import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
@@ -42,10 +47,13 @@ import ro.bankar.app.data.repository
 import ro.bankar.app.ui.LockScreen
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.mainNavigation
+import ro.bankar.app.ui.main.settings.Language
+import ro.bankar.app.ui.main.settings.Theme
 import ro.bankar.app.ui.newuser.NewUserNav
 import ro.bankar.app.ui.newuser.newUserNavigation
 import ro.bankar.app.ui.theme.AppTheme
-import kotlin.time.Duration.Companion.seconds
+import java.util.Locale
+import kotlin.time.Duration.Companion.minutes
 
 // For logging
 const val TAG = "BanKAR"
@@ -74,26 +82,50 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
     val initialPrefs = remember { runBlocking { dataStore.data.first() } }
 
     // This is to prevent theme flickering on startup
-    val initialDarkMode = initialPrefs[IS_DARK_MODE] ?: isSystemInDarkTheme()
-    val isDarkTheme by dataStore.collectPreferenceAsState(IS_DARK_MODE, initialDarkMode)
+    val systemDark = isSystemInDarkTheme()
+    val initialDarkMode = initialPrefs[KeyTheme]?.let { it == Theme.Dark.ordinal } ?: systemDark
+    val darkMode by dataStore.mapCollectPreferenceAsState(key = KeyTheme, defaultValue = initialDarkMode) {
+        when (it) {
+            Theme.Light.ordinal -> false
+            Theme.Dark.ordinal -> true
+            else -> systemDark
+        }
+    }
 
-    AppTheme(useDarkTheme = isDarkTheme) {
+    // Allow programmatically changing language
+    val languages = remember { Language.values() }
+    val language by remember { dataStore.data.map {
+            data -> data[KeyLanguage]?.let { languages[it.coerceIn(languages.indices)] } ?: Language.SystemDefault
+    } }.collectAsState(initial = initialPrefs[KeyLanguage]?.let { languages[it.coerceIn(languages.indices)] } ?: Language.SystemDefault)
+
+    val context = LocalContext.current
+    val languageContext by remember {
+        derivedStateOf {
+            if (language == Language.SystemDefault) context
+            else context.createConfigurationContext(Configuration().apply {
+                setLocale(Locale(language.code!!))
+            })
+        }
+    }
+
+    AppTheme(useDarkTheme = darkMode) {
         CompositionLocalProvider(
-            LocalThemeMode provides ThemeMode(isDarkTheme) {
-                scope.launch { dataStore.setPreference(IS_DARK_MODE, !isDarkTheme) }
+            LocalThemeMode provides ThemeMode(darkMode) {
+                scope.launch { dataStore.setPreference(KeyTheme, if (darkMode) Theme.Dark.ordinal else Theme.Light.ordinal) }
             },
             LocalDataStore provides dataStore,
+            LocalContext provides languageContext
         ) {
             // Setup navigation
             val controller = rememberAnimatedNavController()
 
             // Server data repository
-            val sessionToken by dataStore.collectPreferenceAsState(USER_SESSION, defaultValue = initialPrefs[USER_SESSION])
+            val sessionToken by dataStore.collectPreferenceAsState(KeyUserSession, defaultValue = initialPrefs[KeyUserSession])
             val repository = remember(sessionToken) {
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
                         // Erase session token
-                        lifecycleScope.launch { dataStore.removePreference(USER_SESSION) }
+                        lifecycleScope.launch { dataStore.removePreference(KeyUserSession) }
                         val stack = controller.currentBackStack.value
                         // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
                         if (stack.size < 2 || stack[1].destination.route == Nav.Main.route)
@@ -115,8 +147,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
                     if (event == Lifecycle.Event.ON_STOP) lastActiveAt = Clock.System.now()
-                    // TODO Increase timer from 10 seconds to 1-2 minutes
-                    else if (event == Lifecycle.Event.ON_START && (Clock.System.now() - lastActiveAt) > 10.seconds) {
+                    else if (event == Lifecycle.Event.ON_START && (Clock.System.now() - lastActiveAt) > 1.minutes) {
                         if (sessionToken != null) controller.navigate(Nav.Lock.route)
                     }
                 }
@@ -130,7 +161,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             CompositionLocalProvider(LocalRepository provides repository) {
                 AnimatedNavHost(
                     controller,
-                    startDestination = if (initialPrefs[USER_SESSION] == null) Nav.NewUser.route else Nav.Main.route,
+                    startDestination = if (initialPrefs[KeyUserSession] == null) Nav.NewUser.route else Nav.Main.route,
                     enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) { it / 2 } + fadeIn(spring()) },
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) },

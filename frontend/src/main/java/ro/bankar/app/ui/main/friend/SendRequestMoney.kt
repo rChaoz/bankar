@@ -173,8 +173,7 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUserBase, req
                 selectedAccount = model.selectedAccount,
                 accounts = model.accounts,
                 pickText = if (requesting) R.string.choose_account_request else R.string.choose_account_send,
-                showBalance = true,
-                showNoAccountsFound = true
+                showBalance = true
             )
             Spacer(modifier = Modifier.height(40.dp))
             // Centered text field

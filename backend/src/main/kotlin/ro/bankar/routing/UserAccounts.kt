@@ -26,6 +26,8 @@ import ro.bankar.database.COUNTRY_DATA
 import ro.bankar.database.User
 import ro.bankar.generateNumeric
 import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.NotFoundResponse
+import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPasswordData
@@ -213,6 +215,33 @@ fun Route.configureUserAccounts() {
             newSuspendedTransaction {
                 user.update(data)
                 call.respond(HttpStatusCode.OK, StatusResponse.Success)
+            }
+        }
+
+        route("defaultAccount") {
+            get {
+                val user = call.authentication.principal<UserPrincipal>()!!.user
+                newSuspendedTransaction {
+                    call.respond(HttpStatusCode.OK, user.defaultAccountSerializable())
+                }
+            }
+            post {
+                val user = call.authentication.principal<UserPrincipal>()!!.user
+                val data = call.receive<SDefaultBankAccount>()
+                newSuspendedTransaction {
+                    if (data.id == null) {
+                        user.setDefaultAccount(null, data.alwaysUse)
+                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                        return@newSuspendedTransaction
+                    }
+
+                    val account = user.bankAccounts.find { it.id.value == data.id }
+                    if (account == null) call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "bank_account"))
+                    else {
+                        user.setDefaultAccount(account, data.alwaysUse)
+                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                    }
+                }
             }
         }
     }

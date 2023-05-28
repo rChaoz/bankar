@@ -60,11 +60,10 @@ fun Route.configureBankTransfers() {
 
         post("send") {
             sendRequestMoneyBase { sourceAccount, targetUser, data ->
-                val targetAccount = targetUser.bankAccounts.find { it.currency == data.currency }
-                // If user is in friend list and has an open debit/savings account for the currency, instantly transfer
-                // TODO Add "default" account setting to users to specify what account money should go into
-                if (targetUser in sourceAccount.user.friends && targetAccount != null) {
-                    if (!BankTransfer.transfer(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
+                val defaultAccount = targetUser.defaultAccount?.takeIf { targetUser.alwaysUseDefaultAccount || it.currency == sourceAccount.currency }
+                // If user is in friend list and has a default account instantly transfer
+                if (targetUser in sourceAccount.user.friends && defaultAccount != null) {
+                    if (!BankTransfer.transfer(sourceAccount, defaultAccount, data.amount.toBigDecimal(), data.note))
                         call.respond(HttpStatusCode.Conflict, StatusResponse("balance_low"))
                     else {
                         sendNotificationToUser(targetUser.id, SSocketNotification.STransferNotification)

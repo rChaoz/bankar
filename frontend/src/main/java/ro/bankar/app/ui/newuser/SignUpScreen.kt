@@ -97,10 +97,10 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.serialization.json.Json
+import ro.bankar.app.KeyUserSession
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
-import ro.bankar.app.USER_SESSION
 import ro.bankar.app.data.SafeResponse
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.ktorClient
@@ -340,7 +340,7 @@ class SignUpModel : ViewModel() {
                             }
                         }
                         is SafeResponse.Success -> {
-                            result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(USER_SESSION, it) }
+                            result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(KeyUserSession, it) }
                             onSuccess()
                         }
                     }

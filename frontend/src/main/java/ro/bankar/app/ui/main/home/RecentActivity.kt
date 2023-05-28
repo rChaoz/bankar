@@ -82,7 +82,7 @@ import ro.bankar.app.ui.components.Transaction
 import ro.bankar.app.ui.components.Transfer
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
-import ro.bankar.app.ui.main.LocalSnackBar
+import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.friend.FriendCard
 import ro.bankar.app.ui.nameFromCode
@@ -261,7 +261,7 @@ private fun SentTransferRequest(id: Int, fromName: String, amount: Double, curre
         else {
             val repository = LocalRepository.current
             val context = LocalContext.current
-            val snackBar = LocalSnackBar.current
+            val snackBar = LocalSnackbar.current
 
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                 OutlinedButton(
@@ -560,7 +560,7 @@ private fun ReceivedTransferRequest(
         }
     ) {
         val context = LocalContext.current
-        val snackBar = LocalSnackBar.current
+        val snackBar = LocalSnackbar.current
 
         if (isDeclining) CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 2.dp)
         else AcceptDeclineButtons(onAccept = { if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show() else dialogVisible = true }, onDecline = {

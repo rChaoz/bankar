@@ -7,6 +7,7 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.Table
@@ -20,6 +21,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
+import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SDirection
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
@@ -99,6 +101,8 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var tag by Users.tag
     var phone by Users.phone
     var disabled by Users.disabled
+    var defaultAccount by BankAccount optionalReferencedOn Users.defaultAccount
+    var alwaysUseDefaultAccount by Users.alwaysUseDefaultAccount
 
     private var passwordHash by Users.passwordHash
     private var passwordSalt by Users.passwordSalt
@@ -280,6 +284,19 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         )
     }
 
+    /**
+     * Obtains the default account information as a serializable object
+     */
+    fun defaultAccountSerializable() = SDefaultBankAccount(defaultAccount?.id?.value, alwaysUseDefaultAccount)
+
+    /**
+     * Sets the default account information
+     */
+    fun setDefaultAccount(account: BankAccount?, alwaysUse: Boolean) {
+        defaultAccount = account
+        alwaysUseDefaultAccount = alwaysUse
+    }
+
     fun updateLastOpenedConversationWith(otherUser: User) = FriendPairs.updateLastOpenedConversation(this, otherUser)
 }
 
@@ -293,6 +310,9 @@ internal object Users : IntIdTable(columnName = "user_id") {
     val tag = varchar("tag", 25).uniqueIndex()
     val phone = varchar("phone", 15).uniqueIndex()
     val disabled = bool("disabled").default(false)
+
+    val defaultAccount = reference("default_account", BankAccounts, onDelete = ReferenceOption.SET_NULL).nullable()
+    val alwaysUseDefaultAccount = bool("always_use_default_account").default(false)
 
     val passwordHash = binary("password_hash", 256)
     val passwordSalt = binary("password_salt", 256)

@@ -92,7 +92,7 @@ import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.PagerTabs
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.grayShimmer
-import ro.bankar.app.ui.main.LocalSnackBar
+import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.main.friend.FriendCard
@@ -219,7 +219,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content(model: Model, navigation: NavHostController) {
-        model.snackBar = LocalSnackBar.current
+        model.snackBar = LocalSnackbar.current
         // Load data
         val repository = LocalRepository.current
         model.repository = repository

@@ -66,10 +66,11 @@ import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
+import ro.bankar.app.ui.main.settings.SettingsTab
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 
-val MainTabs = listOf(HomeTab)
+val MainTabs = listOf(HomeTab, FriendsTab, SettingsTab)
 
 abstract class MainTab<T : MainTab.MainTabModel>(val index: Int, val name: String, val title: Int) {
     companion object {
@@ -98,7 +99,7 @@ abstract class MainTab<T : MainTab.MainTabModel>(val index: Int, val name: Strin
     abstract fun viewModel(): T
 }
 
-val LocalSnackBar = compositionLocalOf { SnackbarHostState() }
+val LocalSnackbar = compositionLocalOf { SnackbarHostState() }
 
 @Composable
 fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
@@ -228,7 +229,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     }, label = {
                         Text(text = stringResource(R.string.home))
                     })
-                    NavigationBarItem(selected = false, onClick = {}, icon = {
+                    NavigationBarItem(selected = tab == SettingsTab, onClick = { setTab(SettingsTab) }, icon = {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = stringResource(R.string.settings)
@@ -249,7 +250,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                 }
             }
         ) { contentPadding ->
-            CompositionLocalProvider(LocalSnackBar provides snackBar) {
+            CompositionLocalProvider(LocalSnackbar provides snackBar) {
                 AnimatedContent(
                     targetState = tab,
                     modifier = Modifier.padding(contentPadding),

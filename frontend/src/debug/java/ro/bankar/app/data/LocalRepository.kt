@@ -27,6 +27,7 @@ import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SConversation
+import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SDirection
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
@@ -251,6 +252,8 @@ private object MockRepository : Repository() {
     override val allRecentActivity = mockFlow(mockRecentActivity)
     override fun recentActivityWith(tag: String) = mockFlow(mockRecentActivity.transfers)
 
+    override val defaultAccount = mockFlow(SDefaultBankAccount(1, true))
+    override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) = mockStatusResponse<StatusResponse, NotFoundResponse>()
     override val accounts = mockFlow(
         listOf(
             SBankAccount(
