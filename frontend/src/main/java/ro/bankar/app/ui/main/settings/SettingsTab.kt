@@ -1,6 +1,10 @@
 package ro.bankar.app.ui.main.settings
 
 import android.content.res.Configuration
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators
+import androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -8,37 +12,54 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.alorma.compose.settings.storage.base.SettingValueState
@@ -51,17 +72,24 @@ import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.launch
+import ro.bankar.app.KeyAuthenticationPin
+import ro.bankar.app.KeyFingerprintEnabled
 import ro.bankar.app.KeyLanguage
 import ro.bankar.app.KeyPreferredCurrency
 import ro.bankar.app.KeyTheme
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
+import ro.bankar.app.collectPreferenceAsState
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.removePreference
+import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.AccountsComboBox
+import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.getActivity
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.rememberMockNavController
@@ -133,6 +161,72 @@ object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings
 
 @Composable
 fun SettingsScreen(navigation: NavHostController) {
+    var authenticateDialogVisible by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val repository = LocalRepository.current
+    val scope = rememberCoroutineScope()
+
+    var password by rememberSaveable { mutableStateOf("") }
+    var passwordError by rememberSaveable { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    val onDone: () -> Unit = {
+        isLoading = true
+        scope.launch {
+            when (val r = repository.sendCheckPassword(password)) {
+                is SafeStatusResponse.InternalError -> passwordError = context.getString(r.message)
+                is SafeStatusResponse.Fail -> passwordError = context.getString(R.string.incorrect_password)
+                is SafeStatusResponse.Success -> {
+                    authenticateDialogVisible = false
+                    navigation.navigate(SettingsNav.Access.route)
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    BottomDialog(
+        visible = authenticateDialogVisible,
+        onDismissRequest = { authenticateDialogVisible = false },
+        confirmButtonText = R.string.confirm,
+        onConfirmButtonClick = onDone
+    ) {
+        val requester = remember { FocusRequester() }
+        LaunchedEffect(true) {
+            password = ""
+            passwordError = null
+            requester.requestFocus()
+        }
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(text = stringResource(R.string.verification_password))
+            var showPassword by rememberSaveable { mutableStateOf(false) }
+            TextField(
+                value = password,
+                onValueChange = { password = it; passwordError = null },
+                label = { Text(text = stringResource(R.string.password)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(requester),
+                isError = passwordError != null,
+                supportingText = {
+                    if (passwordError != null) Text(text = passwordError!!)
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onDone() }),
+                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(
+                            painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
+                            contentDescription = stringResource(R.string.show_password)
+                        )
+                    }
+                },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation()
+            )
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -148,7 +242,7 @@ fun SettingsScreen(navigation: NavHostController) {
             icon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },
             title = { Text(text = stringResource(R.string.access_options), style = MaterialTheme.typography.titleMedium) },
             subtitle = { Text(text = stringResource(R.string.access_options_desc)) },
-            onClick = { navigation.navigate(SettingsNav.Access.route) },
+            onClick = { authenticateDialogVisible = true },
         )
         Divider()
         SettingsMenuLink(
@@ -226,27 +320,122 @@ fun LanguageScreen() = Surface {
 
 @Composable
 fun AccessScreen() = Surface {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
+    val fingerprintAvailable = remember { BiometricManager.from(context).canAuthenticate(Authenticators.BIOMETRIC_STRONG) == BIOMETRIC_SUCCESS }
+
+    // Get data
+    val datastore = LocalDataStore.current
+    val dataPin by datastore.collectPreferenceAsState(key = KeyAuthenticationPin, defaultValue = null)
+
+    // PIN entry dialog
+    var pinDialogVisible by rememberSaveable { mutableStateOf(false) }
+    var pin by rememberSaveable { mutableStateOf("") }
+
+    val onDone = { newPin: String? ->
+        scope.launch {
+            if (newPin == null) datastore.removePreference(KeyAuthenticationPin)
+            else datastore.setPreference(KeyAuthenticationPin, newPin)
+            snackbar.showSnackbar(context.getString(if (newPin == null) R.string.pin_disabled else R.string.pin_changed), withDismissAction = true)
+        }
+        pinDialogVisible = false
+    }
+
+    BottomDialog(
+        visible = pinDialogVisible,
+        onDismissRequest = { pinDialogVisible = false },
+        buttonBar = {
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TextButton(onClick = { pinDialogVisible = false }, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
+                TextButton(onClick = { onDone(null) }, modifier = Modifier.weight(1f), enabled = dataPin != null) {
+                    Text(text = stringResource(R.string.disable_pin))
+                }
+                Button(onClick = { onDone(pin) }, modifier = Modifier.weight(1f), enabled = pin.length in 4..8) {
+                    Text(text = stringResource(R.string.confirm))
+                }
+            }
+        }
+    ) {
+        val requester = remember { FocusRequester() }
+        LaunchedEffect(true) {
+            requester.requestFocus()
+        }
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(text = stringResource(R.string.enter_new_pin))
+            TextField(
+                value = pin,
+                onValueChange = { pin = it.filter(Char::isDigit) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { if (pin.length in 4..8) onDone(pin) }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(requester),
+                leadingIcon = { Icon(painter = painterResource(R.drawable.baseline_pin_24), contentDescription = null) }
+            )
+        }
+    }
+
+    // Fingerprint
+    val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
+    val prompt = remember {
+        BiometricPrompt(context.getActivity() as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                scope.launch { datastore.setPreference(KeyFingerprintEnabled, true) }
+            }
+        })
+    }
+    val promptInfo = remember {
+        BiometricPrompt.PromptInfo.Builder()
+            .setTitle(context.getString(R.string.biometric_login))
+            .setSubtitle(context.getString(R.string.enable_biometric))
+            .setNegativeButtonText(context.getString(android.R.string.cancel))
+            .build()
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        SettingsMenuLink(
+        SettingsCheckbox(
+            icon = { Icon(painter = painterResource(R.drawable.baseline_pin_24), contentDescription = null) },
+            title = { Text(text = stringResource(R.string.pin), style = MaterialTheme.typography.titleMedium) },
+            subtitle = { Text(text = stringResource(R.string.pin_desc)) },
+            state = remember {
+                object : SettingValueState<Boolean> {
+                    override var value
+                        get() = dataPin != null
+                        set(_) {}
 
-            //icon = { Icon(imageVector = Icons.Default., contentDescription = "PIN") },
-            title = { Text(text = "PIN", style = MaterialTheme.typography.titleMedium) },
-            onClick = {/*TODO*/ },
+                    override fun reset() {}
+                }
+            },
+            onCheckedChange = { pin = ""; pinDialogVisible = true }
         )
-        Divider()
-        SettingsMenuLink(
+        if (fingerprintAvailable) {
+            Divider()
+            SettingsCheckbox(
+                icon = { Icon(painter = painterResource(R.drawable.baseline_fingerprint_24), contentDescription = null) },
+                title = { Text(text = stringResource(id = R.string.fingerprint), style = MaterialTheme.typography.titleMedium) },
+                subtitle = { Text(text = stringResource(R.string.fingerprint_desc)) },
+                state = remember {
+                    object : SettingValueState<Boolean> {
+                        override var value
+                            get() = fingerprintEnabled
+                            set(_) {}
 
-            //icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Password") },
-            title = { Text(text = stringResource(id = R.string.password), style = MaterialTheme.typography.titleMedium) },
-            onClick = {/*TODO*/ },
-        )
-        Divider()
-        SettingsMenuLink(
-
-            //icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Fingerprint") },
-            title = { Text(text = stringResource(id = R.string.fingerprint), style = MaterialTheme.typography.titleMedium) },
-            onClick = {/*TODO*/ },
-        )
+                        override fun reset() {}
+                    }
+                },
+                onCheckedChange = {
+                    if (fingerprintEnabled) scope.launch { datastore.setPreference(KeyFingerprintEnabled, false) }
+                    else prompt.authenticate(promptInfo)
+                }
+            )
+        }
     }
 }
 
@@ -348,7 +537,7 @@ fun DefaultBankAccountScreen() = Surface {
     // Get data
     val repository = LocalRepository.current
     val state by repository.defaultAccount.collectAsStateRetrying()
-    
+
     // Get accounts list
     var accounts by remember { mutableStateOf<List<SBankAccount>?>(null) }
     val account = remember { mutableStateOf<SBankAccount?>(null) }

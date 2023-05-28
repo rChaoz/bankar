@@ -275,4 +275,13 @@
     <string name="dont_use_default_account">Don\'t use default account</string>
     <string name="use_account_for_all_currencies">Use this account for all currencies</string>
     <string name="use_account_for_all_desc">For incoming transfers of other currencies, automatically exchange at the current rate.</string>
+    <string name="pin">PIN</string>
+    <string name="pin_desc">Use a 4–8 digit PIN to quickly access the app</string>
+    <string name="fingerprint_desc">Use fingerprint for fast authentication</string>
+    <string name="pin_changed">PIN successfully changed</string>
+    <string name="disable_pin">Disable PIN</string>
+    <string name="pin_disabled">PIN successfully disabled</string>
+    <string name="enter_new_pin">Enter new PIN:</string>
+    <string name="enable_biometric">Enable biometric authentication</string>
+    <string name="biometric_login">Biometric login</string>
 </resources>

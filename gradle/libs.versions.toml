@@ -20,6 +20,7 @@ io-coil = "2.3.0"
 image-cropper = "4.5.0"
 shimmer-compose = "1.0.4"
 compose-settings = "0.26.0"
+androidx-biometric = "1.1.0"
 
 [libraries]
 com-android-tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "com-android-tools-desugaring" }
@@ -27,6 +28,7 @@ androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constr
 accompanist-navigation-animation = { group = "com.google.accompanist", name = "accompanist-navigation-animation", version.ref = "accompanist-navigation-animation" }
 accompanist-swipe-refresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist-swipe-refresh" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidx-datastore-preferences" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "androidx-biometric" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }

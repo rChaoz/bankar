@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.shimmer.compose)
     implementation(libs.compose.settings)
     implementation(libs.compose.settings.datastore.preferences)
+    implementation(libs.androidx.biometric)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)

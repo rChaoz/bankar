@@ -273,4 +273,13 @@
     <string name="dont_use_default_account">Nu folosi cont implicit</string>
     <string name="use_account_for_all_currencies">Folosește acest cont pentru toate valutele</string>
     <string name="use_account_for_all_desc">Pentru transferuri sosite de alte valute, schimbă automat valuta la rata curentă</string>
+    <string name="pin">PIN</string>
+    <string name="pin_desc">Folosește un PIN de 4–8 cifre pentru a accesa rapid aplicația</string>
+    <string name="fingerprint_desc">Folosește amprenta pentru autentificare rapidă</string>
+    <string name="pin_changed">PIN schimbat cu succes</string>
+    <string name="disable_pin">Dezactivează PIN</string>
+    <string name="pin_disabled">PIN dezactivat cu succes</string>
+    <string name="enter_new_pin">Introdu noul PIN:</string>
+    <string name="enable_biometric">Activează autentificarea biometrică</string>
+    <string name="biometric_login">Autentificare biometrică</string>
 </resources>

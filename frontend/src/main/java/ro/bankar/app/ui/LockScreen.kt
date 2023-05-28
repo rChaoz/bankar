@@ -1,6 +1,7 @@
 package ro.bankar.app.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,23 +30,35 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import ro.bankar.app.KeyFingerprintEnabled
+import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
+import ro.bankar.app.collectPreferenceAsState
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
+import ro.bankar.app.ui.theme.AppTheme
 
 @Composable
 fun LockScreen(onUnlock: () -> Unit) {
     // Don't allow exiting this screen via back button
-    val activity = LocalContext.current.getActivity()
+    val context = LocalContext.current
+    val activity = context.getActivity()
     BackHandler { activity.moveTaskToBack(true) }
 
     val repository = LocalRepository.current
-
     val scope = rememberCoroutineScope()
+    val datastore = LocalDataStore.current
+    val initialPrefs = runBlocking { datastore.data.first() }
+
+    // Password authentication
     val password = remember {
         verifiableSuspendingStateOf("", scope) {
             when (val result = repository.sendCheckPassword(it)) {
@@ -55,6 +69,26 @@ fun LockScreen(onUnlock: () -> Unit) {
         }
     }
     var showPassword by rememberSaveable { mutableStateOf(false) }
+
+    // Fingerprint
+    val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
+    val prompt = remember {
+        BiometricPrompt(activity as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onUnlock()
+            }
+        })
+    }
+    val promptInfo = remember {
+        BiometricPrompt.PromptInfo.Builder()
+            .setTitle(context.getString(R.string.biometric_login))
+            .setNegativeButtonText(context.getString(android.R.string.cancel))
+            .build()
+    }
+    if (fingerprintEnabled && initialPrefs[KeyFingerprintEnabled] == true) LaunchedEffect(true) {
+        prompt.authenticate(promptInfo)
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -109,5 +143,13 @@ fun LockScreen(onUnlock: () -> Unit) {
                 Text(text = stringResource(R.string.button_continue))
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun LockScreenPreview() {
+    AppTheme {
+        LockScreen(onUnlock = {})
     }
 }

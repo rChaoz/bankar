@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -22,6 +23,9 @@ val KeyUserSession = stringPreferencesKey("userSession")
 val KeyLanguage = intPreferencesKey("language")
 val KeyTheme = intPreferencesKey("theme")
 val KeyPreferredCurrency = intPreferencesKey("preferredCurrency")
+
+val KeyAuthenticationPin = stringPreferencesKey("authenticationPin")
+val KeyFingerprintEnabled = booleanPreferencesKey("fingerprintEnabled")
 
 @Composable
 fun <T> DataStore<Preferences>.collectPreferenceAsState(key: Preferences.Key<out T>, defaultValue: T) =
