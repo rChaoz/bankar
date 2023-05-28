@@ -235,7 +235,7 @@ fun SettingsScreen(navigation: NavHostController) {
         Divider()
         SettingsMenuLink(
 
-            icon = {  Icon(painter = painterResource(R.drawable.baseline_currency_24), contentDescription = "Primary Currency") },
+            icon = {  Icon(painter = painterResource(R.drawable.baseline_money_24), contentDescription = "Primary Currency") },
             title = { Text(text = "Primary Currency", style = MaterialTheme.typography.titleMedium) },
             onClick = {navigation.navigate(SettingsNavigation.PrimaryCurrency.route) },
         )
