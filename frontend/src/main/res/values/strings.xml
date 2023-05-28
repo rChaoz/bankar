@@ -284,4 +284,10 @@
     <string name="enter_new_pin">Enter new PIN:</string>
     <string name="enable_biometric">Enable biometric authentication</string>
     <string name="biometric_login">Biometric login</string>
+    <string name="use_fingerprint">Use fingerprint</string>
+    <string name="use_pin">Use PIN</string>
+    <string name="use_password">Use password</string>
+    <string name="incorrect_pin">Incorrect PIN</string>
+    <string name="show_pin">Show PIN</string>
+    <string name="verification_pin">Please enter your PIN to verify your identity:</string>
 </resources>

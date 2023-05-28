@@ -4,17 +4,21 @@ import androidx.activity.compose.BackHandler
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import ro.bankar.app.KeyAuthenticationPin
 import ro.bankar.app.KeyFingerprintEnabled
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
@@ -43,6 +47,7 @@ import ro.bankar.app.collectPreferenceAsState
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.ui.components.VerifiableField
+import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
 import ro.bankar.app.ui.theme.AppTheme
 
@@ -51,34 +56,41 @@ fun LockScreen(onUnlock: () -> Unit) {
     // Don't allow exiting this screen via back button
     val context = LocalContext.current
     val activity = context.getActivity()
-    BackHandler { activity.moveTaskToBack(true) }
+    BackHandler(enabled = activity != null) { activity!!.moveTaskToBack(true) }
 
     val repository = LocalRepository.current
     val scope = rememberCoroutineScope()
     val datastore = LocalDataStore.current
-    val initialPrefs = runBlocking { datastore.data.first() }
 
     // Password authentication
     val password = remember {
         verifiableSuspendingStateOf("", scope) {
             when (val result = repository.sendCheckPassword(it)) {
                 is SafeStatusResponse.Success -> null
-                is SafeStatusResponse.InternalError -> activity.getString(result.message)
-                is SafeStatusResponse.Fail -> activity.getString(R.string.incorrect_password)
+                is SafeStatusResponse.InternalError -> context.getString(result.message)
+                is SafeStatusResponse.Fail -> context.getString(R.string.incorrect_password)
             }
         }
     }
     var showPassword by rememberSaveable { mutableStateOf(false) }
 
+    // PIN authentication
+    val correctPIN by datastore.collectPreferenceAsState(KeyAuthenticationPin, defaultValue = null)
+    var usingPin by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(correctPIN) { usingPin = true }
+    val pin = remember { verifiableStateOf("", R.string.incorrect_pin) { it == correctPIN } }
+
     // Fingerprint
     val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
     val prompt = remember {
-        BiometricPrompt(activity as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
-                onUnlock()
-            }
-        })
+        activity?.let {
+            BiometricPrompt(it as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    onUnlock()
+                }
+            })
+        }
     }
     val promptInfo = remember {
         BiometricPrompt.PromptInfo.Builder()
@@ -86,8 +98,8 @@ fun LockScreen(onUnlock: () -> Unit) {
             .setNegativeButtonText(context.getString(android.R.string.cancel))
             .build()
     }
-    if (fingerprintEnabled && initialPrefs[KeyFingerprintEnabled] == true) LaunchedEffect(true) {
-        prompt.authenticate(promptInfo)
+    if (fingerprintEnabled && prompt != null) LaunchedEffect(true) {
+        datastore.data.first { if (it[KeyFingerprintEnabled] == true) prompt.authenticate(promptInfo); true }
     }
 
     Scaffold { paddingValues ->
@@ -112,14 +124,38 @@ fun LockScreen(onUnlock: () -> Unit) {
                 style = MaterialTheme.typography.displayMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = stringResource(R.string.verification_password),
+                text = stringResource(if (usingPin == true) R.string.verification_pin else R.string.verification_password),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium
             )
 
-            VerifiableField(
+            val onDone: () -> Unit = {
+                if (usingPin == true) {
+                    pin.check(context)
+                    if (pin.verified) onUnlock()
+                } else scope.launch { password.checkSuspending(context); if (password.verified) onUnlock() }
+            }
+
+            if (usingPin == true) VerifiableField(
+                pin,
+                label = R.string.pin,
+                type = KeyboardType.NumberPassword,
+                showPassword = showPassword,
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(
+                            painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
+                            contentDescription = stringResource(R.string.show_pin)
+                        )
+                    }
+                },
+                onDone = { onDone() },
+                isLast = true
+            )
+            else VerifiableField(
                 password,
                 label = R.string.password,
                 type = KeyboardType.Password,
@@ -133,14 +169,28 @@ fun LockScreen(onUnlock: () -> Unit) {
                         )
                     }
                 },
-                onDone = { scope.launch { password.checkSuspending(activity); if (password.verified) onUnlock() } },
+                onDone = { scope.launch { password.checkSuspending(context); if (password.verified) onUnlock() } },
                 isLast = true
             )
-            Button(
-                onClick = { scope.launch { password.checkSuspending(activity); if (password.verified) onUnlock() } },
-                enabled = password.value.isNotEmpty()
-            ) {
-                Text(text = stringResource(R.string.button_continue))
+            if (fingerprintEnabled && prompt != null) FilledIconButton(onClick = { prompt.authenticate(promptInfo) }, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_fingerprint_24),
+                    contentDescription = stringResource(R.string.use_fingerprint),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                if (usingPin != null) {
+                    TextButton(onClick = { usingPin = !usingPin!! }) {
+                        Text(text = stringResource(if (usingPin!!) R.string.use_password else R.string.use_pin))
+                    }
+                }
+                Button(
+                    onClick = onDone,
+                    enabled = (usingPin == true && pin.value.length in 4..8) || (usingPin != true && password.value.isNotEmpty())
+                ) {
+                    Text(text = stringResource(R.string.button_continue))
+                }
             }
         }
     }

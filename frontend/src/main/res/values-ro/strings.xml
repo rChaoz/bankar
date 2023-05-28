@@ -282,4 +282,10 @@
     <string name="enter_new_pin">Introdu noul PIN:</string>
     <string name="enable_biometric">Activează autentificarea biometrică</string>
     <string name="biometric_login">Autentificare biometrică</string>
+    <string name="use_fingerprint">Folosește amprentă</string>
+    <string name="use_pin">Folosește PIN</string>
+    <string name="use_password">Folosește parolă</string>
+    <string name="incorrect_pin">PIN incorrect</string>
+    <string name="show_pin">Arată PIN</string>
+    <string name="verification_pin">Te rugăm să-ți introduci PIN-ul ca să-ți verifici identitatea:</string>
 </resources>

@@ -135,6 +135,10 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                     }
                 } ?: EmptyRepository
             }
+            // App should start in locked state
+            LaunchedEffect(true) {
+                if (sessionToken != null) controller.navigate(Nav.Lock.route)
+            }
 
             // Open web socket
             LaunchedEffect(repository) {

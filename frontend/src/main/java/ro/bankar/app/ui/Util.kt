@@ -49,10 +49,10 @@ import kotlin.math.min
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
 
-fun Context.getActivity(): Activity = when (this) {
+fun Context.getActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.getActivity()
-    else -> throw RuntimeException("Unable to get activity from context")
+    else -> null
 }
 
 val SBankAccountType.rString

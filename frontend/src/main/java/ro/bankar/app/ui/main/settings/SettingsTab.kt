@@ -384,12 +384,14 @@ fun AccessScreen() = Surface {
     // Fingerprint
     val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
     val prompt = remember {
-        BiometricPrompt(context.getActivity() as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
-                scope.launch { datastore.setPreference(KeyFingerprintEnabled, true) }
-            }
-        })
+        context.getActivity()?.let {
+            BiometricPrompt(it as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    scope.launch { datastore.setPreference(KeyFingerprintEnabled, true) }
+                }
+            })
+        }
     }
     val promptInfo = remember {
         BiometricPrompt.PromptInfo.Builder()
@@ -415,7 +417,7 @@ fun AccessScreen() = Surface {
             },
             onCheckedChange = { pin = ""; pinDialogVisible = true }
         )
-        if (fingerprintAvailable) {
+        if (fingerprintAvailable && prompt != null) {
             Divider()
             SettingsCheckbox(
                 icon = { Icon(painter = painterResource(R.drawable.baseline_fingerprint_24), contentDescription = null) },
