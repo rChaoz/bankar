@@ -12,6 +12,7 @@ import ro.bankar.routing.configureBankTransfers
 import ro.bankar.routing.configureParties
 import ro.bankar.routing.configureRecentActivity
 import ro.bankar.routing.configureSockets
+import ro.bankar.routing.configureStatements
 import ro.bankar.routing.configureUserAccounts
 import ro.bankar.routing.configureUserMessaging
 import ro.bankar.routing.configureUserProfiles
@@ -31,6 +32,7 @@ fun Application.configureRouting() {
 
                 configureBankAccounts()
                 configureBankTransfers()
+                configureStatements()
             }
             static("data") {
                 resources("data")

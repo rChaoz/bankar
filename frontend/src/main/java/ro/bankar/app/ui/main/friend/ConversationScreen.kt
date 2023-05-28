@@ -66,7 +66,6 @@ import ro.bankar.app.data.Repository
 import ro.bankar.app.data.RequestFlow
 import ro.bankar.app.data.SafeStatusResponse
 import ro.bankar.app.data.collectRetrying
-import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
@@ -76,6 +75,7 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSocketNotification
+import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.todayHere
 import kotlin.time.Duration.Companion.seconds

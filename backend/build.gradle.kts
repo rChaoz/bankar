@@ -54,6 +54,7 @@ dependencies {
     implementation("com.h2database:h2:$h2_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("net.axay:simplekotlinmail-core:1.4.0")
+    implementation("com.github.librepdf:openpdf:1.3.30")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.ktor:ktor-server-test-host-jvm:$ktor_version")

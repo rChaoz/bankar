@@ -14,8 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.Avatar
-import ro.bankar.app.ui.format
 import ro.bankar.model.SPublicUserBase
+import ro.bankar.util.format
 
 @Composable
 fun FriendCard(friend: SPublicUserBase, country: String, modifier: Modifier = Modifier) {

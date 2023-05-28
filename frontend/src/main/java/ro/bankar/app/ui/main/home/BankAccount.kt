@@ -64,6 +64,7 @@ import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SNewBankAccount
+import ro.bankar.util.formatIBAN
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -79,16 +80,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To preven
                 .padding(bottom = 12.dp)
                 .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues())
         ) {
-            val iban = buildString(data.iban.length * 5 / 4 + 1) {
-                var counter = 0
-                for (char in data.iban) {
-                    append(char)
-                    if (++counter == 4) {
-                        append(' ')
-                        counter = 0
-                    }
-                }
-            }
+            val iban = formatIBAN(data.iban)
             // Share IBAN
             val shareIntent = Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                 putExtra(Intent.EXTRA_TEXT, iban)

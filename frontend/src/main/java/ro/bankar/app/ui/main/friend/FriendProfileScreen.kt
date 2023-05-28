@@ -41,13 +41,13 @@ import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.Transfer
-import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
+import ro.bankar.util.format
 import ro.bankar.util.todayHere
 
 @OptIn(ExperimentalMaterial3Api::class)

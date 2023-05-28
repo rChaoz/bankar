@@ -39,6 +39,7 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankTransfer
+import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.nowUTC
 

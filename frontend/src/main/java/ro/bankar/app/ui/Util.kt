@@ -24,12 +24,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toJavaLocalDate
-import kotlinx.datetime.toJavaLocalTime
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.StringFormat
@@ -41,8 +35,6 @@ import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.model.SBankAccountType
-import ro.bankar.util.todayHere
-import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -92,20 +84,6 @@ fun rememberMockNavController(): NavHostController {
         }
     }
 }
-
-// Date time formatting
-private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!
-private val longDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")!!
-private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")!!
-
-fun LocalDate.format(long: Boolean = false) = toJavaLocalDate().format(if (long) longDateFormatter else dateFormatter)!!
-fun LocalTime.format() = toJavaLocalTime().format(timeFormatter)!!
-
-fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
-    if (long) "${date.format(true)} • ${time.format()}"
-    else if (date == Clock.System.todayHere()) time.format()
-    else if (vague) date.format()
-    else "${date.format()} • ${time.format()}"
 
 // Currency formatting
 fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =

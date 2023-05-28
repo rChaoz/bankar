@@ -6,7 +6,9 @@ import ro.bankar.banking.Currency
 import ro.bankar.banking.SCreditData
 
 @Serializable
-enum class SBankAccountType { Debit, Savings, Credit }
+enum class SBankAccountType(val title: String) {
+    Debit("Debit"), Savings("Savings"), Credit("Credit");
+}
 
 @Serializable
 data class SBankAccount(

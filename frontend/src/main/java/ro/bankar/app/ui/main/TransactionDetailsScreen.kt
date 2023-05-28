@@ -27,11 +27,11 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.NavScreen
-import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
 import ro.bankar.model.SCardTransaction
+import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.nowUTC
 

@@ -1,10 +1,14 @@
 package ro.bankar.database
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -30,7 +34,15 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
         fun findBetween(user: User, otherUser: User) = with(BankTransfers) {
             find {
                 ((sender eq user.id) and (recipient eq otherUser.id)) or ((sender eq otherUser.id) and (recipient eq user.id))
-            }
+            }.orderBy(dateTime to SortOrder.DESC)
+        }
+
+        fun findInPeriod(account: BankAccount, range: ClosedRange<LocalDate>) = with(BankTransfers) {
+            val start = LocalDateTime(range.start, LocalTime(0, 0, 0))
+            val end = LocalDateTime(range.endInclusive, LocalTime(23, 59, 59, 999_999_999))
+            find {
+                ((sender eq account.id) or (recipient eq account.id)) and (dateTime greaterEq start) and (dateTime lessEq end)
+            }.orderBy(dateTime to SortOrder.DESC)
         }
 
         fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String): Boolean {
@@ -145,11 +157,11 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
 fun SizedIterable<BankTransfer>.serializable(user: User) = map { it.serializable(user) }
 
 internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
-    val sender = reference("sender_account", BankAccounts).nullable()
+    val sender = reference("sender_account", BankAccounts, onDelete = ReferenceOption.SET_NULL).nullable()
     val senderName = varchar("sender_name", 50)
     val senderIban = varchar("sender_iban", 34)
 
-    val recipient = reference("recipient_account", BankAccounts).nullable()
+    val recipient = reference("recipient_account", BankAccounts, onDelete = ReferenceOption.SET_NULL).nullable()
     val recipientName = varchar("recipient_name", 50)
     val recipientIban = varchar("recipient_iban", 34)
 

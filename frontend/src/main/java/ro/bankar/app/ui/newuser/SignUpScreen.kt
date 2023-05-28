@@ -115,7 +115,6 @@ import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
-import ro.bankar.app.ui.format
 import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
@@ -126,6 +125,7 @@ import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation
 import ro.bankar.model.StatusResponse
+import ro.bankar.util.format
 import ro.bankar.util.todayHere
 
 enum class SignUpStep {

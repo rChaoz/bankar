@@ -49,6 +49,7 @@ import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
+import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.nowUTC
 

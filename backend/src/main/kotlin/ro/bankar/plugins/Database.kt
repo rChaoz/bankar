@@ -12,6 +12,7 @@ import ro.bankar.database.FriendPairs
 import ro.bankar.database.FriendRequests
 import ro.bankar.database.Parties
 import ro.bankar.database.PartyMembers
+import ro.bankar.database.Statements
 import ro.bankar.database.TransferRequests
 import ro.bankar.database.UserMessages
 import ro.bankar.database.Users
@@ -20,7 +21,7 @@ private val tables = listOf(
     Users, FriendRequests, FriendPairs, UserMessages,
     BankAccounts, BankTransfers, BankCards, CardTransactions,
     Parties, PartyMembers, TransferRequests,
-    AssetAccounts,
+    AssetAccounts, Statements
 )
 
 private fun Database.Companion.connect() = this.connect(

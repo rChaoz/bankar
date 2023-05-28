@@ -105,7 +105,6 @@ import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
-import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.safeDecodeFromString
@@ -117,6 +116,7 @@ import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.SUserValidation
 import ro.bankar.model.StatusResponse
+import ro.bankar.util.format
 import ro.bankar.util.todayHere
 import java.io.ByteArrayOutputStream
 
