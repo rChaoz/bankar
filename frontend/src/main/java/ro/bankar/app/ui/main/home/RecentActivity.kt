@@ -23,12 +23,14 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -237,6 +239,7 @@ private fun CreatedParty(party: SPartyPreview, onNavigate: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SentTransferRequest(id: Int, fromName: String, amount: Double, currency: Currency) {
     var isLoading by remember { mutableStateOf(false) }
@@ -260,25 +263,27 @@ private fun SentTransferRequest(id: Int, fromName: String, amount: Double, curre
             val context = LocalContext.current
             val snackBar = LocalSnackBar.current
 
-            OutlinedButton(
-                onClick = {
-                    isLoading = true
-                    scope.launch {
-                        when (val r = repository.sendCancelTransferRequest(id)) {
-                            is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                            is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
-                            is SafeStatusResponse.Success -> {
-                                repository.accounts.requestEmit()
-                                repository.recentActivity.emitNow()
+            CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
+                OutlinedButton(
+                    onClick = {
+                        isLoading = true
+                        scope.launch {
+                            when (val r = repository.sendCancelTransferRequest(id)) {
+                                is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
+                                is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
+                                is SafeStatusResponse.Success -> {
+                                    repository.accounts.requestEmit()
+                                    repository.recentActivity.emitNow()
+                                }
                             }
+                            isLoading = false
                         }
-                        isLoading = false
-                    }
-                },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
-            ) {
-                Text(text = stringResource(android.R.string.cancel))
+                    },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
             }
         }
     }
