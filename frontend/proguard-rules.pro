@@ -22,6 +22,7 @@
 
 # KTOR Rules
 -keepclassmembers class io.ktor.http.** { *; }
+-dontwarn org.slf4j.**
 
 # OkHttp3 Rules
 

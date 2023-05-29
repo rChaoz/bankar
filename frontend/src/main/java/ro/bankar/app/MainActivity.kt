@@ -126,9 +126,9 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                     repository(lifecycleScope, it) {
                         // Erase session token
                         lifecycleScope.launch { dataStore.removePreference(KeyUserSession) }
-                        val stack = controller.currentBackStack.value
                         // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
-                        if (stack.size < 2 || stack[1].destination.route == Nav.Main.route)
+                        val current = controller.currentBackStackEntry?.destination?.route ?: return@repository
+                        if (current in listOf(NewUserNav.route, NewUserNav.Welcome.route, NewUserNav.SignIn.route, NewUserNav.SignUp.route))
                             controller.navigate(NewUserNav.route) {
                                 popUpTo(Nav.Main.route) { inclusive = true }
                             }
@@ -141,7 +141,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             }
 
             // Open web socket
-            LaunchedEffect(repository) {
+            if (sessionToken != null) LaunchedEffect(repository) {
                 repository.openAndMaintainSocket()
             }
 

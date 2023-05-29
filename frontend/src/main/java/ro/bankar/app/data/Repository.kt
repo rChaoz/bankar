@@ -364,7 +364,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
             }
         }
 
-    override fun createDownloadStatementRequest(statement: SStatement)= DownloadManager.Request(statement.downloadURI).apply {
+    override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(statement.downloadURI).apply {
         val name = "Statement-${statement.dateTime.dashFormat()}.pdf"
         setDestinationUri(Uri.fromFile(File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), name)))
         setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
