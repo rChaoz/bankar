@@ -9,7 +9,6 @@ import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.EntityID
-import ro.bankar.DEV_MODE
 import ro.bankar.model.SSocketNotification
 import ro.bankar.plugins.UserPrincipal
 import java.util.Collections
@@ -25,7 +24,7 @@ suspend fun sendNotificationToUser(userID: EntityID<Int>, notification: SSocketN
 }
 
 fun Route.configureSockets() {
-    webSocket("socket", if (DEV_MODE) null else "wss") {
+    webSocket("socket") {
         val user = call.authentication.principal<UserPrincipal>()!!.user
         activeSockets.compute(user.id.value) { _, oldValue ->
             if (oldValue != null) throw RuntimeException("Can't open multiple sockets for the same user: ${user.id}")
