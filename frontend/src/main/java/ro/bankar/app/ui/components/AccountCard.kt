@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.app.ui.theme.accountColors
+import ro.bankar.app.ui.theme.color
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
@@ -32,7 +32,7 @@ fun AccountCard(account: SBankAccount, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .padding(start = 3.dp)
-            .startBorder(3.dp, accountColors[account.color.coerceIn(accountColors.indices)])
+            .startBorder(3.dp, account.color())
             .padding(start = 8.dp)
     ) {
         Text(text = account.name, style = MaterialTheme.typography.bodyMedium)

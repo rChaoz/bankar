@@ -1,5 +1,7 @@
 package ro.bankar.app.data
 
+import android.app.DownloadManager
+import android.net.Uri
 import androidx.compose.runtime.compositionLocalOf
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -40,6 +42,7 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSocketNotification
+import ro.bankar.model.SStatement
 import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserMessage
@@ -277,6 +280,11 @@ private object MockRepository : Repository() {
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
     override suspend fun sendCancelTransferRequest(id: Int) = mockStatusResponse<StatusResponse, StatusResponse>()
     override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override val statements = mockFlow(listOf(
+        SStatement(1, "My Statement", Clock.System.nowUTC(), 1)
+    ))
+    override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) = mockResponse<SStatement>()
+    override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(Uri.parse("http://example.com"))
 
     override fun logout() {}
 

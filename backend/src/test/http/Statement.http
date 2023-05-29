@@ -1,0 +1,3 @@
+// Download statement
+GET {{host}}/api/statements/1
+Authorization: Bearer {{auth_token}}

@@ -7,6 +7,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDate
+import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toJavaLocalTime
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
@@ -24,6 +25,7 @@ fun Instant.here() = toLocalDateTime(TimeZone.currentSystemDefault())
 private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!
 private val longDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")!!
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")!!
+private val dashFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm")!!
 
 fun LocalDate.format(long: Boolean = false) = toJavaLocalDate().format(if (long) longDateFormatter else dateFormatter)!!
 
@@ -34,6 +36,8 @@ fun LocalDateTime.format(long: Boolean = false, vague: Boolean = false) =
     else if (date == Clock.System.todayHere()) time.format()
     else if (vague) date.format()
     else "${date.format()} • ${time.format()}"
+
+fun LocalDateTime.dashFormat() = toJavaLocalDateTime().format(dashFormatter)!!
 
 fun formatIBAN(iban: String) = buildString(iban.length * 5 / 4 + 1) {
     for ((index, char) in iban.withIndex()) {

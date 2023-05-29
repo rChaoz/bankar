@@ -288,4 +288,19 @@
     <string name="incorrect_pin">PIN incorrect</string>
     <string name="show_pin">Arată PIN</string>
     <string name="verification_pin">Te rugăm să-ți introduci PIN-ul ca să-ți verifici identitatea:</string>
+    <string name="statements">Extrase de cont</string>
+    <string name="download">Descarcă</string>
+    <string name="download_started">Descărcarea a început…</string>
+    <string name="statement_name">Extrasul \"%s\"</string>
+    <string name="statement_no_name">Extras de cont</string>
+    <string name="for_account">pentru</string>
+    <string name="no_statements">Nu ai create niciun extras de cont. Apasă aici pentru a crea unul.</string>
+    <string name="download_complete">Descărcare completă</string>
+    <string name="open_file">Deschide fișierul</string>
+    <string name="choose_statement_account">Alege contul pentru care vrei să creezi extrasul de cont:</string>
+    <string name="statement_name_too_long">Numele trebuie să aibă cel mult %d de caractere</string>
+    <string name="optional_statement_name">Opțional, poți alege un nume pentru extras:</string>
+    <string name="from_date">De la data de</string>
+    <string name="to_date">Până la data de</string>
+    <string name="name">Nume</string>
 </resources>

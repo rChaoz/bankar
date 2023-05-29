@@ -67,7 +67,7 @@ class Statement(id: EntityID<Int>) : IntEntity(id) {
         fun findByUser(user: User) = find { Statements.bankAccount inList user.bankAccounts.map(BankAccount::id) }
     }
 
-    fun serializable() = SStatement(name, dateTime, bankAccount.id.value, "statements/${id.value}")
+    fun serializable() = SStatement(id.value, name, dateTime, bankAccount.id.value)
 
     var name by Statements.name
     var bankAccount by BankAccount referencedOn Statements.bankAccount

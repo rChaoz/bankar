@@ -99,7 +99,11 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
                     BankAccountShimmer(shimmer)
                     AssetsShimmer(shimmer)
                 } else {
-                    for (account in model.accounts!!) BankAccount(data = account, onNavigate = { navigation.navigate(MainNav.BankAccount(account)) })
+                    for (account in model.accounts!!) BankAccount(
+                        data = account,
+                        onNavigate = { navigation.navigate(MainNav.BankAccount(account)) },
+                        onStatements = { navigation.navigate(MainNav.Statements.route) }
+                    )
                     if (model.accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {
                         navigation.navigate(MainNav.NewBankAccount.route)
                     })

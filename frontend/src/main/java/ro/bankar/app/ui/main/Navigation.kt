@@ -46,9 +46,10 @@ enum class MainNav(val route: String) {
     Friends("$mainTabRoutePrefix/${FriendsTab.name}"),
     Home("$mainTabRoutePrefix/${HomeTab.name}"),
     Settings("$mainTabRoutePrefix/${SettingsTab.name}"),
-    // Profile & new bank account
+    // Profile & bank account stuff
     Profile("profile"),
     NewBankAccount("createAccount"),
+    Statements("statements"),
     // Details screens
     Transaction("$transactionRoutePrefix/{transaction}"),
     Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
@@ -94,12 +95,15 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         composable(MainNav.tabsRoute, arguments = MainNav.tabArguments) { navEntry ->
             MainScreen(MainTabs.first { it.name == navEntry.arguments!!.getString("tab") }, controller)
         }
-        // Profile & new account
+        // Profile & bank accounts
         composable(MainNav.Profile.route) {
             ProfileScreen(onDismiss = controller::popBackStack)
         }
         composable(MainNav.NewBankAccount.route) {
             NewBankAccountScreen(onDismiss = controller::popBackStack)
+        }
+        composable(MainNav.Statements.route) {
+            StatementsScreen(onDismiss = controller::popBackStack)
         }
         // Details screens
         composable(MainNav.Transaction.route) {

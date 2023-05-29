@@ -58,7 +58,7 @@ import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.BankAccountPersonalisation
 import ro.bankar.app.ui.rString
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.app.ui.theme.accountColors
+import ro.bankar.app.ui.theme.color
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
@@ -68,7 +68,8 @@ import ro.bankar.util.formatIBAN
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To prevent parent Column from adding another spacer for the bottom sheet(s)
+// Use box to prevent parent Column from adding another spacer for the bottom sheet(s)
+fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> Unit) = Box {
     var showCustomiseSheet by remember { mutableStateOf(false) }
     // Menu sheet
     val scope = rememberCoroutineScope()
@@ -105,7 +106,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To preven
             }
 
             // Print statements
-            Surface(onClick = { /* TODO */ }) {
+            Surface(onClick = { scope.launch { menuSheetState.hide(); onStatements() } }) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -113,7 +114,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To preven
                 ) {
                     Icon(painter = painterResource(R.drawable.baseline_file_24), contentDescription = null)
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.create_statement))
+                        Text(text = stringResource(R.string.statements))
                         Text(
                             text = stringResource(R.string.download_pdf),
                             style = MaterialTheme.typography.labelMedium,
@@ -211,7 +212,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit) = Box { // To preven
         onClick = onNavigate,
         title = data.name,
         icon = { Icon(painter = painterResource(R.drawable.bank_account), contentDescription = stringResource(R.string.bank_account)) },
-        color = accountColors[data.color.coerceIn(accountColors.indices)]
+        color = data.color()
     ) {
         Text(
             text = stringResource(data.type.rString),
@@ -290,7 +291,7 @@ private val sampleAccount = SBankAccount(
 @Composable
 private fun BankAccountPreview() {
     AppTheme {
-        BankAccount(sampleAccount, onNavigate = {})
+        BankAccount(sampleAccount, onNavigate = {}, onStatements = {})
     }
 }
 
@@ -298,7 +299,7 @@ private fun BankAccountPreview() {
 @Composable
 private fun BankAccountPreviewDark() {
     AppTheme {
-        BankAccount(sampleAccount, onNavigate = {})
+        BankAccount(sampleAccount, onNavigate = {}, onStatements = {})
     }
 }
 

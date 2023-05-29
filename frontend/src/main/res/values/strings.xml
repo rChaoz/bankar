@@ -290,4 +290,20 @@
     <string name="incorrect_pin">Incorrect PIN</string>
     <string name="show_pin">Show PIN</string>
     <string name="verification_pin">Please enter your PIN to verify your identity:</string>
+    <string name="statements">Statements</string>
+    <string name="pdf" translatable="false">PDF</string>
+    <string name="download">Download</string>
+    <string name="download_started">Download started…</string>
+    <string name="statement_name">Statement \"%s\"</string>
+    <string name="statement_no_name">Statement</string>
+    <string name="for_account">for</string>
+    <string name="no_statements">You haven\'t created any statements. Click here to create one.</string>
+    <string name="download_complete">Download complete</string>
+    <string name="open_file">Open file</string>
+    <string name="choose_statement_account">Choose the account you\'d like to create the statement for:</string>
+    <string name="statement_name_too_long">Name must be at most %d characters</string>
+    <string name="optional_statement_name">Optionally, you can choose a name for the statement:</string>
+    <string name="from_date">From date</string>
+    <string name="to_date">To date</string>
+    <string name="name">Name</string>
 </resources>

@@ -32,7 +32,7 @@ import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.main.home.topBorder
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.app.ui.theme.accountColors
+import ro.bankar.app.ui.theme.color
 import ro.bankar.model.SBankAccount
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -49,7 +49,7 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
             ) {
                 Row(
                     modifier = Modifier
-                        .topBorder(8.dp, accountColors[data.color.coerceIn(accountColors.indices)])
+                        .topBorder(8.dp, data.color())
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)

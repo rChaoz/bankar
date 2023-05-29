@@ -1,5 +1,6 @@
 package ro.bankar.app.ui.theme
 import androidx.compose.ui.graphics.Color
+import ro.bankar.model.SBankAccount
 
 val md_theme_light_primary = Color(0xFF954A03)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
@@ -84,3 +85,6 @@ val dark_red = Color(0xFFD32727)
 val dark_green = Color(0xFF2BCC4E)
 val dark_gray = Color.DarkGray
 val dark_shimmer = Color.Gray
+
+// Utility to get account color from account
+fun SBankAccount.color() = accountColors[this.color.coerceIn(accountColors.indices)]

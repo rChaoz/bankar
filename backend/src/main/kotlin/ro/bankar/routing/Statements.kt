@@ -56,7 +56,6 @@ fun Route.configureStatements() {
                 val statement = Statement.findById(id)?.takeIf { it.bankAccount.id in user.bankAccounts.map(BankAccount::id) } ?: run {
                     call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "statement")); return@newSuspendedTransaction
                 }
-                call.response.header("Content-Disposition", "attachment; filename=\"Statement-${statement.dateTime}.pdf\"")
                 call.respondBytes(statement.statement.inputStream.readBytes(), ContentType.Application.Pdf)
             }
         }

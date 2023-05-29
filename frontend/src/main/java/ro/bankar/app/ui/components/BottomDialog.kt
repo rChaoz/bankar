@@ -35,7 +35,9 @@ fun BottomDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(remember { MutableInteractionSource() }, null, onClick = onDismissRequest),
+                .clickable(remember { MutableInteractionSource() }, null, onClick = {
+                    if (properties.dismissOnClickOutside) onDismissRequest()
+                }),
             contentAlignment = Alignment.BottomCenter
         ) {
             Surface(

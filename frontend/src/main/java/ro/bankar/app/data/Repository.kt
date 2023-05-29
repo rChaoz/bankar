@@ -1,5 +1,8 @@
 package ro.bankar.app.data
 
+import android.app.DownloadManager
+import android.net.Uri
+import android.os.Environment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
 import io.ktor.client.HttpClient
@@ -18,6 +21,7 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
@@ -30,6 +34,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
@@ -53,9 +58,13 @@ import ro.bankar.model.SRecentActivity
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSendRequestMoney
 import ro.bankar.model.SSocketNotification
+import ro.bankar.model.SStatement
+import ro.bankar.model.SStatementRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.StatusResponse
+import ro.bankar.util.dashFormat
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -145,7 +154,7 @@ abstract class Repository {
     // Parties
     abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): SafeResponse<StatusResponse>
     abstract fun partyData(id: Int): RequestFlow<SPartyInformation>
-    abstract suspend fun sendCancelParty(id: Int) : SafeStatusResponse<StatusResponse, NotFoundResponse>
+    abstract suspend fun sendCancelParty(id: Int): SafeStatusResponse<StatusResponse, NotFoundResponse>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -163,6 +172,9 @@ abstract class Repository {
     abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
     abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
     abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract val statements: RequestFlow<List<SStatement>>
+    abstract suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate): SafeResponse<SStatement>
+    abstract fun createDownloadStatementRequest(statement: SStatement): DownloadManager.Request
 
     abstract fun logout()
 
@@ -178,10 +190,12 @@ abstract class Repository {
         // Friends page
         friends.requestEmit()
         friendRequests.requestEmit()
+        // Account statements
+        statements.requestEmit()
     }
 }
 
-private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: String, private val onLogout: () -> Unit) : Repository() {
+private class RepositoryImpl(private val scope: CoroutineScope, private val sessionToken: String, private val onLogout: () -> Unit) : Repository() {
     private val client = HttpClient(OkHttp) {
         defaultRequest {
             configUrl()
@@ -303,6 +317,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
     override val defaultAccount = createFlow<SDefaultBankAccount>("defaultAccount")
     override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) =
         client.safePost<StatusResponse, NotFoundResponse> { url("defaultAccount"); setBody(SDefaultBankAccount(id, alwaysUse)) }
+
     override val accounts = createFlow<List<SBankAccount>>("accounts")
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
     override suspend fun sendCreateAccount(account: SNewBankAccount) =
@@ -339,6 +354,21 @@ private class RepositoryImpl(private val scope: CoroutineScope, sessionToken: St
             parameter("action", if (accept) "accept" else "decline")
             parameter("accountID", sourceAccountID)
         }
+    }
+
+    override val statements = createFlow<List<SStatement>>("statements")
+    override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) =
+        client.safeRequest<SStatement>(HttpStatusCode.Created) {
+            post("statements/request") {
+                setBody(SStatementRequest(name, accountID, from, to))
+            }
+        }
+
+    override fun createDownloadStatementRequest(statement: SStatement)= DownloadManager.Request(statement.downloadURI).apply {
+        val name = "Statement-${statement.dateTime.dashFormat()}.pdf"
+        setDestinationUri(Uri.fromFile(File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), name)))
+        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        addRequestHeader(HttpHeaders.Authorization, "Bearer $sessionToken")
     }
 
     // Utility functions
