@@ -1,6 +1,7 @@
 *.iml
 .DS_Store
 /captures
+/release
 .externalNativeBuild
 .cxx
 /*.jks

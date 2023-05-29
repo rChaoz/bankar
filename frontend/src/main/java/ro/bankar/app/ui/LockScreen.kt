@@ -76,8 +76,8 @@ fun LockScreen(onUnlock: () -> Unit) {
 
     // PIN authentication
     val correctPIN by datastore.collectPreferenceAsState(KeyAuthenticationPin, defaultValue = null)
-    var usingPin by remember { mutableStateOf<Boolean?>(null) }
-    LaunchedEffect(correctPIN) { usingPin = true }
+    var usingPin by remember { mutableStateOf(false) }
+    LaunchedEffect(correctPIN) { if (correctPIN != null) usingPin = true }
     val pin = remember { verifiableStateOf("", R.string.incorrect_pin) { it == correctPIN } }
 
     // Fingerprint
@@ -126,19 +126,19 @@ fun LockScreen(onUnlock: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = stringResource(if (usingPin == true) R.string.verification_pin else R.string.verification_password),
+                text = stringResource(if (usingPin) R.string.verification_pin else R.string.verification_password),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium
             )
 
             val onDone: () -> Unit = {
-                if (usingPin == true) {
+                if (usingPin) {
                     pin.check(context)
                     if (pin.verified) onUnlock()
                 } else scope.launch { password.checkSuspending(context); if (password.verified) onUnlock() }
             }
 
-            if (usingPin == true) VerifiableField(
+            if (usingPin) VerifiableField(
                 pin,
                 label = R.string.pin,
                 type = KeyboardType.NumberPassword,
@@ -180,14 +180,14 @@ fun LockScreen(onUnlock: () -> Unit) {
                 )
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                if (usingPin != null) {
-                    TextButton(onClick = { usingPin = !usingPin!! }) {
-                        Text(text = stringResource(if (usingPin!!) R.string.use_password else R.string.use_pin))
+                if (correctPIN != null) {
+                    TextButton(onClick = { usingPin = !usingPin }) {
+                        Text(text = stringResource(if (usingPin) R.string.use_password else R.string.use_pin))
                     }
                 }
                 Button(
                     onClick = onDone,
-                    enabled = (usingPin == true && pin.value.length in 4..8) || (usingPin != true && password.value.isNotEmpty())
+                    enabled = (usingPin && pin.value.length in 4..8) || (!usingPin && password.value.isNotEmpty())
                 ) {
                     Text(text = stringResource(R.string.button_continue))
                 }
