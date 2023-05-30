@@ -217,7 +217,7 @@ private fun RecentActivityPreviewDark() {
 
 @Composable
 private fun CreatedParty(party: SPartyPreview, onNavigate: () -> Unit) {
-    RecentActivityRow(onClick = onNavigate, icon = {
+    RecentActivityRow(onClick = onNavigate, elevated = true, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.split_bill),
             contentDescription = null,
