@@ -37,7 +37,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -89,6 +88,7 @@ import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.MBottomSheet
 import ro.bankar.app.ui.components.PagerTabs
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.grayShimmer
@@ -422,7 +422,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
 
             requestInfo?.let {
                 val sheetState = rememberModalBottomSheetState()
-                ModalBottomSheet(onDismissRequest = { setRequestInfo(null) }, sheetState = sheetState) {
+                MBottomSheet(onDismissRequest = { setRequestInfo(null) }, sheetState = sheetState) {
                     Column(
                         modifier = Modifier
                             .padding(bottom = 12.dp)

@@ -1,5 +1,6 @@
 package ro.bankar.app.ui.components
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -15,9 +16,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -29,6 +32,7 @@ fun BottomDialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
     buttonBar: @Composable () -> Unit,
+    context: Context = LocalContext.current,
     content: @Composable () -> Unit
 ) {
     if (visible) Dialog(onDismissRequest, properties) {
@@ -48,10 +52,12 @@ fun BottomDialog(
                     .clickable(remember { MutableInteractionSource() }, null) {}, // prevent clicks from reaching parent
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Column {
-                    content()
-                    Divider()
-                    buttonBar()
+                CompositionLocalProvider(LocalContext provides context) {
+                    Column {
+                        content()
+                        Divider()
+                        buttonBar()
+                    }
                 }
             }
         }
@@ -66,6 +72,7 @@ fun BottomDialog(
     confirmButtonText: Int,
     confirmButtonEnabled: Boolean = true,
     onConfirmButtonClick: () -> Unit,
+    context: Context = LocalContext.current,
     content: @Composable () -> Unit
 ) {
     BottomDialog(visible, onDismissRequest, properties, buttonBar = {
@@ -80,5 +87,5 @@ fun BottomDialog(
                 Text(text = stringResource(confirmButtonText))
             }
         }
-    }, content)
+    }, context, content)
 }

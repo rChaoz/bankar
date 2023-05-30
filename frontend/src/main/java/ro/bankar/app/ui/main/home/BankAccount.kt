@@ -26,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,6 +52,7 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeResponse
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.MBottomSheet
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.BankAccountPersonalisation
@@ -75,7 +75,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
     val scope = rememberCoroutineScope()
     var showMenuSheet by remember { mutableStateOf(false) }
     val menuSheetState = rememberModalBottomSheetState(true)
-    if (showMenuSheet) ModalBottomSheet(sheetState = menuSheetState, onDismissRequest = { showMenuSheet = false }) {
+    if (showMenuSheet) MBottomSheet(sheetState = menuSheetState, onDismissRequest = { showMenuSheet = false }) {
         Column(
             modifier = Modifier
                 .padding(bottom = 12.dp)
@@ -151,7 +151,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
     // Customise sheet
     var isCustomiseLoading by remember { mutableStateOf(false) }
     val customiseSheetState = rememberModalBottomSheetState(true) { !isCustomiseLoading }
-    if (showCustomiseSheet) ModalBottomSheet(sheetState = customiseSheetState, onDismissRequest = { showCustomiseSheet = false }) {
+    if (showCustomiseSheet) MBottomSheet(sheetState = customiseSheetState, onDismissRequest = { showCustomiseSheet = false }) {
         LoadingOverlay(isCustomiseLoading) {
             Column(
                 modifier = Modifier
