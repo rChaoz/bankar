@@ -363,7 +363,6 @@ class SignUpModel : ViewModel() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
     val themeMode = LocalThemeMode.current

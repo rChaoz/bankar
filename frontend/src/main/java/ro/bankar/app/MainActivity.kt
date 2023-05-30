@@ -111,7 +111,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
     AppTheme(useDarkTheme = darkMode) {
         CompositionLocalProvider(
             LocalThemeMode provides ThemeMode(darkMode) {
-                scope.launch { dataStore.setPreference(KeyTheme, if (darkMode) Theme.Dark.ordinal else Theme.Light.ordinal) }
+                scope.launch { dataStore.setPreference(KeyTheme, if (darkMode) Theme.Light.ordinal else Theme.Dark.ordinal) }
             },
             LocalDataStore provides dataStore,
             LocalContext provides languageContext
