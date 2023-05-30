@@ -1,27 +1,18 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import ro.bankar.database.BankAccount
-import ro.bankar.database.BankTransfer
-import ro.bankar.database.TransferRequest
-import ro.bankar.database.User
-import ro.bankar.database.serializable
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
-import ro.bankar.model.SSendRequestMoney
-import ro.bankar.model.SSocketNotification
-import ro.bankar.model.StatusResponse
+import ro.bankar.database.*
+import ro.bankar.model.*
 import ro.bankar.plugins.UserPrincipal
 
 fun Route.configureBankTransfers() {
@@ -141,7 +132,7 @@ fun Route.configureBankTransfers() {
                     call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_id")); return@newSuspendedTransaction
                 }
                 val userID = request.targetUser.id
-                request.delete()
+                request.decline()
                 sendNotificationToUser(userID, SSocketNotification.SRecentActivityNotification)
                 call.respond(HttpStatusCode.OK, StatusResponse.Success)
             }
