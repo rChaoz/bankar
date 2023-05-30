@@ -8,12 +8,8 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
-import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.exchange
 import ro.bankar.banking.reverseExchange
@@ -33,7 +29,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
 
         fun findBetween(user: User, otherUser: User) = with(BankTransfers) {
             find {
-                ((sender eq user.id) and (recipient eq otherUser.id)) or ((sender eq otherUser.id) and (recipient eq user.id))
+                ((sender inList user.bankAccountIds) and (recipient inList otherUser.bankAccountIds)) or ((sender eq otherUser.id) and (recipient eq user.id))
             }.orderBy(dateTime to SortOrder.DESC)
         }
 

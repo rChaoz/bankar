@@ -1,29 +1,13 @@
 package ro.bankar.database
 
-import com.lowagie.text.Cell
-import com.lowagie.text.Document
-import com.lowagie.text.Element
-import com.lowagie.text.Font
-import com.lowagie.text.Image
-import com.lowagie.text.PageSize
-import com.lowagie.text.Paragraph
-import com.lowagie.text.Phrase
-import com.lowagie.text.Rectangle
-import com.lowagie.text.Table
+import com.lowagie.text.*
 import com.lowagie.text.alignment.HorizontalAlignment
 import com.lowagie.text.alignment.VerticalAlignment
 import com.lowagie.text.pdf.PdfPCell
 import com.lowagie.text.pdf.PdfPTable
 import com.lowagie.text.pdf.PdfPageEventHelper
 import com.lowagie.text.pdf.PdfWriter
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.Month
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.*
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -38,11 +22,7 @@ import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SStatement
 import ro.bankar.plugins.init
-import ro.bankar.util.format
-import ro.bankar.util.formatIBAN
-import ro.bankar.util.nowHere
-import ro.bankar.util.nowUTC
-import ro.bankar.util.todayHere
+import ro.bankar.util.*
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.text.DecimalFormat
@@ -64,7 +44,7 @@ class Statement(id: EntityID<Int>) : IntEntity(id) {
             }
         }
 
-        fun findByUser(user: User) = find { Statements.bankAccount inList user.bankAccounts.map(BankAccount::id) }
+        fun findByUser(user: User) = find { Statements.bankAccount inList user.bankAccountIds }
     }
 
     fun serializable() = SStatement(id.value, name, dateTime, bankAccount.id.value)

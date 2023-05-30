@@ -32,7 +32,7 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
             }
         }
 
-        fun byUser(user: User) = find { Parties.hostAccount inList user.bankAccounts.map(BankAccount::id) }
+        fun byUser(user: User) = find { Parties.hostAccount inList user.bankAccountIds }
     }
 
     var hostAccount by BankAccount referencedOn Parties.hostAccount
