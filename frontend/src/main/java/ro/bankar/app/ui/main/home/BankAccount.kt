@@ -48,6 +48,7 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.launch
+import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.SafeResponse
@@ -87,10 +88,10 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                 putExtra(Intent.EXTRA_TEXT, iban)
                 type = "text/plain"
             }, stringResource(R.string.share_iban))
-            val context = LocalContext.current
+            val activity = LocalActivity.current
             Surface(onClick = {
                 scope.launch { menuSheetState.hide(); showMenuSheet = false }
-                context.startActivity(shareIntent)
+                activity?.startActivity(shareIntent)
             }) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

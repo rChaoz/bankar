@@ -272,7 +272,7 @@
     <string name="choose_default_bank_account">Alege contul bancar implicit:</string>
     <string name="dont_use_default_account">Nu folosi cont implicit</string>
     <string name="use_account_for_all_currencies">Folosește acest cont pentru toate valutele</string>
-    <string name="use_account_for_all_desc">Pentru transferuri sosite de alte valute, schimbă automat valuta la rata curentă</string>
+    <string name="use_account_for_all_desc">Pentru transferuri sosite de alte valute, schimbă-le suma automat, la rata curentă.</string>
     <string name="pin">PIN</string>
     <string name="pin_desc">Folosește un PIN de 4–8 cifre pentru a accesa rapid aplicația</string>
     <string name="fingerprint_desc">Folosește amprenta pentru autentificare rapidă</string>
