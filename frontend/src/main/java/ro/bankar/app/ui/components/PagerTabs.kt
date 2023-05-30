@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -18,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.sign
@@ -55,7 +57,7 @@ fun PagerTabs(
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(index) }
                     },
-                    text = { Text(text = stringResource(tabs[index])) }
+                    text = { Text(text = stringResource(tabs[index]), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Normal) }
                 )
             }
         }
