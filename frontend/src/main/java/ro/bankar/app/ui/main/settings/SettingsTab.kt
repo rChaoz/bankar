@@ -111,13 +111,21 @@ private enum class SettingsNav(val route: String) {
 
 object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings) {
     class Model : MainTabModel() {
-        override val showFAB = mutableStateOf(false)
+        override val backButtonAction = mutableStateOf<(() -> Unit)?>(null)
     }
 
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     override fun Content(model: Model, navigation: NavHostController) {
         val settingsNav = rememberAnimatedNavController()
+
+        LaunchedEffect(settingsNav) {
+            val onBack = { settingsNav.popBackStack(); Unit }
+            settingsNav.currentBackStackEntryFlow.collect {
+                model.backButtonAction.value = if (it.destination.route != SettingsNav.route) onBack else null
+            }
+        }
+
         AnimatedNavHost(
             navController = settingsNav,
             startDestination = SettingsNav.route,

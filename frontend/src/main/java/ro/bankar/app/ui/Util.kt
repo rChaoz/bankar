@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,6 +76,11 @@ fun rememberMockNavController(): NavHostController {
         }
     }
 }
+
+// Read-only constant states
+private class ConstantState<T>(override val value: T) : State<T>
+
+fun <T> stateOf(t: T): State<T> = ConstantState(t)
 
 // Currency formatting
 fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =

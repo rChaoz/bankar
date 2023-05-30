@@ -13,10 +13,13 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
@@ -24,6 +27,8 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -35,7 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.painterResource
@@ -68,6 +73,7 @@ import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.app.ui.main.settings.SettingsTab
 import ro.bankar.app.ui.rememberMockNavController
+import ro.bankar.app.ui.stateOf
 import ro.bankar.app.ui.theme.AppTheme
 
 val MainTabs = listOf(HomeTab, FriendsTab, SettingsTab)
@@ -86,7 +92,8 @@ abstract class MainTab<T : MainTab.MainTabModel>(val index: Int, val name: Strin
     }
 
     abstract class MainTabModel : ViewModel() {
-        abstract val showFAB: State<Boolean>
+        open val showFAB = stateOf(false)
+        open val backButtonAction = stateOf<(() -> Unit)?>(null)
     }
 
     @Composable
@@ -175,7 +182,24 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     modifier = Modifier.layoutId("title"),
                     transitionSpec = { fadeIn() with fadeOut() }
                 ) {
-                    Text(text = stringResource(it.title), style = MaterialTheme.typography.displayMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val model = it.viewModel()
+                        val backAction by model.backButtonAction
+                        AnimatedVisibility(visible = backAction != null) {
+                            CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
+                                IconButton(onClick = { backAction?.let { it() } }, modifier = Modifier
+                                    .size(44.dp)
+                                    .padding(end = 6.dp)) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowBack,
+                                        contentDescription = stringResource(R.string.back),
+                                        modifier = Modifier.size(34.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Text(text = stringResource(it.title), style = MaterialTheme.typography.displayMedium)
+                    }
                 }
             }
         }
