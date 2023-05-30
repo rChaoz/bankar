@@ -59,7 +59,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.alorma.compose.settings.storage.base.SettingValueState
@@ -77,6 +76,7 @@ import ro.bankar.app.KeyFingerprintEnabled
 import ro.bankar.app.KeyLanguage
 import ro.bankar.app.KeyPreferredCurrency
 import ro.bankar.app.KeyTheme
+import ro.bankar.app.LocalActivity
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
 import ro.bankar.app.collectPreferenceAsState
@@ -89,7 +89,6 @@ import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
-import ro.bankar.app.ui.getActivity
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.rememberMockNavController
@@ -383,9 +382,10 @@ fun AccessScreen() = Surface {
 
     // Fingerprint
     val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
+    val activity = LocalActivity.current
     val prompt = remember {
-        context.getActivity()?.let {
-            BiometricPrompt(it as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
+        activity?.let {
+            BiometricPrompt(it, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     scope.launch { datastore.setPreference(KeyFingerprintEnabled, true) }

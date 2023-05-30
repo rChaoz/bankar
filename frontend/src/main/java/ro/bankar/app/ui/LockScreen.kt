@@ -36,11 +36,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import ro.bankar.app.KeyAuthenticationPin
 import ro.bankar.app.KeyFingerprintEnabled
+import ro.bankar.app.LocalActivity
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
 import ro.bankar.app.collectPreferenceAsState
@@ -55,7 +55,7 @@ import ro.bankar.app.ui.theme.AppTheme
 fun LockScreen(onUnlock: () -> Unit) {
     // Don't allow exiting this screen via back button
     val context = LocalContext.current
-    val activity = context.getActivity()
+    val activity = LocalActivity.current
     BackHandler(enabled = activity != null) { activity!!.moveTaskToBack(true) }
 
     val repository = LocalRepository.current
@@ -84,7 +84,7 @@ fun LockScreen(onUnlock: () -> Unit) {
     val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
     val prompt = remember {
         activity?.let {
-            BiometricPrompt(it as FragmentActivity, object : BiometricPrompt.AuthenticationCallback() {
+            BiometricPrompt(it, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     onUnlock()

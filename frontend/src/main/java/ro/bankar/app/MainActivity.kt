@@ -61,11 +61,12 @@ const val TAG = "BanKAR"
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
 
 val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
+val LocalActivity = compositionLocalOf<FragmentActivity?> { null }
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { Main(dataStore, lifecycleScope) }
+        setContent { Main(this, dataStore, lifecycleScope) }
     }
 }
 
@@ -77,7 +78,7 @@ enum class Nav(val route: String) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineScope) {
+private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, lifecycleScope: CoroutineScope) {
     val scope = rememberCoroutineScope()
     val initialPrefs = remember { runBlocking { dataStore.data.first() } }
 
@@ -114,7 +115,8 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
                 scope.launch { dataStore.setPreference(KeyTheme, if (darkMode) Theme.Light.ordinal else Theme.Dark.ordinal) }
             },
             LocalDataStore provides dataStore,
-            LocalContext provides languageContext
+            LocalContext provides languageContext,
+            LocalActivity provides activity
         ) {
             // Setup navigation
             val controller = rememberAnimatedNavController()
