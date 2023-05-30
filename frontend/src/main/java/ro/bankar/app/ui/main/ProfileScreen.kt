@@ -45,6 +45,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,6 +94,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.minus
 import kotlinx.serialization.json.Json
+import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -217,7 +220,7 @@ class ProfileScreenModel : ViewModel() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, InternalComposeApi::class)
 @Composable
 fun ProfileScreen(onDismiss: () -> Unit) {
     val model = viewModel<ProfileScreenModel>()
@@ -232,6 +235,10 @@ fun ProfileScreen(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val lifecycleScope = LocalLifecycleOwner.current.lifecycleScope
     var isLoading by rememberSaveable { mutableStateOf(false) }
+    // Need to provide a real context to 'rememberLauncherForActivityResult', not the crap that Context.createConfigurationContext is
+    // CompositionalLocalProvider can't be used due to no return value
+    val providers = LocalActivity.current?.let { arrayOf(LocalContext provides it) }
+    if (providers != null) currentComposer.startProviders(providers)
     val imagePicker = rememberLauncherForActivityResult(contract = CropImageContract()) {
         if (!it.isSuccessful || it.uriContent == null) return@rememberLauncherForActivityResult
         isLoading = true
@@ -259,6 +266,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
             isLoading = false
         }
     }
+    if (providers != null) currentComposer.endProviders()
 
     // For loading animations
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
