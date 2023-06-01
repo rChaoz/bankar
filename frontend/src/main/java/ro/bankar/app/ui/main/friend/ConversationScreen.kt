@@ -89,8 +89,8 @@ class ConversationScreenModel : ViewModel() {
     lateinit var repository: Repository
 
     fun sendMessage(context: Context, recipientTag: String) {
-        val message = this.message
-        sentMessages = buildList { add(message); addAll(sentMessages) }
+        val message = this.message.trim()
+        sentMessages = buildList(sentMessages.size + 1) { add(message); addAll(sentMessages) }
         this.message = ""
         viewModelScope.launch {
             sendMessageImpl(context, message, recipientTag)
@@ -243,7 +243,7 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                             colors = TextFieldDefaults.colors(unfocusedIndicatorColor = Color.Transparent, focusedIndicatorColor = Color.Transparent),
                             maxLines = 4
                         )
-                        FilledIconButton(onClick = { model.sendMessage(context, user.tag) }) {
+                        FilledIconButton(onClick = { model.sendMessage(context, user.tag) }, enabled = model.message.isNotBlank()) {
                             Icon(imageVector = Icons.Default.Send, contentDescription = stringResource(R.string.send))
                         }
                     }

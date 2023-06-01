@@ -8,8 +8,12 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.exchange
 import ro.bankar.banking.reverseExchange
@@ -21,7 +25,7 @@ import java.math.BigDecimal
 
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankTransfer>(BankTransfers) {
-        fun findRecent(accounts: Iterable<BankAccount>, count: Int) = accounts.map { it.id }.let { ids ->
+        fun findRecent(user: User, count: Int) = user.bankAccountIds.let { ids ->
             find { (BankTransfers.sender inList ids) or (BankTransfers.recipient inList ids) }
                 .orderBy(BankTransfers.dateTime to SortOrder.DESC)
                 .limit(count)
@@ -67,7 +71,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
 
         fun transferExchanging(request: TransferRequest, otherAccount: BankAccount): Boolean {
             fun saveTransfer(senderAcc: BankAccount, recipientAcc: BankAccount, amount: BigDecimal, exchanged: BigDecimal?) {
-                new {
+                request.partyMember?.transfer = new {
                     sender = senderAcc
                     senderName = senderAcc.user.fullName
                     senderIban = senderAcc.iban

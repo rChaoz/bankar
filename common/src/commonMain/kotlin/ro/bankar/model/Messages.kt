@@ -22,5 +22,5 @@ data class SSendMessage(
         const val maxLength = 500
     }
 
-    fun validate() = if (message.length > maxLength) "message" else null
+    fun validate() = if (message.length > maxLength || message.isBlank()) "message" else null
 }

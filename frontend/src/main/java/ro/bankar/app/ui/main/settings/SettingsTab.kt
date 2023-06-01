@@ -131,7 +131,8 @@ object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings
             startDestination = SettingsNav.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) { it / 2 } + fadeIn(spring()) },
             popEnterTransition = { EnterTransition.None },
-            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) }
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) },
+            modifier = Modifier.fillMaxSize()
         ) {
             composable(SettingsNav.route) {
                 SettingsScreen(settingsNav)

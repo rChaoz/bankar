@@ -25,7 +25,7 @@ fun Route.configureRecentActivity() {
             // Check if user has any created parties
             val parties = Party.byUser(user)
             // Get the 3 most recent transfers of these accounts
-            val recentTransfers = BankTransfer.findRecent(user.bankAccounts, count)
+            val recentTransfers = BankTransfer.findRecent(user, count)
             // As well as the most recent transactions
             val allCards = user.bankAccounts.flatMap { it.cards }
             val recentTransactions = CardTransaction.findRecent(allCards, count)

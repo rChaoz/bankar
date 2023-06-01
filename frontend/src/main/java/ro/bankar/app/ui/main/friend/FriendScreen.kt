@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -67,8 +66,7 @@ fun FriendScreen(
                     }
                     if (onClickOnUser == null) BarUserProfile(user, modifier = Modifier.weight(1f))
                     else Surface(onClick = onClickOnUser, color = Color.Transparent, modifier = Modifier
-                        .weight(1f)
-                        .wrapContentWidth(Alignment.Start)) {
+                        .weight(1f)) {
                         BarUserProfile(user)
                     }
                     if (dropdownMenuContent != null) {
@@ -104,7 +102,7 @@ private fun BarUserProfile(user: SPublicUserBase, modifier: Modifier = Modifier)
                     .clip(CircleShape)
             )
         Spacer(modifier = Modifier.width(8.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.fullName,
                 style = MaterialTheme.typography.titleMedium,

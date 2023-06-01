@@ -5,6 +5,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.SCreditData
@@ -56,7 +57,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable(user: User) = SBankAccountData(
         cards.map(BankCard::serializable),
-        transfers.serializable(user),
+        transfers.orderBy(BankTransfers.dateTime to SortOrder.DESC).serializable(user),
         cards.flatMap { it.transactions.serializable() }
     )
 }
