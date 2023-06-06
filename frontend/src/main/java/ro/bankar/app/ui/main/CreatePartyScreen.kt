@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,13 +67,10 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.SafeResponse
-import ro.bankar.app.data.collectAsStateRetrying
-import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.LoadingOverlay
@@ -82,9 +80,7 @@ import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
-import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SFriend
 import ro.bankar.model.SSendRequestMoney
@@ -122,22 +118,9 @@ class CreatePartyScreenModel : ViewModel() {
     fun onCreateParty(context: Context, repository: Repository) = viewModelScope.launch {
         isLoading = true
         val amounts = amounts.map { it.key.tag to (it.value.removeSuffix(".").toDoubleOrNull() ?: 0.0) }
-        when (val r = repository.sendCreateParty(account.value!!.id, note.value, amounts)) {
-            is SafeResponse.InternalError ->
-                launch { snackbar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-            is SafeResponse.Fail -> {
-                val param = Json.safeDecodeFromString<InvalidParamResponse>(r.body)?.param
-                launch {
-                    snackbar.showSnackbar(
-                        message = if (param == null) context.getString(R.string.unknown_error) else context.getString(R.string.invalid_field, param),
-                        withDismissAction = true
-                    )
-                }
-            }
-            is SafeResponse.Success -> {
-                repository.recentActivity.emitNow()
-                onDismiss()
-            }
+        repository.sendCreateParty(account.value!!.id, note.value, amounts).handleSuccess(this, snackbar, context) {
+            repository.recentActivity.emitNow()
+            onDismiss()
         }
         isLoading = false
     }
@@ -157,9 +140,9 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, account: Int
             val index = it.indexOf('.')
             if (index == -1) it else it.substring(0, min(it.length, index + 3))
         }
-        launch { repository.friends.collectRetrying { model.allFriends = it } }
+        launch { repository.friends.collect { model.allFriends = it } }
         if (account != -1) launch {
-            repository.accounts.collectRetrying { accounts ->
+            repository.accounts.collect { accounts ->
                 accounts.find { it.id == account }?.let { model.account.value = it }
                 cancel()
             }
@@ -195,7 +178,7 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, account: Int
 
 @Composable
 fun AccountAndTotalStep(model: CreatePartyScreenModel) {
-    val accounts by LocalRepository.current.accounts.collectAsStateRetrying()
+    val accounts by LocalRepository.current.accounts.collectAsState(null)
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(

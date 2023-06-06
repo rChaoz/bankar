@@ -38,31 +38,45 @@ data class SBankAccountData(
     val transactions: List<SCardTransaction>,
 )
 
+sealed class SBankAccountBase {
+    abstract val name: String
+    abstract val color: Int
+
+    fun validate() = when {
+        name.trim().length !in SNewBankAccount.nameLengthRange -> "name"
+        color < 0 -> "color"
+        else -> null
+    }
+}
+
 @Serializable
 data class SNewBankAccount(
     val type: SBankAccountType,
-    val name: String,
-    val color: Int,
+    override val name: String,
+    override val color: Int,
     val currency: Currency,
     val creditAmount: Double,
-) {
+): SBankAccountBase() {
     companion object {
         val nameLengthRange = 2..30
     }
 
-    fun validate(creditData: List<SCreditData>): String? {
+    fun validate(creditData: List<SCreditData>) = super.validate() ?: run {
         val data = creditData.find { it.currency == currency }
-        return when {
-            name.length !in nameLengthRange -> "name"
+        when {
             type != SBankAccountType.Credit -> null
             data == null -> "credit"
             creditAmount !in data.amountRange -> "credit-amount"
             else -> null
         }
     }
-
-    fun validateCustomise(): String? = if (name.length !in nameLengthRange) "name" else null
 }
+
+@Serializable
+data class SCustomiseBankAccount(
+    override val name: String,
+    override val color: Int,
+): SBankAccountBase()
 
 @Serializable
 data class SDefaultBankAccount(val id: Int?, val alwaysUse: Boolean)

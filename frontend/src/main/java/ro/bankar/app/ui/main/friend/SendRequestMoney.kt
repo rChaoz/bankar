@@ -50,12 +50,10 @@ import com.maxkeppeler.sheets.state.models.StateConfig
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.SafeResponse
-import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.data.handleValue
 import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.VerifiableField
@@ -63,9 +61,7 @@ import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
-import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.customColors
-import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SPublicUserBase
@@ -84,41 +80,27 @@ class SendRequestMoneyModel : ViewModel() {
     var resultState = UseCaseState(onDismissRequest = { onDismiss() })
     var noAccountsState = UseCaseState(onDismissRequest = { onDismiss() })
 
-    fun onSend(context: Context, snackBar: SnackbarHostState, recipient: String, repository: Repository, requesting: Boolean) {
+    fun onSend(context: Context, snackbar: SnackbarHostState, recipient: String, repository: Repository, requesting: Boolean) {
         note.check(context)
         val account = selectedAccount.value
         if (!note.verified || account == null) return
         val amount = amount.toDoubleOrNull()
         if (amount == null) {
-            viewModelScope.launch { snackBar.showSnackbar(context.getString(R.string.invalid_amount), withDismissAction = true) }
+            viewModelScope.launch { snackbar.showSnackbar(context.getString(R.string.invalid_amount), withDismissAction = true) }
             return
         }
         isLoading = true
         viewModelScope.launch {
-            when (
-                val r = if (requesting) repository.sendTransferRequest(recipient, account, amount, note.value.trim())
-                else repository.sendTransfer(recipient, account, amount, note.value.trim())
-            ) {
-                is SafeResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                is SafeResponse.Success -> {
-                    this@SendRequestMoneyModel.result =
-                        if (r.result.status == "sent") R.string.money_sent_successfully
-                        else if (!requesting) R.string.money_sent_request
-                        else R.string.request_sent
-                    resultState.show()
-                    repository.accounts.requestEmit()
-                    repository.recentActivity.requestEmit()
-                }
-                is SafeResponse.Fail -> {
-                    val invalidParam = Json.safeDecodeFromString<InvalidParamResponse>(r.body)
-                    launch {
-                        snackBar.showSnackbar(
-                            if (invalidParam != null) context.getString(R.string.invalid_field, invalidParam.param)
-                            else context.getString(R.string.unknown_error),
-                            withDismissAction = true
-                        )
-                    }
-                }
+            val r = if (requesting) repository.sendTransferRequest(recipient, account, amount, note.value.trim())
+            else repository.sendTransfer(recipient, account, amount, note.value.trim())
+            r.handleValue(this, snackbar, context) {
+                this@SendRequestMoneyModel.result =
+                    if (it == "sent") R.string.money_sent_successfully
+                    else if (!requesting) R.string.money_sent_request
+                    else R.string.request_sent
+                resultState.show()
+                repository.accounts.requestEmit()
+                repository.recentActivity.requestEmit()
             }
             isLoading = false
         }
@@ -133,7 +115,7 @@ fun SendRequestMoneyScreenBase(onDismiss: () -> Unit, user: SPublicUserBase, req
     val model = viewModel<SendRequestMoneyModel>()
     model.onDismiss = onDismiss
     LaunchedEffect(key1 = true) {
-        repository.accounts.collectRetrying {
+        repository.accounts.collect {
             model.accounts = it
             if (it.isEmpty()) model.noAccountsState.show()
             if (model.selectedAccount.value == null) model.selectedAccount.value = it.firstOrNull()

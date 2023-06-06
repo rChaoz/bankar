@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.PagerTabs
 import ro.bankar.app.ui.components.testAccount
@@ -38,7 +38,7 @@ import ro.bankar.model.SBankAccount
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: NavHostController) {
-    val activity by LocalRepository.current.account(data.id).also { it.requestEmit() }.collectAsStateRetrying()
+    val activity by LocalRepository.current.account(data.id).also { it.requestEmit() }.collectAsState(null)
 
     NavScreen(onDismiss, title = R.string.bank_account) {
         Column {
@@ -61,8 +61,8 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
                     Icon(painter = painterResource(R.drawable.bank_account), contentDescription = null, modifier = Modifier.size(32.dp))
                 }
             }
-            PagerTabs(tabs = listOf(R.string.history, R.string.actions)) {
-                if (it == 0) LazyColumn(modifier = Modifier.fillMaxSize()) {
+            PagerTabs(tabs = listOf(R.string.history, R.string.actions)) { tab ->
+                if (tab == 0) LazyColumn(modifier = Modifier.fillMaxSize()) {
                     if (activity == null) RecentActivityShimmer()
                     else {
                         val (_, transfers, transactions) = activity!!

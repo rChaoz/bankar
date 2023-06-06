@@ -39,14 +39,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.ktor.client.request.url
+import io.ktor.client.request.get
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.ktorClient
-import ro.bankar.app.data.safeGet
+import ro.bankar.app.data.RequestSuccess
+import ro.bankar.app.data.basicClient
+import ro.bankar.app.data.handle
+import ro.bankar.app.data.safeRequest
 import ro.bankar.app.ui.components.ButtonRow
 import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.NavScreen
@@ -58,9 +59,11 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.accountColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCreditData
+import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SNewBankAccount
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.SuccessResponse
+import ro.bankar.model.ValueResponse
 import java.text.DecimalFormat
 
 class NewBankAccountModel : ViewModel() {
@@ -86,11 +89,13 @@ class NewBankAccountModel : ViewModel() {
     }
 
     tailrec suspend fun loadCreditData(snackBar: SnackbarHostState, context: Context) {
-        val r = ktorClient.safeGet<List<SCreditData>, StatusResponse> { url("data/credit.json") }
-        if (r !is SafeStatusResponse.Success) {
+        // TODO Replace with repository flow
+        val r = basicClient.safeRequest<List<SCreditData>> { get("data/credit.json") }
+        if (r is RequestSuccess && r.response is ValueResponse) creditData = r.response.value
+        else {
             snackBar.showSnackbar(context.getString(R.string.connection_error), context.getString(R.string.retry))
             loadCreditData(snackBar, context)
-        } else creditData = r.result
+        }
     }
 
     var isLoading by mutableStateOf(false)
@@ -102,18 +107,18 @@ class NewBankAccountModel : ViewModel() {
 
         isLoading = true
         viewModelScope.launch {
-            val result = repository.sendCreateAccount(
+            repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value.trim().ifEmpty { context.getString(R.string.s_account, context.getString(accountType.rString)) },
                     color.value, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
-            )
-            when (result) {
-                is SafeStatusResponse.Fail ->
-                    launch { snackBar.showSnackbar(context.getString(R.string.unable_new_bank_account, result.s.param), withDismissAction = true) }
-                is SafeStatusResponse.InternalError ->
-                    launch { snackBar.showSnackbar(context.getString(R.string.connection_error), withDismissAction = true) }
-                is SafeStatusResponse.Success -> {
-                    repository.accounts.emitNow()
-                    onDismiss()
+            ).handle(this, snackBar, context) {
+                when (it) {
+                    SuccessResponse -> {
+                        repository.accounts.emitNow()
+                        onDismiss()
+                        null
+                    }
+                    is InvalidParamResponse -> context.getString(R.string.unable_new_bank_account, it.param)
+                    else -> context.getString(R.string.unknown_error)
                 }
             }
             isLoading = false

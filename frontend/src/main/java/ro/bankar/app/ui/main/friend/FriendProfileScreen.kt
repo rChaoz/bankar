@@ -23,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +38,6 @@ import androidx.navigation.NavHostController
 import kotlinx.datetime.Clock
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.Transfer
@@ -54,8 +54,8 @@ import ro.bankar.util.todayHere
 @Composable
 fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController) {
     val repository = LocalRepository.current
-    val countryData by repository.countryData.collectAsStateRetrying()
-    val recentActivity by repository.recentActivityWith(profile.tag).also { it.requestEmit() }.collectAsStateRetrying()
+    val countryData by repository.countryData.collectAsState(null)
+    val recentActivity by repository.recentActivityWith(profile.tag).also { it.requestEmit() }.collectAsState(null)
 
     NavScreen(onDismiss = { navigation.popBackStack() }, title = R.string.friend_profile) {
         Column(

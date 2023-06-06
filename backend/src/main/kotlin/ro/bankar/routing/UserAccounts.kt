@@ -25,18 +25,20 @@ import ro.bankar.api.SmsService
 import ro.bankar.database.COUNTRY_DATA
 import ro.bankar.database.User
 import ro.bankar.generateNumeric
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPasswordData
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation
-import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.LoginSession
 import ro.bankar.plugins.SignupSession
 import ro.bankar.plugins.UserPrincipal
+import ro.bankar.respondError
+import ro.bankar.respondInvalidParam
+import ro.bankar.respondNotFound
+import ro.bankar.respondSuccess
+import ro.bankar.respondValue
 import kotlin.time.Duration.Companion.minutes
 
 private fun generateCode() = if (DEV_MODE) "123456" else generateNumeric(6)
@@ -44,11 +46,11 @@ private fun generateCode() = if (DEV_MODE) "123456" else generateNumeric(6)
 fun Route.configureUserAccounts() {
     suspend fun PipelineContext<Unit, ApplicationCall>.checkCode(code: String, expiration: Instant, correctCode: String) = when {
         expiration < Clock.System.now() -> {
-            call.respond(HttpStatusCode.Forbidden, StatusResponse("session_expired"))
+            call.respondError("session_expired", HttpStatusCode.Forbidden)
             false
         }
         correctCode != code -> {
-            call.respond(HttpStatusCode.Forbidden, StatusResponse("invalid_code"))
+            call.respondError("invalid_code", HttpStatusCode.Forbidden)
             false
         }
         else -> true
@@ -62,16 +64,16 @@ fun Route.configureUserAccounts() {
                 val login = call.receive<SInitialLoginData>()
                 val user = User.findByAnything(login.id)
                 if (user == null || !user.verifyPassword(login.password)) {
-                    call.respond(HttpStatusCode.Unauthorized, StatusResponse("invalid_username_or_password")); return@t
+                    call.respondError("invalid_username_or_password", HttpStatusCode.Unauthorized); return@t
                 } else if (user.disabled) {
-                    call.respond(HttpStatusCode.Forbidden, StatusResponse("account_disabled"))
+                    call.respondError("account_disabled", HttpStatusCode.Forbidden)
                 }
                 // Send SMS code and save user&code to session
                 val code = generateCode()
                 SmsService.sendCode(user.phone, code)
                 call.sessions.set(LoginSession(user.id.value, code, Clock.System.now() + 30.minutes))
 
-                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                call.respondSuccess()
                 // Client should now call /login/final with the SMS code
             }
         }
@@ -82,7 +84,7 @@ fun Route.configureUserAccounts() {
             val data = call.receive<SSMSCodeData>()
             val session = call.sessions.get<LoginSession>()
             if (session == null) {
-                call.respond(HttpStatusCode.Unauthorized, StatusResponse("invalid_session"))
+                call.respondError("invalid_session", HttpStatusCode.Unauthorized)
                 return@post
             } else if (!checkCode(data.smsCode, session.expiration, session.correctCode)) return@post
 
@@ -97,7 +99,7 @@ fun Route.configureUserAccounts() {
                 // Return auth token
                 val token = user.createSessionToken()
                 call.response.headers.append("Authorization", "Bearer $token")
-                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                call.respondSuccess()
             }
         }
     }
@@ -106,17 +108,17 @@ fun Route.configureUserAccounts() {
         // Check if tag is taken (or if it's invalid)
         get("check_tag") {
             val tag = call.request.queryParameters["q"]
-            if (tag.isNullOrEmpty() || !SUserValidation.tagRegex.matches(tag)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_tag"))
-            else if (newSuspendedTransaction { User.isTagTaken(tag) }) call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
-            else call.respond(HttpStatusCode.OK, StatusResponse("valid"))
+            if (tag.isNullOrEmpty() || !SUserValidation.tagRegex.matches(tag)) call.respondInvalidParam("tag")
+            else if (newSuspendedTransaction { User.isTagTaken(tag) }) call.respondError("exists", HttpStatusCode.Conflict)
+            else call.respondSuccess()
         }
 
         // Check if e-mail is taken (or invalid)
         get("check_email") {
             val email = call.request.queryParameters["q"]
-            if (email.isNullOrEmpty() || !SUserValidation.emailRegex.matches(email)) call.respond(HttpStatusCode.BadRequest, StatusResponse("invalid_email"))
-            else if (newSuspendedTransaction { User.isEmailTaken(email) }) call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
-            else call.respond(HttpStatusCode.OK, StatusResponse("valid"))
+            if (email.isNullOrEmpty() || !SUserValidation.emailRegex.matches(email)) call.respondInvalidParam("email")
+            else if (newSuspendedTransaction { User.isEmailTaken(email) }) call.respondError("exists", HttpStatusCode.Conflict)
+            else call.respondSuccess()
         }
 
         post("initial") {
@@ -125,23 +127,23 @@ fun Route.configureUserAccounts() {
                 val data = call.receive<SNewUser>()
                 // Validate data
                 data.validate(COUNTRY_DATA)?.let {
-                    call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@t
+                    call.respondInvalidParam(it); return@t
                 }
 
                 // Check that a user with the same tag, e-mail or phone isn't already registered
                 User.checkRegistered(data)?.let {
-                    call.respond(HttpStatusCode.BadRequest, InvalidParamResponse("already_exists", it)); return@t
+                    call.respondInvalidParam(it, "exists"); return@t
                 }
 
                 // Send SMS first to ensure phone number is good
                 val code = generateCode()
                 if (!SmsService.sendCode(data.phone, code)) {
-                    call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = "phone")); return@t
+                    call.respondInvalidParam("phone"); return@t
                 }
 
                 // Save sign-up session
                 call.sessions.set(SignupSession(data, code, Clock.System.now() + 30.minutes))
-                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                call.respondSuccess()
                 // Client should now call /signup/final with the SMS code
             }
         }
@@ -151,14 +153,14 @@ fun Route.configureUserAccounts() {
             val data = call.receive<SSMSCodeData>()
             val session = call.sessions.get<SignupSession>()
             if (session == null) {
-                call.respond(HttpStatusCode.Unauthorized, StatusResponse("invalid_session"))
+                call.respondError("invalid_session", HttpStatusCode.Unauthorized)
                 return@post
             } else if (!checkCode(data.smsCode, session.expiration, session.correctCode)) return@post
 
             newSuspendedTransaction t@{
                 // Create user account
                 User.checkRegistered(session.user)?.let {
-                    call.respond(HttpStatusCode.BadRequest, InvalidParamResponse("already_exists", it)); return@t
+                    call.respondInvalidParam(id, "exists"); return@t
                 }
                 val user = User.createUser(session.user)
 
@@ -168,7 +170,7 @@ fun Route.configureUserAccounts() {
                 // Return auth token
                 val token = user.createSessionToken()
                 call.response.headers.append("Authorization", "Bearer $token")
-                call.respond(HttpStatusCode.Created, StatusResponse.Success)
+                call.respondSuccess(HttpStatusCode.Created)
             }
         }
     }
@@ -177,15 +179,15 @@ fun Route.configureUserAccounts() {
         get("signout") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             newSuspendedTransaction { user.clearSession() }
-            call.respond(HttpStatusCode.OK, StatusResponse.Success)
+            call.respondSuccess()
         }
 
         post("verifyPassword") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             val data = call.receive<SPasswordData>()
             newSuspendedTransaction {
-                if (user.verifyPassword(data.password)) call.respond(HttpStatusCode.OK, StatusResponse.Success)
-                else call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect"))
+                if (user.verifyPassword(data.password)) call.respondSuccess()
+                else call.respondError("incorrect", HttpStatusCode.Unauthorized)
             }
         }
 
@@ -196,8 +198,8 @@ fun Route.configureUserAccounts() {
                 if (user.verifyPassword(data.password)) {
                     // Sign out and disable
                     user.disable()
-                    call.respond(HttpStatusCode.OK, StatusResponse.Success)
-                } else call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect"))
+                    call.respondSuccess()
+                } else call.respondError("incorrect_password", HttpStatusCode.Unauthorized)
             }
         }
 
@@ -205,25 +207,21 @@ fun Route.configureUserAccounts() {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             val data = call.receive<SNewUser>()
             if (!user.verifyPassword(data.password)) {
-                call.respond(HttpStatusCode.Unauthorized, StatusResponse("incorrect_password")); return@put
+                call.respondError("incorrect_password", HttpStatusCode.Unauthorized); return@put
             }
             // Validate data
             data.validateUpdate(COUNTRY_DATA)?.let {
-                call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@put
+                call.respondInvalidParam(it); return@put
             }
 
-            newSuspendedTransaction {
-                user.update(data)
-                call.respond(HttpStatusCode.OK, StatusResponse.Success)
-            }
+            newSuspendedTransaction { user.update(data) }
+            call.respondSuccess()
         }
 
         route("defaultAccount") {
             get {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
-                newSuspendedTransaction {
-                    call.respond(HttpStatusCode.OK, user.defaultAccountSerializable())
-                }
+                call.respondValue(newSuspendedTransaction { user.defaultAccountSerializable() })
             }
             post {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
@@ -231,15 +229,15 @@ fun Route.configureUserAccounts() {
                 newSuspendedTransaction {
                     if (data.id == null) {
                         user.setDefaultAccount(null, data.alwaysUse)
-                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                        call.respondSuccess()
                         return@newSuspendedTransaction
                     }
 
                     val account = user.bankAccounts.find { it.id.value == data.id }
-                    if (account == null) call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "bank_account"))
+                    if (account == null) call.respondNotFound("bank_account")
                     else {
                         user.setDefaultAccount(account, data.alwaysUse)
-                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                        call.respondSuccess()
                     }
                 }
             }

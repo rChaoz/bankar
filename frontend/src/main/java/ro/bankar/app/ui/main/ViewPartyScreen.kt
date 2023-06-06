@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,8 +39,7 @@ import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.collectAsStateRetrying
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.SurfaceList
@@ -57,8 +57,8 @@ import ro.bankar.model.SPublicUserBase
 @Composable
 fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit) {
     val repository = LocalRepository.current
-    val countryData by repository.countryData.collectAsStateRetrying()
-    val partyState = repository.partyData(partyID).also { it.requestEmit() }.collectAsStateRetrying()
+    val countryData by repository.countryData.collectAsState(null)
+    val partyState = repository.partyData(partyID).also { it.requestEmit() }.collectAsState(null)
     val party = partyState.value
 
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
@@ -78,15 +78,9 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
         onConfirm = {
             scope.launch {
                 isLoading = true
-                when (val r = repository.sendCancelParty(partyID)) {
-                    is SafeStatusResponse.InternalError ->
-                        launch { snackbar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                    is SafeStatusResponse.Fail ->
-                        launch { snackbar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
-                    is SafeStatusResponse.Success -> {
-                        repository.recentActivity.emitNow()
-                        onDismiss()
-                    }
+                repository.sendCancelParty(partyID).handleSuccess(this, snackbar, context) {
+                    repository.recentActivity.emitNow()
+                    onDismiss()
                 }
                 isLoading = false
             }

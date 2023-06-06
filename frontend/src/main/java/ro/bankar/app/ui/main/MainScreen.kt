@@ -65,13 +65,12 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.mapCollectAsStateRetrying
-import ro.bankar.app.ui.components.NoImage
 import ro.bankar.app.ui.components.Search
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.main.friends.FriendsTab
 import ro.bankar.app.ui.main.home.HomeTab
 import ro.bankar.app.ui.main.settings.SettingsTab
+import ro.bankar.app.ui.mapCollectAsState
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.stateOf
 import ro.bankar.app.ui.theme.AppTheme
@@ -123,7 +122,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
     BackHandler(enabled = tab != HomeTab) { setTab(HomeTab) }
 
     val snackBar = remember { SnackbarHostState() }
-    val profileImage by LocalRepository.current.profile.mapCollectAsStateRetrying { it.avatar ?: NoImage }
+    val profileImage by LocalRepository.current.profile.mapCollectAsState(null) { it.avatar }
 
     Search(topBar = { isSearchOpen, searchField ->
         Surface(color = MaterialTheme.colorScheme.secondary) {
@@ -229,9 +228,8 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
             bottomBar = {
                 NavigationBar {
                     NavigationBarItem(selected = tab == FriendsTab, onClick = { setTab(FriendsTab) }, icon = {
-                        val unreadMessages by LocalRepository.current.friends.mapCollectAsStateRetrying { friends -> friends.sumOf { it.unreadMessageCount } }
+                        val count by LocalRepository.current.friends.mapCollectAsState(0) { friends -> friends.sumOf { it.unreadMessageCount } }
                         BadgedBox(badge = {
-                            val count = unreadMessages ?: 0
                             if (count > 0) Badge {
                                 val desc = stringResource(R.string.n_unread_messages, count)
                                 Text(text = count.toString(), modifier = Modifier.semantics { contentDescription = desc })

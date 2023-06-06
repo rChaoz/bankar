@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.newuser
 
 import android.content.Context
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -44,6 +45,7 @@ import androidx.compose.material3.LocalAbsoluteTonalElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -82,13 +84,12 @@ import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.request.url
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.path
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -96,16 +97,15 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
-import kotlinx.serialization.json.Json
 import ro.bankar.app.KeyUserSession
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
-import ro.bankar.app.data.SafeResponse
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.ktorClient
-import ro.bankar.app.data.safeGet
-import ro.bankar.app.data.safePost
+import ro.bankar.app.TAG
+import ro.bankar.app.data.RequestSuccess
+import ro.bankar.app.data.basicClient
+import ro.bankar.app.data.fold
+import ro.bankar.app.data.handle
 import ro.bankar.app.data.safeRequest
 import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.ButtonField
@@ -115,16 +115,19 @@ import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
-import ro.bankar.app.ui.safeDecodeFromString
+import ro.bankar.app.ui.show
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SCountry
+import ro.bankar.model.ErrorResponse
 import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.Response
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.SuccessResponse
+import ro.bankar.model.ValueResponse
 import ro.bankar.util.format
 import ro.bankar.util.todayHere
 
@@ -136,15 +139,15 @@ class SignUpModel : ViewModel() {
     // Internal state
     var step by mutableStateOf(SignUpStep.LoginInformation)
     var isLoading by mutableStateOf(false)
-    val snackBar = SnackbarHostState()
+    val snackbar = SnackbarHostState()
 
     // List of countries & country codes
     var countries by mutableStateOf<SCountries?>(null)
 
     // First step
-    val tag = verifiableSuspendingStateOf("", viewModelScope) {
+    val tag = verifiableSuspendingStateOf("", viewModelScope) { string ->
         // Allow the user to input the '@' as well
-        val tag = it.trim().removePrefix("@")
+        val tag = string.trim().removePrefix("@")
         // Check that tag is valid
         when {
             tag.length < SUserValidation.tagLengthRange.first -> getString(R.string.tag_too_short, SUserValidation.tagLengthRange.first)
@@ -155,20 +158,17 @@ class SignUpModel : ViewModel() {
             return@verifiableSuspendingStateOf error
         }
 
-        val result = ktorClient.safeGet<StatusResponse, StatusResponse> {
-            url("signup/check_tag")
-            parameter("q", tag)
-        }
-
-        when (result) {
-            is SafeStatusResponse.InternalError -> getString(result.message)
-            is SafeStatusResponse.Fail -> when (result.s.status) {
-                "invalid_tag" -> getString(R.string.invalid_tag)
-                "exists" -> getString(R.string.tag_already_exists)
-                else -> getString(R.string.unknown_error)
+        basicClient.safeRequest<Unit> { get("signup/check_tag") { parameter("q", tag) } }.fold(
+            onFail = { getString(it) },
+            onSuccess = {
+                when (it) {
+                    SuccessResponse -> null
+                    is InvalidParamResponse -> getString(R.string.invalid_tag)
+                    is ErrorResponse -> getString(R.string.tag_already_exists)
+                    else -> getString(R.string.unknown_error)
+                }
             }
-            is SafeStatusResponse.Success -> null
-        }
+        )
     }
     val email = verifiableStateOf("", R.string.invalid_email) { SUserValidation.emailRegex.matches(it.trim()) }
     val password = verifiableStateOf("", R.string.password_doesnt_meet) { SUserValidation.passwordRegex.matches(it) }
@@ -221,35 +221,22 @@ class SignUpModel : ViewModel() {
                 }
 
                 // Check e-mail isn't taken
-                val result = ktorClient.safeGet<StatusResponse, StatusResponse> {
-                    url("signup/check_email")
-                    parameter("q", email.value)
-                }
-                when (result) {
-                    is SafeStatusResponse.InternalError -> {
-                        isLoading = false
-                        snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
-                        return@launch
-                    }
-                    is SafeStatusResponse.Fail -> {
-                        when (result.s.status) {
-                            "invalid_email" -> email.setError(c.getString(R.string.invalid_email))
-                            "exists" -> {
-                                email.setError(c.getString(R.string.already_registered))
-                                launch { snackBar.showSnackbar(c.getString(R.string.email_already_in_use), withDismissAction = true) }
-                            }
-                            else -> launch { snackBar.showSnackbar(c.getString(R.string.invalid_server_response), withDismissAction = true) }
+                basicClient.safeRequest<Unit> { get("signup/check_email") { parameter("q", email.value) } }.handle(this, snackbar, c) {
+                    when (it) {
+                        SuccessResponse -> null
+                        is InvalidParamResponse -> { email.setError(c.getString(R.string.invalid_email)); null }
+                        is ErrorResponse -> {
+                            email.setError(c.getString(R.string.already_registered))
+                            c.getString(R.string.email_already_in_use)
                         }
-                        isLoading = false
-                        return@launch
+                        else -> c.getString(R.string.unknown_error)
                     }
-                    is SafeStatusResponse.Success -> {}
                 }
 
                 if (countries == null) {
                     // Try getting the data again
                     launch { loadCountries() }
-                    snackBar.showSnackbar(c.getString(R.string.connection_error), withDismissAction = true)
+                    launch { snackbar.show(c.getString(R.string.connection_error)) }
                 } else if (tag.verified && email.verified && password.verified && confirmPassword.verified)
                     step = SignUpStep.PersonalInformation
             }
@@ -265,9 +252,8 @@ class SignUpModel : ViewModel() {
             }
             SignUpStep.PhoneNumber -> {
                 phone.check(c)
-                if (phone.verified) {
-                    val result = ktorClient.safePost<StatusResponse, InvalidParamResponse> {
-                        url("signup/initial")
+                if (phone.verified) try {
+                    val response = basicClient.post("signup/initial") {
                         setBody(
                             SNewUser(
                                 email = email.value.trim(),
@@ -285,24 +271,27 @@ class SignUpModel : ViewModel() {
                             )
                         )
                     }
-                    launch {
-                        when (result) {
-                            is SafeStatusResponse.InternalError -> snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
-                            is SafeStatusResponse.Fail ->
-                                if (result.s.status == "already_exists") {
-                                    if (result.s.param == "phone") {
-                                        phone.setError(c.getString(R.string.already_registered))
-                                        snackBar.showSnackbar(c.getString(R.string.number_already_in_use), withDismissAction = true)
-                                    } else snackBar.showSnackbar(c.getString(R.string.user_already_exists, result.s.param), withDismissAction = true)
-                                } else if (result.s.param == "phone") phone.setError(c.getString(R.string.invalid_phone))
-                                else snackBar.showSnackbar(c.getString(R.string.invalid_field, result.s.param), withDismissAction = true)
-                            is SafeStatusResponse.Success -> {
-                                code = ""
-                                signupSession = result.r.headers["SignupSession"]
-                                step = SignUpStep.SmsCode
+                    when (val r = response.body<Response<Unit>>()) {
+                        SuccessResponse -> {
+                            code = ""
+                            signupSession = response.headers["SignupSession"]
+                            step = SignUpStep.SmsCode
+                        }
+                        is InvalidParamResponse -> launch {
+                            when {
+                                r.reason == "exists" && r.param == "phone" -> {
+                                    phone.setError(c.getString(R.string.already_registered))
+                                    snackbar.show(c.getString(R.string.number_already_in_use))
+                                }
+                                r.reason == "exists" -> snackbar.show(c.getString(R.string.user_with_s_already_exists, r.param))
+                                else -> snackbar.show(c.getString(R.string.invalid_field, r.param))
                             }
                         }
+                        else -> launch { snackbar.show(c.getString(R.string.unknown_error)) }
                     }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Exception during initial sign-up step")
+                    launch { snackbar.show(c.getString(R.string.connection_error)) }
                 }
             }
             SignUpStep.SmsCode -> {
@@ -312,53 +301,57 @@ class SignUpModel : ViewModel() {
                     return@launch
                 }
                 codeError = ""
-                val result = ktorClient.safeRequest<StatusResponse>(HttpStatusCode.Created) {
-                    post("signup/final") {
+                try {
+                    val response = basicClient.post("signup/final") {
                         header("SignupSession", signupSession)
                         setBody(SSMSCodeData(code))
                     }
-                }
-                launch {
-                    when (result) {
-                        is SafeResponse.InternalError -> snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
-                        is SafeResponse.Fail -> {
-                            val sessionStatus = Json.safeDecodeFromString<StatusResponse>(result.body)
-                            val existsStatus = Json.safeDecodeFromString<InvalidParamResponse>(result.body)
-                            when {
-                                sessionStatus?.status == "invalid_session" || sessionStatus?.status == "session_expired" -> {
-                                    if (snackBar.showSnackbar(c.getString(R.string.signup_session_expired), actionLabel = c.getString(R.string.resend))
-                                        == SnackbarResult.ActionPerformed
-                                    ) {
-                                        step = SignUpStep.PhoneNumber
-                                        onNext(c, focusManager)
-                                    }
-                                }
-                                sessionStatus?.status == "invalid_code" -> codeError = c.getString(R.string.incorrect_code)
-                                existsStatus?.status == "already_exists" ->
-                                    snackBar.showSnackbar(c.getString(R.string.user_already_exists, existsStatus.param), withDismissAction = true)
-                                else -> snackBar.showSnackbar(c.getString(R.string.invalid_server_response), withDismissAction = true)
+                    when (val r = response.body<Response<Unit>>()) {
+                        SuccessResponse -> {
+                            val token = response.headers["Authorization"]?.removePrefix("Bearer ")
+                            if (token.isNullOrBlank()) launch { snackbar.show(c.getString(R.string.invalid_server_response)) }
+                            else {
+                                dataStore.setPreference(KeyUserSession, token)
+                                onSuccess()
                             }
                         }
-                        is SafeResponse.Success -> {
-                            result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(KeyUserSession, it) }
-                            onSuccess()
+                        is ErrorResponse -> launch {
+                            if (r.message == "invalid_session" || r.message == "session_expired") {
+                                if (snackbar.showSnackbar(
+                                    c.getString(R.string.signup_session_expired),
+                                    actionLabel = c.getString(R.string.resend),
+                                    duration = SnackbarDuration.Long
+                                ) == SnackbarResult.ActionPerformed) {
+                                    step = SignUpStep.PhoneNumber
+                                    onNext(c, focusManager)
+                                }
+                            } else if (r.message == "invalid_code") codeError = c.getString(R.string.incorrect_code)
+                            else snackbar.show(c.getString(R.string.unknown_error))
                         }
+                        is InvalidParamResponse -> launch {
+                            snackbar.show(c.getString(if (r.reason == "exists")R.string.user_with_s_already_exists else R.string.invalid_field, r.param))
+                        }
+                        else -> launch { snackbar.show(c.getString(R.string.unknown_error)) }
                     }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Exception during final sign-up step", e)
+                    launch { snackbar.show(c.getString(R.string.connection_error)) }
                 }
             }
         }
         isLoading = false
     }
 
-    // Load country data
+    // Load country data, ignore errors silently
     suspend fun loadCountries() {
-        val r = ktorClient.safeGet<SCountries, StatusResponse> {
-            url.path("data/countries.json")
-        }
-        if (r is SafeStatusResponse.Success) {
-            countries = r.result
-            country.value = r.result[0]
-            state.value = r.result[0].states[0]
+        val result = basicClient.safeRequest<SCountries> { get("data/countries.json") }
+        if (result is RequestSuccess) {
+            val r = result.response
+            if (r is ValueResponse) {
+                countries = r.value
+                country.value = r.value[0]
+                state.value = r.value[0].states[0]
+            }
         }
     }
 }
@@ -377,7 +370,7 @@ fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
-        snackbarHost = { SnackbarHost(model.snackBar) }
+        snackbarHost = { SnackbarHost(model.snackbar) }
     ) { padding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier
@@ -680,7 +673,13 @@ private fun PersonalInformationStep(model: SignUpModel) {
 
         // Fields
         VerifiableField(model.firstName, label = R.string.first_name, type = KeyboardType.Text, id = "firstName", capitalization = KeyboardCapitalization.Words)
-        VerifiableField(model.middleName, label = R.string.middle_name, type = KeyboardType.Text, id = "middleName", capitalization = KeyboardCapitalization.Words)
+        VerifiableField(
+            model.middleName,
+            label = R.string.middle_name,
+            type = KeyboardType.Text,
+            id = "middleName",
+            capitalization = KeyboardCapitalization.Words
+        )
         VerifiableField(model.lastName, label = R.string.last_name, type = KeyboardType.Text, id = "lastName", capitalization = KeyboardCapitalization.Words)
         ButtonField(
             value = model.dateOfBirth.value.format(true),
@@ -714,8 +713,10 @@ private fun PersonalInformationStep(model: SignUpModel) {
             supportingText = "",
         )
         VerifiableField(model.city, label = R.string.city, type = KeyboardType.Text, id = "city", capitalization = KeyboardCapitalization.Words)
-        VerifiableField(model.address, label = R.string.address, type = KeyboardType.Text, id = "address",
-            multiLine = true, capitalization = KeyboardCapitalization.Sentences, isLast = true)
+        VerifiableField(
+            model.address, label = R.string.address, type = KeyboardType.Text, id = "address",
+            multiLine = true, capitalization = KeyboardCapitalization.Sentences, isLast = true
+        )
 
         // Button
         val focusManager = LocalFocusManager.current

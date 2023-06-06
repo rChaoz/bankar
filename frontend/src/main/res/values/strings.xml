@@ -67,7 +67,7 @@
     <string name="code_was_sent">The 6-digit code has been sent to %s. Please enter the code below:</string>
     <string name="edit_phone">Edit phone number</string>
     <string name="back">Back</string>
-    <string name="user_already_exists">A user with the same %s already exists</string>
+    <string name="user_with_s_already_exists">A user with the same %s already exists</string>
     <string name="invalid_field">Invalid %s field</string>
     <string name="signup_session_expired">Session expired, SMS code needs to be re-sent</string>
     <string name="resend">Re-send</string>

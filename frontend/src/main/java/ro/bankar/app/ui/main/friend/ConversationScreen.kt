@@ -63,9 +63,9 @@ import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
+import ro.bankar.app.data.RequestFail
 import ro.bankar.app.data.RequestFlow
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.data.RequestSuccess
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
@@ -75,6 +75,7 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSocketNotification
+import ro.bankar.model.SuccessResponse
 import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.todayHere
@@ -98,13 +99,18 @@ class ConversationScreenModel : ViewModel() {
     }
 
     private tailrec suspend fun sendMessageImpl(context: Context, message: String, recipientTag: String) {
-        when (repository.sendFriendMessage(recipientTag, message)) {
-            is SafeStatusResponse.InternalError, is SafeStatusResponse.Fail -> {
+        when (val result = repository.sendFriendMessage(recipientTag, message)) {
+            is RequestFail -> {
+                // Retry on connection/internal error
                 delay(2.seconds)
                 sendMessageImpl(context, message, recipientTag)
             }
-            is SafeStatusResponse.Success -> {
-                conversationFlow.requestEmit()
+            is RequestSuccess -> {
+                if (result.response == SuccessResponse) conversationFlow.requestEmit()
+                else {
+                    // TODO Make message red with retry button or remove it from list, show error message
+                    //Toast.makeText(context, R.string.unable_to_send_message)
+                }
             }
         }
     }
@@ -121,7 +127,7 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
             repository.conversation(user.tag).also {
                 model.conversationFlow = it
                 it.requestEmit()
-            }.collectRetrying {
+            }.collect {
                 // See below
                 model.repository.friends.requestEmit()
                 // Check what messages are new

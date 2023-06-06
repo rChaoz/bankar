@@ -1,27 +1,36 @@
 package ro.bankar.app.data
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
+import androidx.compose.material3.SnackbarHostState
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.get
-import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ro.bankar.app.R
 import ro.bankar.app.TAG
+import ro.bankar.app.ui.show
+import ro.bankar.model.InvalidParamResponse
+import ro.bankar.model.Response
+import ro.bankar.model.SuccessResponse
+import ro.bankar.model.ValueResponse
 
-val ktorClient = HttpClient(OkHttp) {
+/**
+ * Client used for unauthenticated requests
+ */
+val basicClient = HttpClient(OkHttp) {
     defaultRequest {
         configUrl()
         contentType(ContentType.Application.Json)
@@ -31,77 +40,86 @@ val ktorClient = HttpClient(OkHttp) {
     }
 }
 
-sealed class SafeStatusResponse<Result, Fail> {
-    class Success<Result, Fail>(val r: HttpResponse, val result: Result) : SafeStatusResponse<Result, Fail>()
-    class Fail<Result, Fail>(val r: HttpResponse, val s: Fail) : SafeStatusResponse<Result, Fail>()
-    class InternalError<Result, Fail>(val message: Int) : SafeStatusResponse<Result, Fail>()
+/**
+ * Class representing the result of a [safeRequest].
+ */
+sealed class RequestResult<T>
+class RequestFail<T>(val message: Int) : RequestResult<T>()
+class RequestSuccess<T>(val response: Response<T>) : RequestResult<T>()
+
+// Utility functions for dealing with RequestResults
+inline fun <T, R> RequestResult<T>.fold(onFail: (Int) -> R, onSuccess: (Response<T>) -> R) = when (this) {
+    is RequestFail -> onFail(message)
+    is RequestSuccess -> onSuccess(response)
 }
 
-sealed class SafeResponse<Result> {
-    class Success<Result>(val r: HttpResponse, val result: Result) : SafeResponse<Result>()
-    class Fail<Result>(val r: HttpResponse, val body: String) : SafeResponse<Result>()
-    class InternalError<Result>(val message: Int) : SafeResponse<Result>()
+// With snackbar
+inline fun <T> RequestResult<T>.handle(scope: CoroutineScope, snackbar: SnackbarHostState, context: Context, onResponse: (Response<T>) -> String?) = fold(
+    onFail = { scope.launch { snackbar.show(context.getString(it)) } },
+    onSuccess = { onResponse(it)?.let { r -> scope.launch { snackbar.show(r) } } }
+)
+
+inline fun <T> RequestResult<T>.handleSuccess(
+    scope: CoroutineScope,
+    snackbar: SnackbarHostState,
+    context: Context,
+    onSuccess: () -> Unit
+) = handle(scope, snackbar, context) {
+    when (it) {
+        SuccessResponse -> { onSuccess(); null }
+        is InvalidParamResponse -> context.getString(R.string.invalid_field, it.param)
+        else -> context.getString(R.string.unknown_error)
+    }
 }
 
-suspend inline fun <reified Result, reified Fail> HttpClient.safeStatusRequest(
-    successCode: HttpStatusCode = HttpStatusCode.OK,
-    crossinline request: suspend HttpClient.() -> HttpResponse
-): SafeStatusResponse<Result, Fail> =
-    withContext(Dispatchers.IO) {
-        val result = runCatching { request() }
-        if (result.isFailure) {
-            Log.e(TAG, "HttpRequest", result.exceptionOrNull()!!)
-            SafeStatusResponse.InternalError(R.string.connection_error)
-        } else {
-            try {
-                val response = result.getOrThrow()
-                if (response.status == successCode) SafeStatusResponse.Success(response, response.body())
-                else {
-                    val body = response.body<Fail>()
-                    Log.w(TAG, "HttpRequest failed: $response\n$body")
-                    SafeStatusResponse.Fail(response, body)
-                }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "HttpRequest", e)
-                SafeStatusResponse.InternalError(R.string.invalid_server_response)
-            }
-        }
+inline fun <T> RequestResult<T>.handleValue(
+    scope: CoroutineScope,
+    snackbar: SnackbarHostState,
+    context: Context,
+    onSuccess: (T) -> Unit
+) = handle(scope, snackbar, context) {
+    when (it) {
+        is ValueResponse -> { onSuccess(it.value); null }
+        is InvalidParamResponse -> context.getString(R.string.invalid_field, it.param)
+        else -> context.getString(R.string.unknown_error)
     }
+}
 
-suspend inline fun <reified Result> HttpClient.safeRequest(
-    successCode: HttpStatusCode = HttpStatusCode.OK,
-    crossinline request: suspend HttpClient.() -> HttpResponse
-): SafeResponse<Result> =
-    withContext(Dispatchers.IO) {
-        val result = runCatching { request() }
-        if (result.isFailure) {
-            Log.e(TAG, "HttpRequest", result.exceptionOrNull()!!)
-            SafeResponse.InternalError(R.string.connection_error)
-        } else {
-            try {
-                val response = result.getOrThrow()
-                if (response.status == successCode) SafeResponse.Success(response, response.body())
-                else if (response.status == HttpStatusCode.InternalServerError) SafeResponse.InternalError(R.string.internal_error)
-                else {
-                    val body = response.bodyAsText()
-                    Log.w(TAG, "HttpRequest failed: $response\n$body")
-                    SafeResponse.Fail(response, body)
-                }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.e(TAG, "HttpRequest", e)
-                SafeResponse.InternalError(R.string.invalid_server_response)
-            }
-        }
+// With toast
+inline fun <T> RequestResult<T>.handle(context: Context, onResponse: (Response<T>) -> String?): Unit = fold(
+    onFail = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() },
+    onSuccess = {
+        onResponse(it)?.let { r -> Toast.makeText(context, r, Toast.LENGTH_SHORT).show() }
     }
+)
 
-suspend inline fun <reified Result, reified Fail> HttpClient.safeGet(
-    successCode: HttpStatusCode = HttpStatusCode.OK,
-    crossinline builder: HttpRequestBuilder.() -> Unit
-) = safeStatusRequest<Result, Fail>(successCode) { get(builder) }
+inline fun <T> RequestResult<T>.handleSuccess(context: Context, onSuccess: () -> Unit) = handle(context) {
+    when (it) {
+        SuccessResponse -> { onSuccess(); null }
+        is InvalidParamResponse -> context.getString(R.string.invalid_field, it.param)
+        else -> context.getString(R.string.unknown_error)
+    }
+}
 
-suspend inline fun <reified Result, reified Fail> HttpClient.safePost(
-    successCode: HttpStatusCode = HttpStatusCode.OK,
-    crossinline builder: HttpRequestBuilder.() -> Unit
-) = safeStatusRequest<Result, Fail>(successCode) { post(builder) }
+suspend inline fun <reified T> HttpClient.safeRequest(crossinline request: suspend HttpClient.() -> HttpResponse): RequestResult<T> =
+    withContext(Dispatchers.IO) {
+        runCatching { request() }.fold(
+            onFailure = {
+                Log.e(TAG, "HttpRequest", it)
+                RequestFail(R.string.connection_error)
+            },
+            onSuccess = {
+                if (it.status == HttpStatusCode.InternalServerError) {
+                    Log.w(TAG, "Request $it returned status code 500 Internal Server Error")
+                    return@fold RequestFail(R.string.internal_error)
+                }
+                try {
+                    RequestSuccess(it.body())
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    Log.w(TAG, "Request $it: unable to parse response", e)
+                    RequestFail(R.string.invalid_server_response)
+                }
+            }
+        )
+    }

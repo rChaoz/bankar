@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.newuser
 
 import android.content.Context
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -66,25 +67,28 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.ktor.client.call.body
 import io.ktor.client.request.header
+import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.request.url
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ro.bankar.app.KeyUserSession
 import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.ktorClient
-import ro.bankar.app.data.safePost
+import ro.bankar.app.TAG
+import ro.bankar.app.data.basicClient
 import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
+import ro.bankar.app.ui.show
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.model.ErrorResponse
+import ro.bankar.model.Response
 import ro.bankar.model.SInitialLoginData
 import ro.bankar.model.SSMSCodeData
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.SuccessResponse
 
 enum class LoginStep {
     Initial, Final;
@@ -103,7 +107,7 @@ class LoginModel : ViewModel() {
     // Internal state
     var isLoading by mutableStateOf(false)
     var step by mutableStateOf(LoginStep.Initial)
-    val snackBar = SnackbarHostState()
+    val snackbar = SnackbarHostState()
 
     // Set by model
     lateinit var onSuccess: () -> Unit
@@ -114,66 +118,69 @@ class LoginModel : ViewModel() {
     }
 
     private var loginSession by mutableStateOf<String?>(null)
-    fun doInitial(focusManager: FocusManager, c: Context) = viewModelScope.launch {
+    fun doInitial(focusManager: FocusManager, context: Context) = viewModelScope.launch {
         focusManager.clearFocus()
         isLoading = true
         usernameOrPasswordError = null
-        val result = ktorClient.safePost<StatusResponse, StatusResponse> {
-            url("login/initial")
-            // Allow the user to input tag prefixed with '@' symbol
-            setBody(
-                SInitialLoginData(username.trim().removePrefix("@"), password)
-            )
+        try {
+            // We need access to headers, so manually call instead of using safeRequest
+            val response = basicClient.post {
+                // Allow the user to input tag prefixed with '@' symbol
+                setBody(SInitialLoginData(username.trim().removePrefix("@"), password))
+            }
+            when (val r = response.body<Response<Unit>>()) {
+                SuccessResponse -> {
+                    loginSession = response.headers["LoginSession"]
+                    codeError = null
+                    step = LoginStep.Final
+                }
+                is ErrorResponse -> when (r.message) {
+                    "account_disabled" -> launch { snackbar.show(context.getString(R.string.account_disabled)) }
+                    "invalid_username_or_password" -> usernameOrPasswordError = context.getString(R.string.invalid_user_or_pass)
+                    else -> launch { snackbar.show(context.getString(R.string.unknown_error)) }
+                }
+                else -> launch { snackbar.show(context.getString(R.string.unknown_error)) }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Exception during login initial step", e)
+            launch { snackbar.show(context.getString(R.string.connection_error)) }
         }
         isLoading = false
-        when (result) {
-            is SafeStatusResponse.Success -> {
-                loginSession = result.r.headers["LoginSession"]
-                codeError = null
-                step = LoginStep.Final
-            }
-            is SafeStatusResponse.InternalError -> {
-                snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
-            }
-            is SafeStatusResponse.Fail -> {
-                when (result.s.status) {
-                    "account_disabled" -> snackBar.showSnackbar(c.getString(R.string.account_disabled), withDismissAction = true)
-                    "invalid_username_or_password" -> usernameOrPasswordError = c.getString(R.string.invalid_user_or_pass)
-                    else -> snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
-                }
-            }
-        }
     }
 
     fun doFinal(focusManager: FocusManager, context: Context) = viewModelScope.launch {
         focusManager.clearFocus()
         isLoading = true
         codeError = null
-        val result = ktorClient.safePost<StatusResponse, StatusResponse> {
-            url("login/final")
-            header("LoginSession", loginSession)
-            setBody(SSMSCodeData(code))
-        }
-        isLoading = false
-        when (result) {
-            is SafeStatusResponse.Success -> {
-                result.r.headers["Authorization"]?.removePrefix("Bearer ")?.let { dataStore.setPreference(KeyUserSession, it) }
-                onSuccess()
+        try {
+            val response = basicClient.post("login/final") {
+                header("LoginSession", loginSession)
+                setBody(SSMSCodeData(code))
             }
-            is SafeStatusResponse.InternalError -> {
-                snackBar.showSnackbar(context.getString(result.message), withDismissAction = true)
-            }
-            is SafeStatusResponse.Fail -> {
-                when (result.s.status) {
+            when (val r = response.body<Response<Unit>>()) {
+                SuccessResponse -> {
+                    val token = response.headers["Authorization"]?.removePrefix("Bearer ")
+                    if (token.isNullOrBlank()) launch { snackbar.show(context.getString(R.string.invalid_server_response)) }
+                    else {
+                        dataStore.setPreference(KeyUserSession, token)
+                        onSuccess()
+                    }
+                }
+                is ErrorResponse -> when (r.message) {
                     "invalid_session", "session_expired" -> {
                         step = LoginStep.Initial
-                        snackBar.showSnackbar(context.getString(R.string.login_session_expired), withDismissAction = true)
+                        launch { snackbar.show(context.getString(R.string.login_session_expired)) }
                     }
                     "invalid_code" -> codeError = context.getString(R.string.incorrect_code)
-                    else -> snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true)
+                    else -> launch { snackbar.show(context.getString(R.string.unknown_error)) }
                 }
+                else -> launch { snackbar.show(context.getString(R.string.unknown_error)) }
             }
+        } catch (e: Exception) {
+            Log.w(TAG, "Exception during login final step", e)
+            launch { snackbar.show(context.getString(R.string.connection_error)) }
         }
+        isLoading = false
     }
 }
 
@@ -184,7 +191,7 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
     model.onSuccess = onSuccess
     val themeMode = LocalThemeMode.current
 
-    Scaffold(snackbarHost = { SnackbarHost(model.snackBar) }) { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(model.snackbar) }) { padding ->
         Surface(color = MaterialTheme.colorScheme.primaryContainer) {
             Column(
                 modifier = Modifier

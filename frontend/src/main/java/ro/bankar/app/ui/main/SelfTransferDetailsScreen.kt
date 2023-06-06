@@ -29,12 +29,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.mapCollectAsStateRetrying
 import ro.bankar.app.ui.components.AccountCard
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.home.Amount
+import ro.bankar.app.ui.mapCollectAsState
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
@@ -45,8 +45,8 @@ import ro.bankar.util.nowUTC
 
 @Composable
 fun SelfTransferDetailsScreen(onDismiss: () -> Unit, data: SBankTransfer, onNavigateToAccount: (SBankAccount) -> Unit) {
-    val sourceAccount by LocalRepository.current.accounts.mapCollectAsStateRetrying { accounts -> accounts.find { it.id == data.sourceAccountID } }
-    val destinationAccount by LocalRepository.current.accounts.mapCollectAsStateRetrying { accounts -> accounts.find { it.id == data.accountID } }
+    val sourceAccount by LocalRepository.current.accounts.mapCollectAsState(null) { accounts -> accounts.find { it.id == data.sourceAccountID } }
+    val destinationAccount by LocalRepository.current.accounts.mapCollectAsState(null) { accounts -> accounts.find { it.id == data.accountID } }
 
     NavScreen(onDismiss, title = if (data.exchangedAmount == null) R.string.self_transfer else R.string.exchange) {
         Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

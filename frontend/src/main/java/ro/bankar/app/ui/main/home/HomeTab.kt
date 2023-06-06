@@ -34,7 +34,6 @@ import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.collectRetrying
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
@@ -74,8 +73,8 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
 
         // Get data
         LaunchedEffect(true) {
-            launch { repository.accounts.collectRetrying { model.accounts = it } }
-            launch { repository.recentActivity.collectRetrying { model.recentActivity = it } }
+            launch { repository.accounts.collect { model.accounts = it } }
+            launch { repository.recentActivity.collect { model.recentActivity = it } }
         }
 
         // Hide FAB when scrolling down

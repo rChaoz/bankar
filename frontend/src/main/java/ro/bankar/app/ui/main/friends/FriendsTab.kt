@@ -81,8 +81,9 @@ import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.data.fold
+import ro.bankar.app.data.handle
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.Avatar
@@ -101,10 +102,13 @@ import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.SCountries
+import ro.bankar.model.ErrorResponse
+import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SDirection
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SPublicUserBase
+import ro.bankar.model.SuccessResponse
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
@@ -118,7 +122,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         // FAB
         var scrollShowFAB = mutableStateOf(true)
         override val showFAB = derivedStateOf { scrollShowFAB.value && friends != null && friendRequests != null }
-        lateinit var snackBar: SnackbarHostState
+        lateinit var snackbar: SnackbarHostState
 
         // Add friend dialog
         var addFriendLoading by mutableStateOf(false)
@@ -156,59 +160,53 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
 
         fun onAddFriend(c: Context, repository: Repository) = viewModelScope.launch {
             addFriendLoading = true
-            val result = repository.sendAddFriend(addFriendInput.trim().removePrefix("@"))
+            repository.sendAddFriend(addFriendInput.trim().removePrefix("@")).fold(
+                onFail = { addFriendError = it },
+                onSuccess = {
+                    when (it) {
+                        SuccessResponse -> {
+                            repository.friendRequests.emitNow()
+                            // Close dialog, show confirm message
+                            showAddFriendDialog = false
+                            launch { snackbar.showSnackbar(c.getString(R.string.friend_request_sent), withDismissAction = true) }
+                        }
+                        is NotFoundResponse -> addFriendError = R.string.user_not_found
+                        is ErrorResponse -> addFriendError = when (it.message) {
+                            "user_is_friend" -> R.string.user_already_friend
+                            "cant_friend_self" -> R.string.cant_friend_self
+                            "exists" -> R.string.friend_request_exists
+                            else -> R.string.unknown_error
+                        }
+                        else -> addFriendError = R.string.unknown_error
+                    }
+                }
+            )
             addFriendLoading = false
-            when (result) {
-                is SafeStatusResponse.InternalError -> addFriendError = result.message
-                is SafeStatusResponse.Fail -> addFriendError = when (result.s.status) {
-                    "user_not_found" -> R.string.user_not_found
-                    "user_is_friend" -> R.string.user_already_friend
-                    "cant_friend_self" -> R.string.cant_friend_self
-                    "exists" -> R.string.friend_request_exists
-                    else -> R.string.unknown_error
-                }
-
-                is SafeStatusResponse.Success -> {
-                    addFriendLoading = true
-                    repository.friendRequests.emitNow()
-                    addFriendLoading = false
-                    // Close dialog, show confirm message
-                    showAddFriendDialog = false
-                    snackBar.showSnackbar(c.getString(R.string.friend_request_sent), withDismissAction = true)
-                }
-            }
         }
 
         /**
          * Used to cancel an outgoing friend request
          */
-        fun onCancelRequest(c: Context, tag: String, repository: Repository) = viewModelScope.launch {
-            when (val result = repository.sendCancelFriendRequest(tag)) {
-                is SafeStatusResponse.InternalError -> snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
-                is SafeStatusResponse.Fail ->
-                    // Sometimes, the same request can be removed twice (due to fast click/lag), don't show error, just update screen
-                    if (result.s.status == "request_not_found") repository.friendRequests.requestEmit()
-                    else snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
-
-                is SafeStatusResponse.Success -> repository.friendRequests.requestEmit()
+        fun onCancelRequest(context: Context, tag: String, repository: Repository) = viewModelScope.launch {
+            repository.sendCancelFriendRequest(tag).handle(this, snackbar, context) {
+                when {
+                    it == SuccessResponse -> repository.friendRequests.requestEmit()
+                    it is ErrorResponse && it.message == "request_not_found" -> repository.friendRequests.requestEmit()
+                    else -> return@handle context.getString(R.string.unknown_error)
+                }
+                null
             }
         }
 
         /**
          * Used to accept/decline an incoming friend request
          */
-        fun onRespondToRequest(c: Context, fromTag: String, accepted: Boolean, repository: Repository) = viewModelScope.launch {
-            when (val result = repository.sendFriendRequestResponse(fromTag, accepted)) {
-                is SafeStatusResponse.Success -> coroutineScope {
+        fun onRespondToRequest(context: Context, fromTag: String, accepted: Boolean, repository: Repository) = viewModelScope.launch {
+            repository.sendFriendRequestResponse(fromTag, accepted).handleSuccess(this, snackbar, context) {
+                coroutineScope {
                     launch { repository.friends.emitNow() }
                     launch { repository.friendRequests.emitNow() }
                 }
-
-                is SafeStatusResponse.InternalError ->
-                    snackBar.showSnackbar(c.getString(result.message), withDismissAction = true)
-
-                is SafeStatusResponse.Fail ->
-                    snackBar.showSnackbar(c.getString(R.string.unknown_error), withDismissAction = true)
             }
         }
     }
@@ -219,14 +217,14 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content(model: Model, navigation: NavHostController) {
-        model.snackBar = LocalSnackbar.current
+        model.snackbar = LocalSnackbar.current
         // Load data
         val repository = LocalRepository.current
         model.repository = repository
         LaunchedEffect(true) {
-            launch { repository.friends.collectRetrying { model.friends = it } }
-            launch { repository.friendRequests.collectRetrying { model.friendRequests = it } }
-            launch { repository.countryData.collectRetrying { model.countryData = it } }
+            launch { repository.friends.collect { model.friends = it } }
+            launch { repository.friendRequests.collect { model.friendRequests = it } }
+            launch { repository.countryData.collect { model.countryData = it } }
         }
 
         model.onNavigateToConversation = { friend -> navigation.navigate(MainNav.Conversation(friend)) }

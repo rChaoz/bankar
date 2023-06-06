@@ -1,7 +1,6 @@
 package ro.bankar.app.ui.main.home
 
 import android.content.res.Configuration
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,9 +67,7 @@ import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.collectAsStateRetrying
-import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.components.AcceptDeclineButtons
 import ro.bankar.app.ui.components.AccountsComboBox
@@ -122,8 +120,8 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
     model.repository = LocalRepository.current
     model.accounts = rememberUpdatedState(accounts)
     LaunchedEffect(true) {
-        launch { model.repository.countryData.collectRetrying { model.countryData = it } }
-        launch { model.repository.exchangeData.collectRetrying { model.exchangeData = it } }
+        launch { model.repository.countryData.collect { model.countryData = it } }
+        launch { model.repository.exchangeData.collect { model.exchangeData = it } }
     }
 
     StateDialog(
@@ -201,7 +199,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
 @Composable
 private fun RecentActivityPreview() {
     AppTheme {
-        LocalRepository.current.recentActivity.collectAsStateRetrying().value?.let {
+        LocalRepository.current.recentActivity.collectAsState(null).value?.let {
             RecentActivity(it, emptyList(), rememberMockNavController())
         } ?: RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
     }
@@ -261,17 +259,15 @@ private fun SentTransferRequest(id: Int, fromName: String, amount: Double, curre
         else {
             val repository = LocalRepository.current
             val context = LocalContext.current
-            val snackBar = LocalSnackbar.current
+            val snackbar = LocalSnackbar.current
 
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                 OutlinedButton(
                     onClick = {
                         isLoading = true
                         scope.launch {
-                            when (val r = repository.sendCancelTransferRequest(id)) {
-                                is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                                is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
-                                is SafeStatusResponse.Success -> {
+                            repository.sendCancelTransferRequest(id).handleSuccess(this, snackbar, context) {
+                                coroutineScope {
                                     repository.accounts.requestEmit()
                                     repository.recentActivity.emitNow()
                                 }
@@ -341,13 +337,9 @@ private fun ReceivedTransferRequest(
                         scope.launch {
                             isLoading = true
                             // Use toasts instead of snackbar because snackbar isn't visible over dialog
-                            when (val r = model.repository.sendRespondToTransferRequest(request.id, false, null)) {
-                                is SafeStatusResponse.InternalError -> Toast.makeText(context, r.message, Toast.LENGTH_SHORT).show()
-                                is SafeStatusResponse.Fail -> Toast.makeText(context, context.getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
-                                is SafeStatusResponse.Success -> {
-                                    model.repository.recentActivity.emitNow()
-                                    dialogVisible = false
-                                }
+                            model.repository.sendRespondToTransferRequest(request.id, false, null).handleSuccess(context) {
+                                model.repository.recentActivity.emitNow()
+                                dialogVisible = false
                             }
                             isLoading = false
                         }
@@ -363,16 +355,12 @@ private fun ReceivedTransferRequest(
                             val account = selectedAccount.value ?: return@launch
                             isLoading = true
                             // Use toasts instead of snackbar because snackbar isn't visible over dialog
-                            when (val r = model.repository.sendRespondToTransferRequest(request.id, true, account.id)) {
-                                is SafeStatusResponse.InternalError -> Toast.makeText(context, r.message, Toast.LENGTH_SHORT).show()
-                                is SafeStatusResponse.Fail -> Toast.makeText(context, context.getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
-                                is SafeStatusResponse.Success -> {
-                                    coroutineScope {
-                                        launch { model.repository.accounts.emitNow() }
-                                        launch { model.repository.recentActivity.emitNow() }
-                                    }
-                                    dialogVisible = false
+                            model.repository.sendRespondToTransferRequest(request.id, true, account.id).handleSuccess(context) {
+                                coroutineScope {
+                                    launch { model.repository.accounts.emitNow() }
+                                    launch { model.repository.recentActivity.emitNow() }
                                 }
+                                dialogVisible = false
                             }
                             isLoading = false
                         }
@@ -560,16 +548,14 @@ private fun ReceivedTransferRequest(
         }
     ) {
         val context = LocalContext.current
-        val snackBar = LocalSnackbar.current
+        val snackbar = LocalSnackbar.current
 
         if (isDeclining) CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 2.dp)
         else AcceptDeclineButtons(onAccept = { if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show() else dialogVisible = true }, onDecline = {
             scope.launch {
                 isDeclining = true
-                when (val r = model.repository.sendRespondToTransferRequest(request.id, false, null)) {
-                    is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                    is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
-                    is SafeStatusResponse.Success -> model.repository.recentActivity.emitNow()
+                model.repository.sendRespondToTransferRequest(request.id, false, null).handleSuccess(this, snackbar, context) {
+                    model.repository.recentActivity.emitNow()
                 }
                 isDeclining = false
             }

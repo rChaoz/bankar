@@ -67,7 +67,7 @@
     <string name="code_was_sent">Codul de 6 cifre a fost trimis la %s. Vă rugăm introduceți codul mai jos:</string>
     <string name="edit_phone">Schimbă numărul de telefon</string>
     <string name="back">Înapoi</string>
-    <string name="user_already_exists">Un user cu același %s deja există</string>
+    <string name="user_with_s_already_exists">Un user cu același %s deja există</string>
     <string name="invalid_field">Câmp %s invalid</string>
     <string name="signup_session_expired">Sesiunea a expirat, codul SMS trebuie re-trimis</string>
     <string name="resend">Re-trimite</string>

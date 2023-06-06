@@ -4,7 +4,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authentication
 import io.ktor.server.request.receive
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.put
@@ -17,24 +16,27 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import ro.bankar.database.FriendRequests
 import ro.bankar.database.User
 import ro.bankar.database.friendsSerializable
-import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SDirection
 import ro.bankar.model.SSocketNotification
 import ro.bankar.model.SUserProfileUpdate
-import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
+import ro.bankar.respondError
+import ro.bankar.respondInvalidParam
+import ro.bankar.respondNotFound
+import ro.bankar.respondSuccess
+import ro.bankar.respondValue
 
 fun Route.configureUserProfiles() {
     route("profile") {
         get {
             val user = call.authentication.principal<UserPrincipal>()!!.user
-            call.respond(HttpStatusCode.OK, newSuspendedTransaction { user.serializable() })
+            call.respondValue(newSuspendedTransaction { user.serializable() })
         }
 
         route("friends") {
             get {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
-                call.respond(HttpStatusCode.OK, newSuspendedTransaction { user.friends.friendsSerializable(user) })
+                call.respondValue(newSuspendedTransaction { user.friends.friendsSerializable(user) })
             }
 
             get("add/{id}") {
@@ -42,16 +44,16 @@ fun Route.configureUserProfiles() {
                 val id = call.parameters["id"]!!
                 newSuspendedTransaction {
                     val otherUser = User.findByAnything(id)
-                    if (otherUser == null) call.respond(HttpStatusCode.NotFound, StatusResponse("user_not_found"))
-                    else if (user.hasFriend(otherUser)) call.respond(HttpStatusCode.Conflict, StatusResponse("user_is_friend"))
-                    else if (otherUser.id == user.id) call.respond(HttpStatusCode.BadRequest, StatusResponse("cant_friend_self"))
+                    if (otherUser == null) call.respondNotFound("user")
+                    else if (user.hasFriend(otherUser)) call.respondError("user_is_friend", HttpStatusCode.Conflict)
+                    else if (otherUser.id == user.id) call.respondError("cant_friend_self", HttpStatusCode.Conflict)
                     else if (otherUser.friendRequests.any { it.id == user.id } || user.friendRequests.any { it.id == otherUser.id })
-                        call.respond(HttpStatusCode.Conflict, StatusResponse("exists"))
+                        call.respondError("exists", HttpStatusCode.Conflict)
                     else {
                         // Send the friend request
                         otherUser.addFriendRequest(user)
                         sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
-                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                        call.respondSuccess(HttpStatusCode.Created)
                     }
                 }
             }
@@ -61,12 +63,12 @@ fun Route.configureUserProfiles() {
                 val tag = call.parameters["tag"]!!
                 newSuspendedTransaction {
                     val otherUser = User.findByTag(tag)
-                    if (otherUser == null || otherUser !in user.friends) call.respond(HttpStatusCode.NotFound, StatusResponse("user_not_found"))
+                    if (otherUser == null || otherUser !in user.friends) call.respondNotFound("user")
                     else {
                         user.removeFriend(otherUser)
                         otherUser.removeFriend(user)
                         sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
-                        call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                        call.respondSuccess()
                     }
                 }
             }
@@ -84,14 +86,14 @@ fun Route.configureUserProfiles() {
                         }
                     }
                 }
-                call.respond(HttpStatusCode.OK, requests)
+                call.respondValue(requests)
             }
 
             get("{action}/{tag}") {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
                 val action = call.parameters["action"]!!
                 if (action != "accept" && action != "decline" && action != "cancel") {
-                    call.respond(HttpStatusCode.NotFound, StatusResponse("action_not_found")); return@get
+                    call.respondNotFound("action"); return@get
                 }
 
                 val tag = call.parameters["tag"]!!
@@ -99,18 +101,18 @@ fun Route.configureUserProfiles() {
                 newSuspendedTransaction t@{
                     if (action == "cancel") {
                         val otherUser = User.findByAnything(tag)
-                        if (otherUser == null) call.respond(HttpStatusCode.NotFound, StatusResponse("request_not_found"))
+                        if (otherUser == null) call.respondNotFound("friend_request")
                         else {
                             otherUser.friendRequests = SizedCollection(otherUser.friendRequests.filter { it.id != user.id })
                             sendNotificationToUser(otherUser.id, SSocketNotification.SFriendNotification)
-                            call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                            call.respondSuccess()
                         }
                         return@t
                     }
 
                     val otherUser = user.friendRequests.find { it.tag == tag }
                     if (otherUser == null) {
-                        call.respond(HttpStatusCode.BadRequest, StatusResponse("no_request_from_tag")); return@t
+                        call.respondError("no_request_from_tag"); return@t
                     }
                     // Delete this friend request
                     user.friendRequests = SizedCollection(user.friendRequests.filter { it.id != otherUser.id })
@@ -124,7 +126,7 @@ fun Route.configureUserProfiles() {
                         otherUser.friendRequests = SizedCollection(otherUser.friendRequests.filter { it.id != user.id })
                     }
 
-                    call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                    call.respondSuccess()
                 }
             }
         }
@@ -135,7 +137,7 @@ fun Route.configureUserProfiles() {
             // Get & validate data
             val data = call.receive<SUserProfileUpdate>()
             data.validate()?.let {
-                call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@put
+                call.respondInvalidParam(it); return@put
             }
             // Update user profile
             newSuspendedTransaction {
@@ -145,7 +147,7 @@ fun Route.configureUserProfiles() {
                     user.avatar = ExposedBlob(it)
                 }
             }
-            call.respond(HttpStatusCode.OK, StatusResponse.Success)
+            call.respondSuccess()
         }
     }
 }

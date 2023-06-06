@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -20,7 +21,6 @@ import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.datetime.Month
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.collectAsStateRetrying
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.RecentActivityShimmerRow
 import ro.bankar.app.ui.components.Transaction
@@ -32,7 +32,7 @@ import java.text.DateFormatSymbols
 
 @Composable
 fun RecentActivityScreen(onDismiss: () -> Unit, navigation: NavHostController) {
-    val activity by LocalRepository.current.allRecentActivity.also { it.requestEmit() }.collectAsStateRetrying()
+    val activity by LocalRepository.current.allRecentActivity.also { it.requestEmit() }.collectAsState(null)
 
     NavScreen(onDismiss, title = R.string.recent_activity) {
         LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {

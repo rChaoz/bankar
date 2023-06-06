@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,14 +94,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.minus
-import kotlinx.serialization.json.Json
 import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.SafeResponse
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.collectAsStateRetrying
+import ro.bankar.app.data.handle
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.ButtonField
@@ -110,15 +108,15 @@ import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.nameFromCode
-import ro.bankar.app.ui.safeDecodeFromString
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.SCountry
+import ro.bankar.model.ErrorResponse
 import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.SUserValidation
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.SuccessResponse
 import ro.bankar.util.format
 import ro.bankar.util.todayHere
 import java.io.ByteArrayOutputStream
@@ -171,7 +169,7 @@ class ProfileScreenModel : ViewModel() {
     }
 
     @OptIn(ExperimentalFoundationApi::class)
-    suspend fun onSaveSuspending(context: Context, repository: Repository, snackBar: SnackbarHostState): Boolean = coroutineScope {
+    suspend fun onSaveSuspending(context: Context, repository: Repository, snackbar: SnackbarHostState): Boolean = coroutineScope {
         email.check(context)
         firstName.check(context)
         middleName.check(context)
@@ -181,38 +179,34 @@ class ProfileScreenModel : ViewModel() {
         address.check(context)
         password.check(context)
         if (!email.verified || !firstName.verified || !middleName.verified || !lastName.verified || !dateOfBirth.verified
-            || !city.verified || !address.verified) return@coroutineScope false
+            || !city.verified || !address.verified
+        ) return@coroutineScope false
         if (!password.verified) {
             passwordScrollRequester.bringIntoView()
             return@coroutineScope false
         }
         isSaving = true
-        when (val r = repository.sendUpdate(
+        repository.sendUpdate(
             SNewUser(
                 email.value, "", "", password.value, firstName.value.trim(), middleName.value.trim().ifEmpty { null }, lastName.value.trim(),
                 dateOfBirth.value, country.value.code, state, city.value, address.value
             )
-        )) {
-            is SafeResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-            is SafeResponse.Fail -> {
-                val status = Json.safeDecodeFromString<StatusResponse>(r.body)
-                val invalid = Json.safeDecodeFromString<InvalidParamResponse>(r.body)
-                if (status != null && status.status == "incorrect_password") {
+        ).handle(this, snackbar, context) {
+            when (it) {
+                SuccessResponse -> {
+                    repository.profile.emitNow()
+                    launch { snackbar.showSnackbar(context.getString(R.string.updated_successfully), withDismissAction = true) }
+                    isSaving = false
+                    editing = false
+                    return@coroutineScope true
+                }
+                is ErrorResponse -> {
                     password.setError(context.getString(R.string.incorrect_password))
                     launch { passwordScrollRequester.bringIntoView() }
-                } else launch {
-                    snackBar.showSnackbar(
-                        if (invalid != null) context.getString(R.string.invalid_field, invalid.param) else context.getString(R.string.unknown_error),
-                        withDismissAction = true
-                    )
+                    null
                 }
-            }
-            is SafeResponse.Success -> {
-                repository.profile.emitNow()
-                launch { snackBar.showSnackbar(context.getString(R.string.updated_successfully), withDismissAction = true) }
-                isSaving = false
-                editing = false
-                return@coroutineScope true
+                is InvalidParamResponse -> context.getString(R.string.invalid_field, it.param)
+                else -> context.getString(R.string.unknown_error)
             }
         }
         isSaving = false
@@ -225,10 +219,10 @@ class ProfileScreenModel : ViewModel() {
 fun ProfileScreen(onDismiss: () -> Unit) {
     val model = viewModel<ProfileScreenModel>()
     val repository = LocalRepository.current
-    val snackBar = remember { SnackbarHostState() }
+    val snackbar = remember { SnackbarHostState() }
 
-    val countryData by repository.countryData.collectAsStateRetrying()
-    val dataState = repository.profile.collectAsStateRetrying()
+    val countryData by repository.countryData.collectAsState(null)
+    val dataState = repository.profile.collectAsState(null)
     val data = dataState.value // extract to variable to prevent "variable has custom getter" null-check errors
 
     // Code to load picked image and submit to server
@@ -239,29 +233,29 @@ fun ProfileScreen(onDismiss: () -> Unit) {
     // CompositionalLocalProvider can't be used due to no return value
     val providers = LocalActivity.current?.let { arrayOf(LocalContext provides it) }
     if (providers != null) currentComposer.startProviders(providers)
-    val imagePicker = rememberLauncherForActivityResult(contract = CropImageContract()) {
-        if (!it.isSuccessful || it.uriContent == null) return@rememberLauncherForActivityResult
+    val imagePicker = rememberLauncherForActivityResult(contract = CropImageContract()) { result ->
+        if (!result.isSuccessful || result.uriContent == null) return@rememberLauncherForActivityResult
         isLoading = true
         // We need lifecycleScope because the "Welcome back" (password screen) might be displaying on top due to long time spent by user in cropping activity
         lifecycleScope.launch {
             // Load image as bitmap
-            val bitmap = withContext(Dispatchers.IO) { ImageLoader(context).execute(ImageRequest.Builder(context).data(it.uriContent).build()) }
+            val bitmap = withContext(Dispatchers.IO) { ImageLoader(context).execute(ImageRequest.Builder(context).data(result.uriContent).build()) }
                 .drawable?.toBitmapOrNull(SUserValidation.avatarSize, SUserValidation.avatarSize)
             if (bitmap == null) {
                 isLoading = false
-                snackBar.showSnackbar(context.getString(R.string.error_loading_image), withDismissAction = true)
+                snackbar.showSnackbar(context.getString(R.string.error_loading_image), withDismissAction = true)
                 return@launch
             }
             // Compress bitmap into memory
             val bytes = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bytes)
             // Send image to server
-            when (val result = repository.sendAboutOrPicture(SUserProfileUpdate(null, bytes.toByteArray()))) {
-                is SafeStatusResponse.InternalError -> launch { snackBar.showSnackbar(context.getString(result.message), withDismissAction = true) }
-                is SafeStatusResponse.Fail -> launch { snackBar.showSnackbar(context.getString(R.string.profile_picture_problem), withDismissAction = true) }
-                is SafeStatusResponse.Success ->
-                    // Wait for image update to be received
+            repository.sendAboutOrPicture(SUserProfileUpdate(null, bytes.toByteArray())).handle(this, snackbar, context) {
+                // Wait for image update to be received
+                if (it == SuccessResponse) {
                     repository.profile.emitNow()
+                    null
+                } else context.getString(R.string.profile_picture_problem)
             }
             isLoading = false
         }
@@ -291,7 +285,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
         negativeButton = SelectionButton(R.string.save),
         positiveButton = SelectionButton(R.string.yes),
         onNegativeClick = {
-            scope.launch { if (model.onSaveSuspending(context, repository, snackBar)) onDismiss() }
+            scope.launch { if (model.onSaveSuspending(context, repository, snackbar)) onDismiss() }
         },
         onPositiveClick = onDismiss
     ), body = InfoBody.Default(
@@ -315,11 +309,11 @@ fun ProfileScreen(onDismiss: () -> Unit) {
         },
         onIconButtonClick = { logoutDialogState.show() },
         isLoading = isLoading || model.isSaving,
-        snackbar = snackBar,
+        snackbar = snackbar,
         isFABVisible = data != null && countryData != null && (model.editing || showFAB),
         fabContent = {
             FloatingActionButton(onClick = {
-                if (model.editing) model.onSave(context, repository, snackBar)
+                if (model.editing) model.onSave(context, repository, snackbar)
                 else model.onEdit(data!!, countryData!!.first { it.code == data.countryCode })
             }, shape = CircleShape) {
                 if (model.editing) Icon(imageVector = Icons.Default.Check, contentDescription = stringResource(R.string.save))
@@ -426,14 +420,15 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                                     focusManager.clearFocus()
                                     editingAbout = null
                                     scope.launch {
-                                        when (val result = repository.sendAboutOrPicture(SUserProfileUpdate(aboutValue.trim(), null))) {
-                                            is SafeStatusResponse.InternalError ->
-                                                launch { snackBar.showSnackbar(context.getString(result.message), withDismissAction = true) }
-                                            is SafeStatusResponse.Fail ->
-                                                launch { snackBar.showSnackbar(context.getString(R.string.invalid_about), withDismissAction = true) }
-                                            is SafeStatusResponse.Success -> {
-                                                repository.profile.emitNow()
-                                                editingAbout = false
+                                        repository.sendAboutOrPicture(SUserProfileUpdate(aboutValue.trim(), null)).handle(this, snackbar, context) {
+                                            when (it) {
+                                                SuccessResponse -> {
+                                                    repository.profile.emitNow()
+                                                    editingAbout = false
+                                                    null
+                                                }
+                                                is InvalidParamResponse -> context.getString(R.string.invalid_about)
+                                                else -> context.getString(R.string.unknown_error)
                                             }
                                         }
                                         if (editingAbout == null) editingAbout = true
@@ -668,19 +663,21 @@ fun ProfileScreen(onDismiss: () -> Unit) {
 
             if (model.editing) {
                 var showPassword by remember { mutableStateOf(false) }
-                VerifiableField(model.password, R.string.password, type = KeyboardType.Password, trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            painterResource(
-                                if (showPassword) R.drawable.baseline_visibility_24
-                                else R.drawable.baseline_visibility_off_24
-                            ),
-                            stringResource(R.string.show_password)
-                        )
-                    }
-                }, showPassword = showPassword, isLast = true, modifier = Modifier
-                    .fillMaxWidth()
-                    .bringIntoViewRequester(model.passwordScrollRequester))
+                VerifiableField(
+                    model.password, R.string.password, type = KeyboardType.Password, trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                painterResource(
+                                    if (showPassword) R.drawable.baseline_visibility_24
+                                    else R.drawable.baseline_visibility_off_24
+                                ),
+                                stringResource(R.string.show_password)
+                            )
+                        }
+                    }, showPassword = showPassword, isLast = true, modifier = Modifier
+                        .fillMaxWidth()
+                        .bringIntoViewRequester(model.passwordScrollRequester)
+                )
                 Spacer(modifier = Modifier.height(40.dp))
             }
         }

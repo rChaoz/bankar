@@ -3,11 +3,13 @@ package ro.bankar.app.ui
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
@@ -22,10 +24,11 @@ import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.StringFormat
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import ro.bankar.app.R
@@ -77,22 +80,21 @@ fun rememberMockNavController(): NavHostController {
     }
 }
 
+// Show snackbar with dismiss action
+suspend fun SnackbarHostState.show(message: String) = coroutineScope { showSnackbar(message, withDismissAction = true) }
+
+@Composable
+fun <T, R> Flow<T>.mapCollectAsState(initial: R, mapFunc: (T) -> R) = produceState(initialValue = initial) {
+    map(mapFunc).collect { value = it }
+}
+
 // Read-only constant states
 private class ConstantState<T>(override val value: T) : State<T>
-
 fun <T> stateOf(t: T): State<T> = ConstantState(t)
 
 // Currency formatting
 fun Currency.format(amount: Double, showPlusSign: Boolean = false, separator: String = " ") =
     "${if (showPlusSign) "%+.2f" else "%.2f"}$separator%s".format(amount, this.code)
-
-
-// Serialization helpers
-inline fun <reified T> StringFormat.safeDecodeFromString(string: String) = try {
-    decodeFromString<T>(string)
-} catch (_: Exception) {
-    null
-}
 
 /**
  * Saver for kotlinx.serialization.Serializable classes

@@ -9,7 +9,6 @@ import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Build.VERSION
 import android.util.Range
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,8 +76,7 @@ import kotlinx.datetime.toKotlinLocalDate
 import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.SafeResponse
-import ro.bankar.app.data.collectAsStateRetrying
+import ro.bankar.app.data.handle
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
@@ -107,8 +106,8 @@ fun StatementsScreen(onDismiss: () -> Unit) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
-    val accounts by repository.accounts.collectAsStateRetrying()
-    val statements by repository.statements.collectAsStateRetrying()
+    val accounts by repository.accounts.collectAsState(null)
+    val statements by repository.statements.collectAsState(null)
 
     // Create statement dialog
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -133,15 +132,10 @@ fun StatementsScreen(onDismiss: () -> Unit) {
             if (!name.verified) return@BottomDialog
             isLoading = true
             scope.launch {
-                when (val r = repository.sendStatementRequest(name.value.trim().ifEmpty { null }, account.value!!.id, startDate, endDate)) {
-                    is SafeResponse.InternalError ->
-                        Toast.makeText(context, r.message, Toast.LENGTH_SHORT).show()
-                    is SafeResponse.Fail ->
-                        Toast.makeText(context, R.string.unknown_error, Toast.LENGTH_SHORT).show()
-                    is SafeResponse.Success -> {
-                        repository.statements.emitNow()
-                        showCreateDialog = false
-                    }
+                repository.sendStatementRequest(name.value.trim().ifEmpty { null }, account.value!!.id, startDate, endDate).handle(context) {
+                    repository.statements.emitNow()
+                    showCreateDialog = false
+                    null
                 }
                 isLoading = false
             }

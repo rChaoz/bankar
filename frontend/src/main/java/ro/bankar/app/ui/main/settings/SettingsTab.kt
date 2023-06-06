@@ -40,6 +40,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,9 +82,8 @@ import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
 import ro.bankar.app.collectPreferenceAsState
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.SafeStatusResponse
-import ro.bankar.app.data.collectAsStateRetrying
-import ro.bankar.app.data.collectRetrying
+import ro.bankar.app.data.fold
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.removePreference
 import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.AccountsComboBox
@@ -94,7 +94,9 @@ import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
+import ro.bankar.model.ErrorResponse
 import ro.bankar.model.SBankAccount
+import ro.bankar.model.SuccessResponse
 
 private enum class SettingsNav(val route: String) {
     Language("language"),
@@ -131,8 +133,7 @@ object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings
             startDestination = SettingsNav.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) { it / 2 } + fadeIn(spring()) },
             popEnterTransition = { EnterTransition.None },
-            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) },
-            modifier = Modifier.fillMaxSize()
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) { it / 2 } + fadeOut(spring()) }
         ) {
             composable(SettingsNav.route) {
                 SettingsScreen(settingsNav)
@@ -181,14 +182,20 @@ fun SettingsScreen(navigation: NavHostController) {
     val onDone: () -> Unit = {
         isLoading = true
         scope.launch {
-            when (val r = repository.sendCheckPassword(password)) {
-                is SafeStatusResponse.InternalError -> passwordError = context.getString(r.message)
-                is SafeStatusResponse.Fail -> passwordError = context.getString(R.string.incorrect_password)
-                is SafeStatusResponse.Success -> {
-                    authenticateDialogVisible = false
-                    navigation.navigate(SettingsNav.Access.route)
+            repository.sendCheckPassword(password).fold(
+                onFail = { context.getString(it) },
+                onSuccess = {
+                    when (it) {
+                        SuccessResponse -> {
+                            authenticateDialogVisible = false
+                            navigation.navigate(SettingsNav.Access.route)
+                            null
+                        }
+                        is ErrorResponse -> R.string.incorrect_password
+                        else -> R.string.unknown_error
+                    }
                 }
-            }
+            )
             isLoading = false
         }
     }
@@ -547,13 +554,13 @@ fun PrimaryCurrencyScreen() = Surface {
 fun DefaultBankAccountScreen() = Surface {
     // Get data
     val repository = LocalRepository.current
-    val state by repository.defaultAccount.collectAsStateRetrying()
+    val state by repository.defaultAccount.collectAsState(null)
 
     // Get accounts list
     var accounts by remember { mutableStateOf<List<SBankAccount>?>(null) }
     val account = remember { mutableStateOf<SBankAccount?>(null) }
     LaunchedEffect(state) {
-        repository.accounts.collectRetrying { newAccounts ->
+        repository.accounts.collect { newAccounts ->
             accounts = newAccounts
             if (state != null) account.value = newAccounts.find { it.id == state!!.id }
         }
@@ -574,12 +581,8 @@ fun DefaultBankAccountScreen() = Surface {
                     noneOptionText = R.string.dont_use_default_account, onPickAccount = {
                         isLoading = true
                         scope.launch {
-                            when (val r = repository.sendDefaultAccount(it?.id, state!!.alwaysUse)) {
-                                is SafeStatusResponse.InternalError ->
-                                    launch { snackbar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                                is SafeStatusResponse.Fail ->
-                                    launch { snackbar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
-                                is SafeStatusResponse.Success -> repository.defaultAccount.requestEmit()
+                            repository.sendDefaultAccount(it?.id, state!!.alwaysUse).handleSuccess(this, snackbar, context) {
+                                repository.defaultAccount.emitNow()
                             }
                             isLoading = false
                         }
@@ -594,12 +597,8 @@ fun DefaultBankAccountScreen() = Surface {
                             set(value) {
                                 isLoading = true
                                 scope.launch {
-                                    when (val r = repository.sendDefaultAccount(state!!.id, value)) {
-                                        is SafeStatusResponse.InternalError ->
-                                            launch { snackbar.showSnackbar(context.getString(r.message), withDismissAction = true) }
-                                        is SafeStatusResponse.Fail ->
-                                            launch { snackbar.showSnackbar(context.getString(R.string.unknown_error), withDismissAction = true) }
-                                        is SafeStatusResponse.Success -> repository.defaultAccount.requestEmit()
+                                    repository.sendDefaultAccount(state!!.id, value).handleSuccess(this, snackbar, context) {
+                                        repository.defaultAccount.emitNow()
                                     }
                                     isLoading = false
                                 }

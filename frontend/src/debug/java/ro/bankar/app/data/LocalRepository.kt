@@ -21,8 +21,6 @@ import ro.bankar.app.R
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
@@ -47,11 +45,8 @@ import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserMessage
 import ro.bankar.model.SUserProfileUpdate
-import ro.bankar.model.StatusResponse
 import ro.bankar.util.nowUTC
 import ro.bankar.util.todayHere
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -64,15 +59,12 @@ val EmptyRepository: Repository = MockRepository
 private object MockRepository : Repository() {
     @OptIn(DelicateCoroutinesApi::class)
     private fun <T> mockFlow(value: T) = object : RequestFlow<T>(GlobalScope) {
-        override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
+        override suspend fun emit(): T {
             delay(3.seconds)
-            flow.emit(EmissionResult.Success(value))
-            continuation?.resume(Unit)
+            return value
         }
     }
-
-    private fun <Result, Fail> mockStatusResponse() = SafeStatusResponse.InternalError<Result, Fail>(R.string.connection_error)
-    private fun <Result> mockResponse() = SafeResponse.InternalError<Result>(R.string.connection_error)
+    private fun <T> mockResponse(): RequestResult<T> = RequestFail<T>(R.string.connection_error)
 
     // TODO If socket is ever used - change this to some mock version so it doesn't crash
     override lateinit var socket: DefaultClientWebSocketSession
@@ -91,7 +83,7 @@ private object MockRepository : Repository() {
         )
     )
 
-    override suspend fun sendCheckPassword(password: String) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendCheckPassword(password: String) = mockResponse<Unit>()
 
     override val profile = mockFlow(
         SUser(
@@ -112,8 +104,8 @@ private object MockRepository : Repository() {
         )
     )
 
-    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
-    override suspend fun sendUpdate(data: SNewUser) = mockResponse<StatusResponse>()
+    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockResponse<Unit>()
+    override suspend fun sendUpdate(data: SNewUser) = mockResponse<Unit>()
 
     private val bombasticus = SPublicUser(
         "bombasticus", "Bomba", "Maximus", "Extremus", "RO",
@@ -142,8 +134,8 @@ private object MockRepository : Repository() {
         )
     )
 
-    override suspend fun sendAddFriend(id: String) = mockStatusResponse<StatusResponse, StatusResponse>()
-    override suspend fun sendRemoveFriend(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendAddFriend(id: String) = mockResponse<Unit>()
+    override suspend fun sendRemoveFriend(tag: String) = mockResponse<Unit>()
     override val friendRequests = mockFlow(
         listOf(
             SFriendRequest(
@@ -157,7 +149,7 @@ private object MockRepository : Repository() {
         )
     )
 
-    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockResponse<Unit>()
     override fun conversation(tag: String): RequestFlow<SConversation> {
         val today = Clock.System.todayHere()
         val yesterday = today - DatePeriod(days = 1)
@@ -189,9 +181,9 @@ private object MockRepository : Repository() {
         )
     }
 
-    override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendFriendMessage(recipientTag: String, message: String) = mockResponse<Unit>()
 
-    override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<StatusResponse>()
+    override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<Unit>()
     override fun partyData(id: Int) = mockFlow(
         SPartyInformation(
             bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", listOf(
@@ -202,7 +194,7 @@ private object MockRepository : Repository() {
         )
     )
 
-    override suspend fun sendCancelParty(id: Int) = mockStatusResponse<StatusResponse, NotFoundResponse>()
+    override suspend fun sendCancelParty(id: Int) = mockResponse<Unit>()
 
     private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier ->
         SRecentActivity(
@@ -248,7 +240,7 @@ private object MockRepository : Repository() {
         )
     }
 
-    override suspend fun sendCancelFriendRequest(tag: String) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendCancelFriendRequest(tag: String) = mockResponse<Unit>()
 
 
     override val recentActivity = mockFlow(mockRecentActivity)
@@ -256,7 +248,7 @@ private object MockRepository : Repository() {
     override fun recentActivityWith(tag: String) = mockFlow(mockRecentActivity.transfers)
 
     override val defaultAccount = mockFlow(SDefaultBankAccount(1, true))
-    override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) = mockStatusResponse<StatusResponse, NotFoundResponse>()
+    override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) = mockResponse<Unit>()
     override val accounts = mockFlow(
         listOf(
             SBankAccount(
@@ -274,12 +266,12 @@ private object MockRepository : Repository() {
         SBankAccountData(emptyList(), emptyList(), emptyList()) // TODO
     )
 
-    override suspend fun sendCreateAccount(account: SNewBankAccount) = mockStatusResponse<StatusResponse, InvalidParamResponse>()
-    override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = mockResponse<StatusResponse>()
-    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
-    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<StatusResponse>()
-    override suspend fun sendCancelTransferRequest(id: Int) = mockStatusResponse<StatusResponse, StatusResponse>()
-    override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockStatusResponse<StatusResponse, StatusResponse>()
+    override suspend fun sendCreateAccount(account: SNewBankAccount) = mockResponse<Unit>()
+    override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = mockResponse<Unit>()
+    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<String>()
+    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<String>()
+    override suspend fun sendCancelTransferRequest(id: Int) = mockResponse<Unit>()
+    override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockResponse<Unit>()
     override val statements = mockFlow(listOf(
         SStatement(1, "My Statement", Clock.System.nowUTC(), 1)
     ))

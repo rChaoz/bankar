@@ -3,9 +3,9 @@ package ro.bankar.app.data
 import android.app.DownloadManager
 import android.net.Uri
 import android.os.Environment
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
+import android.util.Log
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -22,31 +22,27 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
-import ro.bankar.banking.Currency
+import ro.bankar.app.TAG
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
-import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SConversation
 import ro.bankar.model.SCreateParty
+import ro.bankar.model.SCustomiseBankAccount
 import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
@@ -62,13 +58,9 @@ import ro.bankar.model.SStatement
 import ro.bankar.model.SStatementRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
-import ro.bankar.model.StatusResponse
+import ro.bankar.model.ValueResponse
 import ro.bankar.util.dashFormat
 import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -76,56 +68,31 @@ import kotlin.time.Duration.Companion.seconds
  */
 abstract class RequestFlow<T> protected constructor(
     private val scope: CoroutineScope,
-    protected val flow: MutableSharedFlow<EmissionResult<T>> = MutableSharedFlow(replay = 1)
-) : SharedFlow<RequestFlow.EmissionResult<T>> by flow.asSharedFlow() {
-    sealed class EmissionResult<T> {
-        class Fail<T>(val continuation: Continuation<Unit>?) : EmissionResult<T>() {
-            val hasRetried = AtomicBoolean(false)
+    private val flow: MutableSharedFlow<T> = MutableSharedFlow(replay = 1)
+) : SharedFlow<T> by flow.asSharedFlow() {
+
+    fun requestEmit() {
+        scope.launch { emitNow() }
+    }
+
+    suspend fun emitNow(): T {
+        var timer = 1
+        var result = emit()
+        while (result == null) {
+            if (timer < 10) ++timer
+            delay(timer.seconds)
+            result = emit()
         }
-
-        class Success<T>(val value: T) : EmissionResult<T>()
+        flow.emit(result)
+        return result
     }
 
-    fun requestEmit(continuation: Continuation<Unit>? = null) {
-        scope.launch { onEmissionRequest(continuation) }
-    }
-
-    suspend fun emitNow() = suspendCoroutine {
-        scope.launch { onEmissionRequest(it) }
-    }
-
-    protected abstract suspend fun onEmissionRequest(continuation: Continuation<Unit>?)
-}
-
-@Composable
-fun <T> RequestFlow<T>.collectAsStateRetrying() = mapCollectAsStateRetrying { it }
-
-@Composable
-fun <T, V> RequestFlow<T>.mapCollectAsStateRetrying(mapFunction: (T) -> V) = produceState<V?>(null) {
-    collect {
-        when (it) {
-            is RequestFlow.EmissionResult.Fail -> {
-                delay(2.seconds)
-                if (it.hasRetried.compareAndSet(false, true)) requestEmit(it.continuation)
-            }
-            is RequestFlow.EmissionResult.Success -> value = mapFunction(it.value)
-        }
-    }
-}
-
-suspend fun <T> RequestFlow<T>.collectRetrying(collector: FlowCollector<T>): Nothing = collect {
-    when (it) {
-        is RequestFlow.EmissionResult.Fail -> {
-            delay(2.seconds)
-            if (it.hasRetried.compareAndSet(false, true)) requestEmit(it.continuation)
-        }
-        is RequestFlow.EmissionResult.Success -> collector.emit(it.value)
-    }
+    protected abstract suspend fun emit(): T?
 }
 
 // LocalRepository defined in debug/release source sets
-
-fun repository(scope: CoroutineScope, sessionToken: String, onLogout: () -> Unit): Repository = RepositoryImpl(scope, sessionToken, onLogout)
+fun repository(scope: CoroutineScope, sessionToken: String, onLogout: () -> Unit): Repository =
+    RepositoryImpl(scope, sessionToken, onLogout)
 
 abstract class Repository {
     // WebSocket for transmitting live data
@@ -136,25 +103,25 @@ abstract class Repository {
     // Static data & password check
     abstract val countryData: RequestFlow<SCountries>
     abstract val exchangeData: RequestFlow<SExchangeData>
-    abstract suspend fun sendCheckPassword(password: String): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendCheckPassword(password: String): RequestResult<Unit>
 
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
-    abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): SafeStatusResponse<StatusResponse, InvalidParamResponse>
-    abstract suspend fun sendUpdate(data: SNewUser): SafeResponse<StatusResponse>
-    abstract suspend fun sendAddFriend(id: String): SafeStatusResponse<StatusResponse, StatusResponse>
-    abstract suspend fun sendRemoveFriend(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): RequestResult<Unit>
+    abstract suspend fun sendUpdate(data: SNewUser): RequestResult<Unit>
+    abstract suspend fun sendAddFriend(id: String): RequestResult<Unit>
+    abstract suspend fun sendRemoveFriend(tag: String): RequestResult<Unit>
     abstract val friends: RequestFlow<List<SFriend>>
     abstract val friendRequests: RequestFlow<List<SFriendRequest>>
-    abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): SafeStatusResponse<StatusResponse, StatusResponse>
-    abstract suspend fun sendCancelFriendRequest(tag: String): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): RequestResult<Unit>
+    abstract suspend fun sendCancelFriendRequest(tag: String): RequestResult<Unit>
     abstract fun conversation(tag: String): RequestFlow<SConversation>
-    abstract suspend fun sendFriendMessage(recipientTag: String, message: String): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendFriendMessage(recipientTag: String, message: String): RequestResult<Unit>
 
     // Parties
-    abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): SafeResponse<StatusResponse>
+    abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): RequestResult<Unit>
     abstract fun partyData(id: Int): RequestFlow<SPartyInformation>
-    abstract suspend fun sendCancelParty(id: Int): SafeStatusResponse<StatusResponse, NotFoundResponse>
+    abstract suspend fun sendCancelParty(id: Int): RequestResult<Unit>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -163,17 +130,17 @@ abstract class Repository {
 
     // Bank accounts
     abstract val defaultAccount: RequestFlow<SDefaultBankAccount>
-    abstract suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean): SafeStatusResponse<StatusResponse, NotFoundResponse>
+    abstract suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean): RequestResult<Unit>
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
-    abstract suspend fun sendCreateAccount(account: SNewBankAccount): SafeStatusResponse<StatusResponse, InvalidParamResponse>
-    abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): SafeResponse<StatusResponse>
-    abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
-    abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): SafeResponse<StatusResponse>
-    abstract suspend fun sendCancelTransferRequest(id: Int): SafeStatusResponse<StatusResponse, StatusResponse>
-    abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): SafeStatusResponse<StatusResponse, StatusResponse>
+    abstract suspend fun sendCreateAccount(account: SNewBankAccount): RequestResult<Unit>
+    abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): RequestResult<Unit>
+    abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): RequestResult<String>
+    abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): RequestResult<String>
+    abstract suspend fun sendCancelTransferRequest(id: Int): RequestResult<Unit>
+    abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): RequestResult<Unit>
     abstract val statements: RequestFlow<List<SStatement>>
-    abstract suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate): SafeResponse<SStatement>
+    abstract suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate): RequestResult<SStatement>
     abstract fun createDownloadStatementRequest(statement: SStatement): DownloadManager.Request
 
     abstract fun logout()
@@ -196,6 +163,7 @@ abstract class Repository {
 }
 
 private class RepositoryImpl(private val scope: CoroutineScope, private val sessionToken: String, private val onLogout: () -> Unit) : Repository() {
+
     private val client = HttpClient(OkHttp) {
         defaultRequest {
             configUrl()
@@ -253,59 +221,56 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     }
 
     // Static data & password check
-    override val countryData = createFlow<SCountries>("data/countries.json")
-    override val exchangeData = createFlow<SExchangeData>("data/exchange.json")
-    override suspend fun sendCheckPassword(password: String) = client.safePost<StatusResponse, StatusResponse> {
-        url("verifyPassword")
-        setBody(SPasswordData(password))
+    override val countryData = createRawFlow<SCountries>("data/countries.json")
+    override val exchangeData = createRawFlow<SExchangeData>("data/exchange.json")
+    override suspend fun sendCheckPassword(password: String) = client.safeRequest<Unit> {
+        post("verifyPassword") { setBody(SPasswordData(password)) }
     }
 
     // User profile & friends
     override val profile = createFlow<SUser>("profile")
-    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeStatusRequest<StatusResponse, InvalidParamResponse> {
+    override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeRequest<Unit> {
         put("profile/update") {
             setBody(data)
         }
     }
 
-    override suspend fun sendUpdate(data: SNewUser) = client.safeRequest<StatusResponse> {
+    override suspend fun sendUpdate(data: SNewUser) = client.safeRequest<Unit> {
         put("updateAccount") { setBody(data) }
     }
 
-    override suspend fun sendAddFriend(id: String) = client.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {
-        url("profile/friends/add/$id")
+    override suspend fun sendAddFriend(id: String) = client.safeRequest<Unit> {
+        get("profile/friends/add/$id")
     }
 
-    override suspend fun sendRemoveFriend(tag: String) = client.safeGet<StatusResponse, StatusResponse>(HttpStatusCode.OK) {
-        url("profile/friends/remove/$tag")
+    override suspend fun sendRemoveFriend(tag: String) = client.safeRequest<Unit> {
+        get("profile/friends/remove/$tag")
     }
 
     override val friends = createFlow<List<SFriend>>("profile/friends")
     override val friendRequests = createFlow<List<SFriendRequest>>("profile/friend_requests")
-    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = client.safeGet<StatusResponse, StatusResponse> {
-        url("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
+    override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = client.safeRequest<Unit> {
+        get("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
     }
 
-    override suspend fun sendCancelFriendRequest(tag: String) = client.safeGet<StatusResponse, StatusResponse> {
-        url("profile/friend_requests/cancel/$tag")
+    override suspend fun sendCancelFriendRequest(tag: String) = client.safeRequest<Unit> {
+        get("profile/friend_requests/cancel/$tag")
     }
 
     override fun conversation(tag: String) = createFlow<SConversation>("messaging/conversation/$tag")
-    override suspend fun sendFriendMessage(recipientTag: String, message: String) = client.safePost<StatusResponse, StatusResponse> {
-        url("messaging/send")
-        setBody(SSendMessage(message, recipientTag))
+    override suspend fun sendFriendMessage(recipientTag: String, message: String) = client.safeRequest<Unit> {
+        post("messaging/send") { setBody(SSendMessage(message, recipientTag)) }
     }
 
     // Parties
-    override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) =
-        client.safeRequest<StatusResponse>(HttpStatusCode.Created) {
-            post("party/create") {
-                setBody(SCreateParty(account, note, amounts))
-            }
+    override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = client.safeRequest<Unit> {
+        post("party/create") {
+            setBody(SCreateParty(account, note, amounts))
         }
+    }
 
     override fun partyData(id: Int) = createFlow<SPartyInformation>("party/$id")
-    override suspend fun sendCancelParty(id: Int) = client.safeGet<StatusResponse, NotFoundResponse> { url("party/cancel/$id") }
+    override suspend fun sendCancelParty(id: Int) = client.safeRequest<Unit> { get("party/cancel/$id") }
 
 
     // Recent activity
@@ -316,41 +281,32 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     // Bank accounts
     override val defaultAccount = createFlow<SDefaultBankAccount>("defaultAccount")
     override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) =
-        client.safePost<StatusResponse, NotFoundResponse> { url("defaultAccount"); setBody(SDefaultBankAccount(id, alwaysUse)) }
+        client.safeRequest<Unit> { post("defaultAccount") { setBody(SDefaultBankAccount(id, alwaysUse)) } }
 
     override val accounts = createFlow<List<SBankAccount>>("accounts")
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
-    override suspend fun sendCreateAccount(account: SNewBankAccount) =
-        client.safePost<StatusResponse, InvalidParamResponse>(HttpStatusCode.Created) {
-            url("accounts/new")
-            setBody(account)
-        }
-
-    override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = client.safeRequest<StatusResponse> {
-        post("accounts/$id/customise") {
-            setBody(SNewBankAccount(SBankAccountType.Debit, name, color, Currency.ROMANIAN_LEU, 0.0))
-        }
+    override suspend fun sendCreateAccount(account: SNewBankAccount) = client.safeRequest<Unit> {
+        post("accounts/new") { setBody(account) }
     }
 
-    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<StatusResponse> {
-        post("transfer/send") {
-            setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
-        }
+    override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = client.safeRequest<Unit> {
+        post("accounts/$id/customise") { setBody(SCustomiseBankAccount(name, color)) }
     }
 
-    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) =
-        client.safeRequest<StatusResponse> {
-            post("transfer/request") {
-                setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
-            }
-        }
-
-    override suspend fun sendCancelTransferRequest(id: Int) = client.safeGet<StatusResponse, StatusResponse> {
-        url("transfer/cancel/$id")
+    override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<String> {
+        post("transfer/send") { setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note)) }
     }
 
-    override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = client.safeGet<StatusResponse, StatusResponse> {
-        url(path = "transfer/respond/$id") {
+    override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<String> {
+        post("transfer/request") { setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note)) }
+    }
+
+    override suspend fun sendCancelTransferRequest(id: Int) = client.safeRequest<Unit> {
+        get("transfer/cancel/$id")
+    }
+
+    override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = client.safeRequest<Unit> {
+        get("transfer/respond/$id") {
             parameter("action", if (accept) "accept" else "decline")
             parameter("accountID", sourceAccountID)
         }
@@ -358,10 +314,8 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
 
     override val statements = createFlow<List<SStatement>>("statements")
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) =
-        client.safeRequest<SStatement>(HttpStatusCode.Created) {
-            post("statements/request") {
-                setBody(SStatementRequest(name, accountID, from, to))
-            }
+        client.safeRequest<SStatement> {
+            post("statements/request") { setBody(SStatementRequest(name, accountID, from, to)) }
         }
 
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(statement.downloadURI).apply {
@@ -372,25 +326,29 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     }
 
     // Utility functions
-    private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
-        override suspend fun onEmissionRequest(continuation: Continuation<Unit>?) {
-            when (val r = client.safeRequest<T> { get(url) }) {
-                is SafeResponse.InternalError -> flow.emit(EmissionResult.Fail(continuation))
-                is SafeResponse.Fail -> {
-                    if (r.r.status == HttpStatusCode.Unauthorized || r.r.status == HttpStatusCode.Forbidden) onLogout()
-                    else flow.emit(EmissionResult.Fail(continuation))
-                }
+    private inline fun <reified T> createRawFlow(url: String) = object : RequestFlow<T>(scope) {
+        override suspend fun emit(): T? = try {
+            client.get(url).body<T>()
+        } catch (e: Exception) {
+            Log.w(TAG, "Exception in raw flow", e)
+            null
+        }
+    }
 
-                is SafeResponse.Success -> {
-                    flow.emit(EmissionResult.Success(r.result))
-                    continuation?.resume(Unit)
-                }
+    private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
+        override suspend fun emit(): T? {
+            val result = client.safeRequest<T> { get(url) }
+            if (result is RequestSuccess) {
+                val response = result.response
+                if (response is ValueResponse) return response.value
+                else Log.w(TAG, "Invalid server response for flow \"$url\": $response")
             }
+            return null
         }
     }
 
     override fun logout() {
-        scope.launch { client.safeGet<StatusResponse, StatusResponse> { url("signout") } }
+        scope.launch { client.safeRequest<Unit> { get("signout") } }
         onLogout()
     }
 

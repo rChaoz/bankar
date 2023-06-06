@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,12 +36,11 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.collectAsStateRetrying
-import ro.bankar.app.data.mapCollectAsStateRetrying
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.friend.FriendCard
 import ro.bankar.app.ui.main.home.Amount
+import ro.bankar.app.ui.mapCollectAsState
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
@@ -61,8 +61,8 @@ fun ExternalTransferDetailsScreen(
     onNavigateToAccount: (SBankAccount) -> Unit,
     onCreateParty: (Double, Int) -> Unit
 ) {
-    val countryData by LocalRepository.current.countryData.collectAsStateRetrying()
-    val bankAccount by LocalRepository.current.accounts.mapCollectAsStateRetrying { accounts -> accounts.find { it.id == data.accountID } }
+    val countryData by LocalRepository.current.countryData.collectAsState(null)
+    val bankAccount by LocalRepository.current.accounts.mapCollectAsState(null) { accounts -> accounts.find { it.id == data.accountID } }
 
     NavScreen(onDismiss, title = R.string.transfer) {
         Column(

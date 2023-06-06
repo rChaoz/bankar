@@ -45,11 +45,12 @@ import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
 import ro.bankar.app.collectPreferenceAsState
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.SafeStatusResponse
+import ro.bankar.app.data.fold
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.model.SuccessResponse
 
 @Composable
 fun LockScreen(onUnlock: () -> Unit) {
@@ -64,12 +65,11 @@ fun LockScreen(onUnlock: () -> Unit) {
 
     // Password authentication
     val password = remember {
-        verifiableSuspendingStateOf("", scope) {
-            when (val result = repository.sendCheckPassword(it)) {
-                is SafeStatusResponse.Success -> null
-                is SafeStatusResponse.InternalError -> context.getString(result.message)
-                is SafeStatusResponse.Fail -> context.getString(R.string.incorrect_password)
-            }
+        verifiableSuspendingStateOf("", scope) { string ->
+            repository.sendCheckPassword(string).fold(
+                onFail = { getString(it) },
+                onSuccess = { if (it is SuccessResponse) null else getString(R.string.incorrect_password) }
+            )
         }
     }
     var showPassword by rememberSaveable { mutableStateOf(false) }

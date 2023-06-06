@@ -2,7 +2,6 @@ package ro.bankar.app.ui.main.home
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +50,7 @@ import kotlinx.coroutines.launch
 import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.SafeResponse
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.MBottomSheet
 import ro.bankar.app.ui.components.verifiableStateOf
@@ -191,13 +190,9 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                     Button(modifier = Modifier.weight(1f), onClick = {
                         isCustomiseLoading = true
                         scope.launch {
-                            when (val r = repository.sendCustomiseAccount(data.id, name.value.trim(), color.value)) {
-                                is SafeResponse.InternalError -> Toast.makeText(context, r.message, Toast.LENGTH_SHORT).show()
-                                is SafeResponse.Fail -> Toast.makeText(context, R.string.unknown_error, Toast.LENGTH_SHORT).show()
-                                is SafeResponse.Success -> {
-                                    repository.accounts.emitNow()
-                                    showCustomiseSheet = false
-                                }
+                            repository.sendCustomiseAccount(data.id, name.value.trim(), color.value).handleSuccess(context) {
+                                repository.accounts.emitNow()
+                                showCustomiseSheet = false
                             }
                             isCustomiseLoading = false
                         }

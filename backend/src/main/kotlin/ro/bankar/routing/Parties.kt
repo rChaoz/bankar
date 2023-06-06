@@ -4,19 +4,19 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.authentication
 import io.ktor.server.request.receive
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.Party
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
 import ro.bankar.model.SCreateParty
 import ro.bankar.model.SSocketNotification
-import ro.bankar.model.StatusResponse
 import ro.bankar.plugins.UserPrincipal
+import ro.bankar.respondInvalidParam
+import ro.bankar.respondNotFound
+import ro.bankar.respondSuccess
+import ro.bankar.respondValue
 
 fun Route.configureParties() {
     route("party") {
@@ -26,22 +26,22 @@ fun Route.configureParties() {
 
             // Verify the party data is valid
             data.validate()?.let {
-                call.respond(HttpStatusCode.BadRequest, InvalidParamResponse(param = it)); return@post
+                call.respondInvalidParam(it); return@post
             }
             newSuspendedTransaction {
                 val account = user.bankAccounts.find { it.id.value == data.accountID } ?: run {
-                    call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "bank_account")); return@newSuspendedTransaction
+                    call.respondNotFound("bank_account"); return@newSuspendedTransaction
                 }
                 val party = data.amounts.map { pair ->
                     val u = user.friends.find { it.tag == pair.first }
                     if (u == null) {
-                        call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "user:${pair.first}")); return@newSuspendedTransaction
+                        call.respondNotFound("user:${pair.first}"); return@newSuspendedTransaction
                     }
                     u to pair.second.toBigDecimal()
                 }
                 Party.create(data.note, account, party)
                 for (pair in party) sendNotificationToUser(pair.first.id, SSocketNotification.SRecentActivityNotification)
-                call.respond(HttpStatusCode.Created, StatusResponse.Success)
+                call.respondSuccess(HttpStatusCode.Created)
             }
         }
 
@@ -51,9 +51,9 @@ fun Route.configureParties() {
                 val party = call.parameters["id"]?.toIntOrNull()?.let { Party.findById(it) }?.takeIf {
                     it.hostAccount.user.id == user.id || it.members.any { member -> member.user.id == user.id }
                 } ?: run {
-                    call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "party")); return@newSuspendedTransaction
+                    call.respondNotFound("party"); return@newSuspendedTransaction
                 }
-                call.respond(HttpStatusCode.OK, party.serializable(user))
+                call.respondValue(party.serializable(user))
             }
         }
 
@@ -62,13 +62,11 @@ fun Route.configureParties() {
             newSuspendedTransaction {
                 val party = call.parameters["id"]?.toIntOrNull()?.let { Party.findById(it) }
                 if (party == null || party.hostAccount.user.id != user.id) {
-                    call.respond(HttpStatusCode.NotFound, NotFoundResponse(resource = "party")); return@newSuspendedTransaction
+                    call.respondNotFound("party"); return@newSuspendedTransaction
                 }
-                for (member in party.members) {
-                    sendNotificationToUser(member.user.id, SSocketNotification.SRecentActivityNotification)
-                }
+                for (member in party.members) sendNotificationToUser(member.user.id, SSocketNotification.SRecentActivityNotification)
                 party.delete()
-                call.respond(HttpStatusCode.OK, StatusResponse.Success)
+                call.respondSuccess()
             }
         }
     }
