@@ -46,6 +46,7 @@ import ro.bankar.app.R
 import ro.bankar.app.collectPreferenceAsState
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.fold
+import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.components.verifiableSuspendingStateOf
@@ -62,6 +63,7 @@ fun LockScreen(onUnlock: () -> Unit) {
     val repository = LocalRepository.current
     val scope = rememberCoroutineScope()
     val datastore = LocalDataStore.current
+    var isLoading by remember { mutableStateOf(false) }
 
     // Password authentication
     val password = remember {
@@ -103,93 +105,100 @@ fun LockScreen(onUnlock: () -> Unit) {
     }
 
     Scaffold { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(30.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                modifier = Modifier.padding(top = 15.dp),
-                painter = painterResource(R.drawable.logo_adaptive),
-                contentDescription = stringResource(R.string.logo),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(R.string.welcome_back),
-                modifier = Modifier.padding(horizontal = 30.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = stringResource(if (usingPin) R.string.verification_pin else R.string.verification_password),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            val onDone: () -> Unit = {
-                if (usingPin) {
-                    pin.check(context)
-                    if (pin.verified) onUnlock()
-                } else scope.launch { password.checkSuspending(context); if (password.verified) onUnlock() }
-            }
-
-            if (usingPin) VerifiableField(
-                pin,
-                label = R.string.pin,
-                type = KeyboardType.NumberPassword,
-                showPassword = showPassword,
-                modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
-                            contentDescription = stringResource(R.string.show_pin)
-                        )
-                    }
-                },
-                onDone = { onDone() },
-                isLast = true
-            )
-            else VerifiableField(
-                password,
-                label = R.string.password,
-                type = KeyboardType.Password,
-                showPassword = showPassword,
-                modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
-                            contentDescription = stringResource(R.string.show_password)
-                        )
-                    }
-                },
-                onDone = { scope.launch { password.checkSuspending(context); if (password.verified) onUnlock() } },
-                isLast = true
-            )
-            if (fingerprintEnabled && prompt != null) FilledIconButton(onClick = { prompt.authenticate(promptInfo) }, modifier = Modifier.size(40.dp)) {
+        LoadingOverlay(isLoading) {
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .padding(30.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Icon(
-                    painter = painterResource(R.drawable.baseline_fingerprint_24),
-                    contentDescription = stringResource(R.string.use_fingerprint),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.padding(top = 15.dp),
+                    painter = painterResource(R.drawable.logo_adaptive),
+                    contentDescription = stringResource(R.string.logo),
+                    tint = MaterialTheme.colorScheme.primary,
                 )
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                if (correctPIN != null) {
-                    TextButton(onClick = { usingPin = !usingPin }) {
-                        Text(text = stringResource(if (usingPin) R.string.use_password else R.string.use_pin))
+                Text(
+                    text = stringResource(R.string.welcome_back),
+                    modifier = Modifier.padding(horizontal = 30.dp),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = stringResource(if (usingPin) R.string.verification_pin else R.string.verification_password),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                val onDone: () -> Unit = {
+                    if (usingPin) {
+                        pin.check(context)
+                        if (pin.verified) onUnlock()
+                    } else scope.launch {
+                        isLoading = true
+                        password.checkSuspending(context)
+                        if (password.verified) onUnlock()
+                        isLoading = false
                     }
                 }
-                Button(
-                    onClick = onDone,
-                    enabled = (usingPin && pin.value.length in 4..8) || (!usingPin && password.value.isNotEmpty())
-                ) {
-                    Text(text = stringResource(R.string.button_continue))
+
+                if (usingPin) VerifiableField(
+                    pin,
+                    label = R.string.pin,
+                    type = KeyboardType.NumberPassword,
+                    showPassword = showPassword,
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
+                                contentDescription = stringResource(R.string.show_pin)
+                            )
+                        }
+                    },
+                    onDone = { onDone() },
+                    isLast = true
+                )
+                else VerifiableField(
+                    password,
+                    label = R.string.password,
+                    type = KeyboardType.Password,
+                    showPassword = showPassword,
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
+                                contentDescription = stringResource(R.string.show_password)
+                            )
+                        }
+                    },
+                    onDone = { onDone() },
+                    isLast = true
+                )
+                if (fingerprintEnabled && prompt != null) FilledIconButton(onClick = { prompt.authenticate(promptInfo) }, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_fingerprint_24),
+                        contentDescription = stringResource(R.string.use_fingerprint),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                    if (correctPIN != null) {
+                        TextButton(onClick = { usingPin = !usingPin }) {
+                            Text(text = stringResource(if (usingPin) R.string.use_password else R.string.use_pin))
+                        }
+                    }
+                    Button(
+                        onClick = onDone,
+                        enabled = (usingPin && pin.value.length in 4..8) || (!usingPin && password.value.isNotEmpty())
+                    ) {
+                        Text(text = stringResource(R.string.button_continue))
+                    }
                 }
             }
         }

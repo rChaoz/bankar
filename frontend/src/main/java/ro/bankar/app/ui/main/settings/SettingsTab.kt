@@ -169,7 +169,7 @@ object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings
 }
 
 @Composable
-fun SettingsScreen(navigation: NavHostController) {
+private fun SettingsScreen(navigation: NavHostController) {
     var authenticateDialogVisible by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -212,33 +212,35 @@ fun SettingsScreen(navigation: NavHostController) {
             passwordError = null
             requester.requestFocus()
         }
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(text = stringResource(R.string.verification_password))
-            var showPassword by rememberSaveable { mutableStateOf(false) }
-            TextField(
-                value = password,
-                onValueChange = { password = it; passwordError = null },
-                label = { Text(text = stringResource(R.string.password)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(requester),
-                isError = passwordError != null,
-                supportingText = {
-                    if (passwordError != null) Text(text = passwordError!!)
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onDone() }),
-                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
-                            contentDescription = stringResource(R.string.show_password)
-                        )
-                    }
-                },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation()
-            )
+        LoadingOverlay(isLoading) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(text = stringResource(R.string.verification_password))
+                var showPassword by rememberSaveable { mutableStateOf(false) }
+                TextField(
+                    value = password,
+                    onValueChange = { password = it; passwordError = null },
+                    label = { Text(text = stringResource(R.string.password)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(requester),
+                    isError = passwordError != null,
+                    supportingText = {
+                        if (passwordError != null) Text(text = passwordError!!)
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onDone() }),
+                    leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                painter = painterResource(if (showPassword) R.drawable.baseline_visibility_24 else R.drawable.baseline_visibility_off_24),
+                                contentDescription = stringResource(R.string.show_password)
+                            )
+                        }
+                    },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation()
+                )
+            }
         }
     }
 
@@ -302,7 +304,7 @@ enum class Language(val text: Int, val flag: Int?, val code: String?) {
 }
 
 @Composable
-fun LanguageScreen() = Surface {
+private fun LanguageScreen() = Surface {
     val datastore = LocalDataStore.current
     var state by rememberPreferenceDataStoreIntSettingState(key = KeyLanguage.name, dataStore = datastore, defaultValue = 0)
 
@@ -334,7 +336,7 @@ fun LanguageScreen() = Surface {
 }
 
 @Composable
-fun AccessScreen() = Surface {
+private fun AccessScreen() = Surface {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = LocalSnackbar.current
@@ -464,7 +466,7 @@ enum class Theme(val title: Int, val icon: Int) {
 }
 
 @Composable
-fun ThemeScreen() = Surface {
+private fun ThemeScreen() = Surface {
     val datastore = LocalDataStore.current
     var state by rememberPreferenceDataStoreIntSettingState(key = KeyTheme.name, dataStore = datastore, defaultValue = 0)
 
@@ -491,7 +493,7 @@ fun ThemeScreen() = Surface {
 }
 
 @Composable
-fun ContactScreen() = Surface {
+private fun ContactScreen() = Surface {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -525,7 +527,7 @@ fun ContactScreen() = Surface {
 }
 
 @Composable
-fun PrimaryCurrencyScreen() = Surface {
+private fun PrimaryCurrencyScreen() = Surface {
     val datastore = LocalDataStore.current
     var state by rememberPreferenceDataStoreIntSettingState(key = KeyPreferredCurrency.name, dataStore = datastore, defaultValue = 0)
 
@@ -551,7 +553,7 @@ fun PrimaryCurrencyScreen() = Surface {
 }
 
 @Composable
-fun DefaultBankAccountScreen() = Surface {
+private fun DefaultBankAccountScreen() = Surface {
     // Get data
     val repository = LocalRepository.current
     val state by repository.defaultAccount.collectAsState(null)

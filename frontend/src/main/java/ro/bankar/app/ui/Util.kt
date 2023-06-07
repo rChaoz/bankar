@@ -84,7 +84,7 @@ fun rememberMockNavController(): NavHostController {
 suspend fun SnackbarHostState.show(message: String) = coroutineScope { showSnackbar(message, withDismissAction = true) }
 
 @Composable
-fun <T, R> Flow<T>.mapCollectAsState(initial: R, mapFunc: (T) -> R) = produceState(initialValue = initial) {
+fun <T, R> Flow<T>.mapCollectAsState(initial: R, mapFunc: suspend (T) -> R) = produceState(initialValue = initial) {
     map(mapFunc).collect { value = it }
 }
 

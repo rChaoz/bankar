@@ -338,7 +338,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
                                 .padding(6.dp)
                         ) {
                             Box {
-                                Avatar(image = data?.avatar, nullIsLoading = data == null, modifier = Modifier.padding(8.dp))
+                                Avatar(image = data?.avatar, shimmer = shimmer.takeIf { data == null }, modifier = Modifier.padding(8.dp))
                                 if (data != null) {
                                     val imagePickerActivityTitle = stringResource(R.string.image_crop)
                                     FilledIconButton(

@@ -200,7 +200,7 @@ private fun PartyMember(member: SPartyMember, currency: Currency, showYou: Boole
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Avatar(image = member.profile.avatar, size = 48.dp)
+        Avatar(image = member.profile.avatar, modifier = Modifier.size(48.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (showYou) stringResource(R.string.you_brackets_s, member.profile.firstName) else member.profile.firstName,

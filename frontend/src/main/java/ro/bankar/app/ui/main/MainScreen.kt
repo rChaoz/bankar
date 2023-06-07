@@ -47,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layoutId
@@ -122,7 +123,8 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
     BackHandler(enabled = tab != HomeTab) { setTab(HomeTab) }
 
     val snackBar = remember { SnackbarHostState() }
-    val profileImage by LocalRepository.current.profile.mapCollectAsState(null) { it.avatar }
+    var profileImageLoading by remember { mutableStateOf(true) }
+    val profileImage by LocalRepository.current.profile.mapCollectAsState(null) { profileImageLoading = false; it.avatar }
 
     Search(topBar = { isSearchOpen, searchField ->
         Surface(color = MaterialTheme.colorScheme.secondary) {
@@ -174,7 +176,12 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                 Box(modifier = Modifier.layoutId("search"), propagateMinConstraints = true) {
                     searchField()
                 }
-                ProfileRibbon(image = profileImage, modifier = Modifier.layoutId("profile"), onClick = { navigation.navigate(MainNav.Profile.route) })
+                ProfileRibbon(
+                    image = profileImage,
+                    modifier = Modifier.layoutId("profile"),
+                    onClick = { navigation.navigate(MainNav.Profile.route) },
+                    isLoading = profileImageLoading
+                )
                 AnimatedContent(
                     targetState = tab,
                     label = "TopBar title change",

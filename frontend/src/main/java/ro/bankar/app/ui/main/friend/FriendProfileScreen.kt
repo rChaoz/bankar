@@ -69,7 +69,7 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                     modifier = Modifier.padding(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Avatar(image = profile.avatar, size = 120.dp)
+                    Avatar(image = profile.avatar, modifier = Modifier.size(120.dp))
                     Text(text = profile.fullName, style = MaterialTheme.typography.headlineSmall)
                     Text(text = "@${profile.tag}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
                     Spacer(modifier = Modifier.height(6.dp))

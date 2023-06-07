@@ -374,7 +374,7 @@ private fun ReceivedTransferRequest(
         LoadingOverlay(showLoading) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-                    .padding(vertical = 12.dp)
+                    .padding(vertical = 24.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 if (request.partyID != null) Text(

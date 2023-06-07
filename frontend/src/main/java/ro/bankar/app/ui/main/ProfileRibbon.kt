@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.valentinilk.shimmer.ShimmerBounds
+import com.valentinilk.shimmer.rememberShimmer
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.Avatar
 
@@ -25,7 +27,7 @@ private val ribbonShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
+fun ProfileRibbon(image: ByteArray?, modifier: Modifier, isLoading: Boolean, onClick: () -> Unit) {
     Surface(
         onClick,
         modifier = modifier,
@@ -41,10 +43,11 @@ fun ProfileRibbon(image: ByteArray?, modifier: Modifier, onClick: () -> Unit) {
         ) {
             Avatar(
                 image = image,
-                modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                modifier = Modifier
+                    .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .size(65.dp),
                 contentDescription = R.string.profile,
-                size = 65.dp,
-                nullIsLoading = true
+                shimmer = if (isLoading) rememberShimmer(ShimmerBounds.Window) else null
             )
         }
     }
