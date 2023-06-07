@@ -11,7 +11,6 @@ import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.FriendRequests
 import ro.bankar.database.User
@@ -143,8 +142,7 @@ fun Route.configureUserProfiles() {
             newSuspendedTransaction {
                 data.about?.let { user.about = it }
                 data.avatar?.let {
-                    user.avatar = null
-                    user.avatar = ExposedBlob(it)
+                    user.avatar = it
                 }
             }
             call.respondSuccess()

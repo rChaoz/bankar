@@ -7,13 +7,28 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.SizedCollection
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import org.jetbrains.exposed.sql.update
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
-import ro.bankar.model.*
+import ro.bankar.model.SDefaultBankAccount
+import ro.bankar.model.SDirection
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
+import ro.bankar.model.SNewUser
+import ro.bankar.model.SPublicUser
+import ro.bankar.model.SUser
 import ro.bankar.sha256
 import ro.bankar.util.nowUTC
 import kotlin.time.Duration.Companion.days
@@ -80,7 +95,8 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         /**
          * Get a user by session token
          */
-        fun findBySessionToken(token: String) = find { (Users.sessionToken eq token) and (Users.sessionTokenExpiration greater Clock.System.nowUTC()) }.firstOrNull()
+        fun findBySessionToken(token: String) =
+            find { (Users.sessionToken eq token) and (Users.sessionTokenExpiration greater Clock.System.nowUTC()) }.firstOrNull()
     }
 
     var email by Users.email
@@ -109,7 +125,18 @@ class User(id: EntityID<Int>) : IntEntity(id) {
 
     var joinDate by Users.joinDate
     var about by Users.about
-    var avatar by Users.avatar
+    private var _avatar by Users.avatar
+    private var _avatarSet = false
+    var avatar: ByteArray? = null
+        @Synchronized get() = if (_avatarSet) field else _avatar?.inputStream?.readBytes().also { field = it; _avatarSet = true }
+        @Synchronized set(value) {
+            field = value
+            // Required because, on set, Exposed will compare the new value with old to test whether it should update
+            // (which fails due to input stream not resettable, if the data has already been read)
+            _avatar = null
+            _avatar = value?.let { ExposedBlob(it) }
+            _avatarSet = true
+        }
 
     val bankAccounts by BankAccount referrersOn BankAccounts.userID
     val bankAccountIds get() = bankAccounts.map(BankAccount::id)
@@ -217,7 +244,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable() = SUser(
         email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state,
-        city, address, joinDate, about, avatar?.inputStream?.readBytes()
+        city, address, joinDate, about, avatar
     )
 
     /**
@@ -231,7 +258,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         countryCode,
         joinDate,
         about,
-        avatar?.inputStream?.readBytes(),
+        avatar,
         isFriend
     )
 
@@ -246,7 +273,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
         countryCode,
         joinDate,
         about,
-        avatar?.inputStream?.readBytes(),
+        avatar,
         direction
     )
 
@@ -265,7 +292,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
             countryCode,
             joinDate,
             about,
-            avatar?.inputStream?.readBytes(),
+            avatar,
             lastMessage?.serializable(user),
             unreadCount
         )
