@@ -374,8 +374,8 @@ private fun ReceivedTransferRequest(
         LoadingOverlay(showLoading) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-                    .padding(vertical = 24.dp)
                     .verticalScroll(rememberScrollState())
+                    .padding(vertical = 24.dp)
             ) {
                 if (request.partyID != null) Text(
                     text = stringResource(R.string.party_invitation),

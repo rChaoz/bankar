@@ -54,7 +54,9 @@ fun BottomDialog(
             ) {
                 CompositionLocalProvider(LocalContext provides context) {
                     Column {
-                        content()
+                        Box(modifier = Modifier.weight(1f, false)) {
+                            content()
+                        }
                         Divider()
                         buttonBar()
                     }
