@@ -2,6 +2,7 @@ package ro.bankar.plugins
 
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.transactions.transaction
 import ro.bankar.database.AssetAccounts
 import ro.bankar.database.BankAccounts
@@ -17,7 +18,7 @@ import ro.bankar.database.TransferRequests
 import ro.bankar.database.UserMessages
 import ro.bankar.database.Users
 
-private val tables = listOf(
+private val tables = arrayOf(
     Users, FriendRequests, FriendPairs, UserMessages,
     BankAccounts, BankTransfers, BankCards, CardTransactions,
     Parties, PartyMembers, TransferRequests,
@@ -33,10 +34,16 @@ private fun Database.Companion.connect() = this.connect(
 
 fun Database.Companion.reset() {
     connect()
-    transaction { tables.reversed().forEach { SchemaUtils.drop(it) } }
+    @Suppress("SpellCheckingInspection")
+    transaction {
+        // Needed because Exposed doesn't handle circular dependencies
+        if (TransferRequests.exists()) exec("ALTER TABLE TRANSFERREQUESTS DROP CONSTRAINT FK_TRANSFERREQUESTS_PARTY_MEMBER__ID;")
+        if (BankAccounts.exists()) exec("ALTER TABLE BANKACCOUNTS DROP CONSTRAINT FK_BANKACCOUNTS_USER_ID__USER_ID;")
+        SchemaUtils.drop(*tables)
+    }
 }
 
 fun Database.Companion.init() {
     connect()
-    transaction { tables.forEach { SchemaUtils.create(it) } }
+    transaction { SchemaUtils.createMissingTablesAndColumns(*tables) }
 }
