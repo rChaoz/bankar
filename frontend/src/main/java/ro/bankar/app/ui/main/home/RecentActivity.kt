@@ -380,7 +380,9 @@ private fun ReceivedTransferRequest(
                 if (request.partyID != null) Text(
                     text = stringResource(R.string.party_invitation),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .align(Alignment.CenterHorizontally)
                 )
                 if (request.user.isFriend) {
                     Surface(

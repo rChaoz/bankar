@@ -248,7 +248,7 @@ private fun PickFriendsStep(model: CreatePartyScreenModel) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Box {
-                            Avatar(image = friend.avatar, modifier = Modifier.size(48.dp))
+                            Avatar(image = friend.avatar, size = 48.dp)
                             FilledIconButton(
                                 onClick = { model.added -= friend },
                                 modifier = Modifier
@@ -310,7 +310,7 @@ private fun PickFriendsStep(model: CreatePartyScreenModel) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Avatar(image = it.avatar, modifier = Modifier.size(48.dp))
+                        Avatar(image = it.avatar, size = 48.dp)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = it.fullName,
@@ -354,7 +354,7 @@ private fun ChooseAmountsStep(model: CreatePartyScreenModel) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Avatar(image = friend.avatar, modifier = Modifier.size(48.dp))
+                        Avatar(image = friend.avatar, size = 48.dp)
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = friend.firstName,

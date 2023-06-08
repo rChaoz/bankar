@@ -43,9 +43,8 @@ fun ProfileRibbon(image: ByteArray?, modifier: Modifier, isLoading: Boolean, onC
         ) {
             Avatar(
                 image = image,
-                modifier = Modifier
-                    .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    .size(65.dp),
+                modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                size = 65.dp,
                 contentDescription = R.string.profile,
                 shimmer = if (isLoading) rememberShimmer(ShimmerBounds.Window) else null
             )

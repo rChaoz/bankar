@@ -327,7 +327,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                                                 Text(text = friend.unreadMessageCount.toString(), modifier = Modifier.semantics { contentDescription = desc })
                                             }
                                     }) {
-                                        Avatar(image = friend.avatar, modifier = Modifier.size(48.dp))
+                                        Avatar(image = friend.avatar, size = 48.dp)
                                     }
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -387,7 +387,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Avatar(image = friend.avatar, modifier = Modifier.size(48.dp))
+                                    Avatar(image = friend.avatar, size = 48.dp)
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = friend.fullName,
@@ -516,7 +516,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                             horizontalArrangement = Arrangement.spacedBy(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Avatar(image = req.avatar, modifier = Modifier.size(48.dp))
+                            Avatar(image = req.avatar, size = 48.dp)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = req.fullName,
@@ -560,7 +560,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                             horizontalArrangement = Arrangement.spacedBy(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Avatar(image = req.avatar, modifier = Modifier.size(48.dp))
+                            Avatar(image = req.avatar, size = 48.dp)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = req.fullName,

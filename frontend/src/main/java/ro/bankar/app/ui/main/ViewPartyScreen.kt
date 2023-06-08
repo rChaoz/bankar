@@ -58,7 +58,7 @@ import ro.bankar.model.SPublicUserBase
 fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
-    val partyState = repository.partyData(partyID).also { it.requestEmit() }.collectAsState(null)
+    val partyState = remember { repository.partyData(partyID).also { it.requestEmit() } }.collectAsState(null)
     val party = partyState.value
 
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
@@ -74,6 +74,7 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
         isLoading = isLoading,
         snackbar = snackbar,
         cancelText = R.string.close,
+        // TODO If not host, show accept/decline buttons
         confirmText = R.string.cancel_party,
         onConfirm = {
             scope.launch {
@@ -179,12 +180,16 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                         )
                     }
                 } else SurfaceList(modifier = Modifier.padding(vertical = 12.dp)) {
+                    // Show self first, highlighted
+                    party.members.find { !it.profile.isFriend }?.let {
+                        Surface(tonalElevation = 2.dp) {
+                            PartyMember(it, currency = party.currency, showYou = true)
+                        }
+                    }
+                    // Then the other members
                     for (member in party.members) {
                         if (member.profile.isFriend) Surface(onClick = { onNavigateToFriend(member.profile) }) {
                             PartyMember(member, currency = party.currency)
-                        }
-                        else Surface {
-                            PartyMember(member, currency = party.currency, showYou = true)
                         }
                     }
                 }
@@ -200,7 +205,7 @@ private fun PartyMember(member: SPartyMember, currency: Currency, showYou: Boole
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Avatar(image = member.profile.avatar, modifier = Modifier.size(48.dp))
+        Avatar(image = member.profile.avatar, size = 48.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (showYou) stringResource(R.string.you_brackets_s, member.profile.firstName) else member.profile.firstName,
