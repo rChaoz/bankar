@@ -39,6 +39,24 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
     var total by Parties.total
     var note by Parties.note
     val members by PartyMember referrersOn PartyMembers.party
+    var completed by Parties.completed
+
+    /**
+     * Cancel the party and delete all pending requests. If there are no accepted requests, the party will be deleted.
+     * @return true if the party was cancelled (wasn't already completed)
+     */
+    fun cancel(): Boolean {
+        if (completed) return false
+        var hasAccepted = false
+        for (member in members) {
+            member.request?.decline()
+            if (member.transfer != null) hasAccepted = true
+        }
+        // This will cascade delete all party members
+        if (!hasAccepted) delete()
+        else completed = true
+        return true
+    }
 
     fun serializable(user: User) = SPartyInformation(
         hostAccount.user.takeIf { it.id != user.id }?.publicSerializable(true),
@@ -56,4 +74,7 @@ internal object Parties : IntIdTable() {
     val hostAccount = reference("host", BankAccounts)
     val total = amount("total")
     val note = varchar("note", 100)
+    // If true, the party is completed and there are no more pending requests
+    // "Completed" doesn't mean that all requests were accepted. A completed party will appear in the history of all members that accepted the invite
+    val completed = bool("completed").default(false)
 }

@@ -170,6 +170,7 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
     val currency = currency("currency")
     val note = varchar("note", 200)
     val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
+    val party = reference("party", Parties).nullable()
 
     init {
         check("sender_or_recipient_not_null") { sender.isNotNull() or recipient.isNotNull() }
