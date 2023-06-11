@@ -307,4 +307,6 @@
     <string name="to_date">To date</string>
     <string name="name">Name</string>
     <string name="messages">Messages</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
 </resources>

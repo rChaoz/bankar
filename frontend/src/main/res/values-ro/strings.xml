@@ -304,4 +304,6 @@
     <string name="to_date">Până la data de</string>
     <string name="name">Nume</string>
     <string name="messages">Mesaje</string>
+    <string name="today">Astăzi</string>
+    <string name="yesterday">Ieri</string>
 </resources>

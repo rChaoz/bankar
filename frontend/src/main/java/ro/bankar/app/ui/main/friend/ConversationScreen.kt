@@ -1,6 +1,7 @@
 package ro.bankar.app.ui.main.friend
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,8 +59,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.toJavaLocalDate
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -79,6 +85,8 @@ import ro.bankar.model.SuccessResponse
 import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.todayHere
+import ro.bankar.util.utcToHere
+import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
 class ConversationScreenModel : ViewModel() {
@@ -115,6 +123,9 @@ class ConversationScreenModel : ViewModel() {
         }
     }
 }
+
+private val weekdayFormatter = DateTimeFormatter.ofPattern("EEEE")
+private val sameYearFormatter = DateTimeFormatter.ofPattern("dd MMM")
 
 @Composable
 fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
@@ -209,6 +220,32 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = if (item.direction == SDirection.Sent) Alignment.End else Alignment.Start
                         ) {
+                            val today = Clock.System.todayHere()
+                            val yesterday = today - DatePeriod(days = 1)
+                            val date = item.dateTime.utcToHere().date
+                            val differentDate = if ((it == conv.lastIndex && date != today)
+                                || (it != conv.lastIndex && date != conv[it + 1].dateTime.utcToHere().date)) {
+                                // Display a date badge for older messages
+                                val text = when(date) {
+                                    today -> stringResource(R.string.today)
+                                    yesterday -> stringResource(R.string.yesterday)
+                                    in (today - DatePeriod(days = 7))..today -> weekdayFormatter.format(date.toJavaLocalDate())
+                                    in LocalDate(today.year, Month.JANUARY, 1)..today -> sameYearFormatter.format(date.toJavaLocalDate())
+                                    else -> date.format(true)
+                                }
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .3f),
+                                    modifier = Modifier.padding(6.dp).align(Alignment.CenterHorizontally)
+                                ) {
+                                    Text(
+                                        text = text,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 12.dp)
+                                    )
+                                }
+                                true
+                            } else false
                             Surface(
                                 modifier = if (item.direction == SDirection.Sent) Modifier.padding(start = 50.dp) else Modifier.padding(end = 50.dp),
                                 shadowElevation = 1.dp,
@@ -222,11 +259,10 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                                         .run { if (item.direction == SDirection.Sent) padding(end = 8.dp) else padding(start = 8.dp) }
                                 )
                             }
-                            if (it == 0 || conv[it - 1].direction != item.direction || conv[it - 1].dateTime.date != item.dateTime.date
-                                || conv[it - 1].dateTime.hour != item.dateTime.hour || conv[it - 1].dateTime.minute != item.dateTime.minute
-                            )
+                            if (it == 0 || differentDate || conv[it - 1].dateTime.hour != item.dateTime.hour
+                                || conv[it - 1].dateTime.minute != item.dateTime.minute)
                                 Text(
-                                    text = item.dateTime.toInstant(TimeZone.UTC).here().format(),
+                                    text = item.dateTime.toInstant(TimeZone.UTC).here().time.format(),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.outline,
                                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -235,7 +271,7 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                     }
                 }
                 val context = LocalContext.current
-                Surface(tonalElevation = 2.dp, shadowElevation = 1.dp) {
+                Surface(tonalElevation = 1.dp, border = BorderStroke(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant)) {
                     Row(modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         TextField(
                             value = model.message,
