@@ -23,9 +23,11 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +40,7 @@ import kotlinx.serialization.json.Json
 import ro.bankar.app.TAG
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
+import ro.bankar.model.Response
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankTransfer
@@ -342,11 +345,15 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
 
     private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
         override suspend fun emit(): T? {
-            val result = client.safeRequest<T> { get(url) }
-            if (result is RequestSuccess) {
-                val response = result.response
+            try {
+                val result = client.get(url)
+                if (result.status == HttpStatusCode.Unauthorized) onLogout()
+                val response = result.body<Response<T>>()
                 if (response is ValueResponse) return response.value
                 else Log.w(TAG, "Invalid server response for flow \"$url\": $response")
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.w(TAG, "Exception in repository flow", e)
             }
             return null
         }

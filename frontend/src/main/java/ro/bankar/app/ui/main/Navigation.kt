@@ -13,6 +13,7 @@ import com.google.accompanist.navigation.animation.composable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ro.bankar.app.Nav
 import ro.bankar.app.ui.main.friend.ConversationScreen
 import ro.bankar.app.ui.main.friend.FriendProfileScreen
 import ro.bankar.app.ui.main.friend.RequestMoneyScreen
@@ -97,7 +98,11 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         }
         // Profile & bank accounts
         composable(MainNav.Profile.route) {
-            ProfileScreen(onDismiss = controller::popBackStack)
+            ProfileScreen(onDismiss = controller::popBackStack, onLogout = {
+                controller.navigate(Nav.NewUser.route) {
+                    popUpTo(Nav.Main.route) { inclusive = true }
+                }
+            })
         }
         composable(MainNav.NewBankAccount.route) {
             NewBankAccountScreen(onDismiss = controller::popBackStack)

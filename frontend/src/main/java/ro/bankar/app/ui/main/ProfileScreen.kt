@@ -216,7 +216,7 @@ class ProfileScreenModel : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, InternalComposeApi::class)
 @Composable
-fun ProfileScreen(onDismiss: () -> Unit) {
+fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
     val model = viewModel<ProfileScreenModel>()
     val repository = LocalRepository.current
     val snackbar = remember { SnackbarHostState() }
@@ -271,7 +271,10 @@ fun ProfileScreen(onDismiss: () -> Unit) {
     InfoDialog(state = logoutDialogState, selection = InfoSelection(
         negativeButton = SelectionButton(android.R.string.cancel),
         positiveButton = SelectionButton(R.string.exit),
-        onPositiveClick = { repository.logout() }
+        onPositiveClick = {
+            repository.logout()
+            onLogout()
+        }
     ), body = InfoBody.Default(
         bodyText = stringResource(R.string.confirm_logout),
         preBody = { Text(text = stringResource(R.string.logout), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 18.dp)) }
@@ -688,7 +691,7 @@ fun ProfileScreen(onDismiss: () -> Unit) {
 @Composable
 private fun ProfilePreview() {
     AppTheme {
-        ProfileScreen(onDismiss = {})
+        ProfileScreen(onDismiss = {}, onLogout = {})
     }
 }
 
@@ -696,6 +699,6 @@ private fun ProfilePreview() {
 @Composable
 private fun WelcomeScreenPreviewDark() {
     AppTheme {
-        ProfileScreen(onDismiss = {})
+        ProfileScreen(onDismiss = {}, onLogout = {})
     }
 }
