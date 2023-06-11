@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerScope
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +29,8 @@ import kotlin.math.sign
 @Composable
 fun PagerTabs(
     tabs: List<Int>,
-    pagerState: PagerState = rememberPagerState(0),
-    tabContent: @Composable (Int) -> Unit
+    pagerState: PagerState = rememberPagerState { tabs.size },
+    tabContent: @Composable PagerScope.(Int) -> Unit
 ) {
     val scope = rememberCoroutineScope()
 
@@ -62,7 +63,6 @@ fun PagerTabs(
             }
         }
         HorizontalPager(
-            pageCount = tabs.size,
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
             pageContent = tabContent

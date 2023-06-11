@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android)
 
     id("org.jetbrains.kotlin.plugin.serialization")
+    // For Firebase
+    id("com.google.gms.google-services") version "4.3.15"
 }
 
 android {
@@ -87,6 +89,9 @@ dependencies {
     implementation(libs.io.ktor.client.okhttp)
     implementation(libs.io.ktor.content.negotiation)
     implementation(libs.io.ktor.serialization.json)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)

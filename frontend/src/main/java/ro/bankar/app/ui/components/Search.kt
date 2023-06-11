@@ -10,7 +10,7 @@ import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOut
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -88,7 +88,7 @@ private fun SearchField(isSearchOpen: Boolean, onSearchOpenChange: (Boolean) -> 
                 targetState = isSearchOpen,
                 label = "Search Everything Icon",
                 transitionSpec = {
-                    (slideIn { IntOffset(-it.width, 0) } + fadeIn() with slideOut { IntOffset(-it.width, 0) } + fadeOut())
+                    ((slideIn { IntOffset(-it.width, 0) } + fadeIn()) togetherWith slideOut { IntOffset(-it.width, 0) } + fadeOut())
                         .using(SizeTransform(clip = false))
                 }
             ) {

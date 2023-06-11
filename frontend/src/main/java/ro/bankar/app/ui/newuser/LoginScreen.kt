@@ -11,7 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -227,9 +227,9 @@ fun LoginScreen(onSignUp: () -> Unit, onSuccess: () -> Unit) {
                                 label = "Login Step Animation",
                                 transitionSpec = {
                                     if (targetState.ordinal > initialState.ordinal) {
-                                        (slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w })
+                                        (slideInHorizontally { w -> w } togetherWith slideOutHorizontally { w -> -w })
                                     } else {
-                                        (slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w })
+                                        (slideInHorizontally { w -> -w } togetherWith slideOutHorizontally { w -> w })
                                     }
                                 }
                             ) {

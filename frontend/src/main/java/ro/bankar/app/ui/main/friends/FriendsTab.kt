@@ -48,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -112,7 +113,7 @@ import ro.bankar.model.SuccessResponse
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
-        var currentTabIndex by mutableStateOf(0)
+        var currentTabIndex by mutableIntStateOf(0)
 
         // Data
         var friends by mutableStateOf<List<SFriend>?>(null)
@@ -261,7 +262,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
             }
         }
 
-        val pagerState = rememberPagerState(0)
+        val pagerState = rememberPagerState { tabs.size }
         val scope = rememberCoroutineScope()
         model.currentTabIndex = pagerState.currentPage
         model.onGoToFriendsTab = { scope.launch { pagerState.animateScrollToPage(FriendsTabs.Friends.index) } }

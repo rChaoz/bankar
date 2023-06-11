@@ -10,7 +10,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -423,11 +423,11 @@ fun SignUpScreen(onSignIn: () -> Unit, onSuccess: () -> Unit) {
                                 label = "Login Step Animation",
                                 transitionSpec = {
                                     if (targetState == SignUpStep.SmsCode || initialState == SignUpStep.SmsCode)
-                                        EnterTransition.None with ExitTransition.None
+                                        EnterTransition.None togetherWith ExitTransition.None
                                     else if (targetState.ordinal > initialState.ordinal) {
-                                        (slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w })
+                                        (slideInHorizontally { w -> w } togetherWith slideOutHorizontally { w -> -w })
                                     } else {
-                                        (slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w })
+                                        (slideInHorizontally { w -> -w } togetherWith slideOutHorizontally { w -> w })
                                     }
                                 }
                             ) {

@@ -11,7 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -186,7 +186,7 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     targetState = tab,
                     label = "TopBar title change",
                     modifier = Modifier.layoutId("title"),
-                    transitionSpec = { fadeIn() with fadeOut() }
+                    transitionSpec = { fadeIn() togetherWith fadeOut() }
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val model = it.viewModel()
@@ -286,9 +286,9 @@ private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (Main
                     label = "Main Tab",
                     transitionSpec = {
                         if (targetState.index > initialState.index)
-                            slideInHorizontally { it / 4 } + fadeIn() with slideOutHorizontally { -it / 4 } + fadeOut()
+                            slideInHorizontally { it / 4 } + fadeIn() togetherWith slideOutHorizontally { -it / 4 } + fadeOut()
                         else
-                            slideInHorizontally { -it / 4 } + fadeIn() with slideOutHorizontally { it / 4 } + fadeOut()
+                            slideInHorizontally { -it / 4 } + fadeIn() togetherWith slideOutHorizontally { it / 4 } + fadeOut()
                     }
                 ) {
                     it.Content(it.viewModel(), navigation)

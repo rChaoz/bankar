@@ -7,7 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -163,8 +163,8 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, account: Int
             targetState = model.step,
             label = "Party step animation",
             transitionSpec = {
-                if (targetState.ordinal > initialState.ordinal) slideInHorizontally { w -> w } with slideOutHorizontally { w -> -w }
-                else slideInHorizontally { w -> -w } with slideOutHorizontally { w -> w }
+                if (targetState.ordinal > initialState.ordinal) slideInHorizontally { w -> w } togetherWith slideOutHorizontally { w -> -w }
+                else slideInHorizontally { w -> -w } togetherWith slideOutHorizontally { w -> w }
             }
         ) {
             when (it) {

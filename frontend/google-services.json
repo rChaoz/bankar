@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "751623152233",
+    "project_id": "bankar-app",
+    "storage_bucket": "bankar-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:751623152233:android:3e896300156e5ec80e78f8",
+        "android_client_info": {
+          "package_name": "ro.bankar.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "751623152233-c2aqb0inv7rvf6masdla9mchrh7mdl6k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDo-oRZRjkHByj5WdNlMokWtxnmTRkXaVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "751623152233-c2aqb0inv7rvf6masdla9mchrh7mdl6k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
