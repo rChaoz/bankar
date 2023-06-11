@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.datetime.Clock
@@ -102,7 +103,7 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
+                    .border(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
                 tonalElevation = 1.dp,
                 shadowElevation = 1.dp,
                 shape = RoundedCornerShape(8.dp),

@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +42,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -160,17 +158,8 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
         model.repository.friends.requestEmit()
     }
 
-    FriendScreen(onDismiss = { navigation.popBackStack() }, user, dropdownMenuContent = {
-        DropdownMenuItem(
-            leadingIcon = { Icon(painter = painterResource(R.drawable.transfer), contentDescription = null) },
-            text = { Text(text = stringResource(R.string.send_money)) },
-            onClick = { it(); navigation.navigate(MainNav.SendMoney(user)) }
-        )
-        DropdownMenuItem(
-            leadingIcon = { Icon(painter = painterResource(R.drawable.transfer_request), contentDescription = null) },
-            text = { Text(text = stringResource(R.string.request_money)) },
-            onClick = { it(); navigation.navigate(MainNav.RequestMoney(user)) }
-        )
+    FriendScreen(onDismiss = { navigation.popBackStack() }, user, dropdownMenu = { expanded, onDismiss ->
+        FriendDropdown(expanded, onDismiss, navigation, user)
     }, onClickOnUser = { navigation.navigate(MainNav.Friend(user)) }) {
         val conv = model.conversation
         if (conv != null) {
@@ -236,7 +225,9 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                                 Surface(
                                     shape = MaterialTheme.shapes.small,
                                     color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .3f),
-                                    modifier = Modifier.padding(6.dp).align(Alignment.CenterHorizontally)
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .align(Alignment.CenterHorizontally)
                                 ) {
                                     Text(
                                         text = text,

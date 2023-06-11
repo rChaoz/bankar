@@ -306,4 +306,6 @@
     <string name="messages">Mesaje</string>
     <string name="today">Astăzi</string>
     <string name="yesterday">Ieri</string>
+    <string name="unfriend">Scoate din lista de prieteni</string>
+    <string name="unfriend_confirm">Sigur vrei să îl scoți pe \'%s\' din lista ta de prieteni?</string>
 </resources>

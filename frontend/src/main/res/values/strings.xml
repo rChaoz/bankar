@@ -309,4 +309,6 @@
     <string name="messages">Messages</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday</string>
+    <string name="unfriend">Unfriend</string>
+    <string name="unfriend_confirm">Are you sure you want to remove \'%s\' from your friend list?</string>
 </resources>

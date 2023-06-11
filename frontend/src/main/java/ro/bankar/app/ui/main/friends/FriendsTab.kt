@@ -98,6 +98,7 @@ import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.main.friend.FriendCard
+import ro.bankar.app.ui.main.friend.FriendDropdown
 import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
@@ -268,7 +269,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         model.onGoToFriendsTab = { scope.launch { pagerState.animateScrollToPage(FriendsTabs.Friends.index) } }
 
         PagerTabs(tabs = tabs.map { it.title }, pagerState = pagerState) {
-            tabs[it].Content(model, repository)
+            tabs[it].Content(model, repository, navigation)
         }
     }
 
@@ -289,13 +290,13 @@ private val tabs = listOf(FriendsTabs.Conversations, FriendsTabs.Friends, Friend
 
 private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: Int?) {
     @Composable
-    abstract fun Content(model: FriendsTab.Model, repository: Repository)
+    abstract fun Content(model: FriendsTab.Model, repository: Repository, navigation: NavHostController)
     abstract fun fabAction(model: FriendsTab.Model)
 
     object Conversations : FriendsTabs(0, R.string.conversations, null) {
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
-        override fun Content(model: FriendsTab.Model, repository: Repository) {
+        override fun Content(model: FriendsTab.Model, repository: Repository, navigation: NavHostController) {
             @Suppress("DEPRECATION") val swipeRefreshState = rememberSwipeRefreshState(model.isRefreshing)
             @Suppress("DEPRECATION") SwipeRefresh(state = swipeRefreshState, onRefresh = model::refresh) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -350,6 +351,13 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                                             )
                                         }
                                     }
+                                    Box {
+                                        var expanded by remember { mutableStateOf(false) }
+                                        IconButton(onClick = { expanded = true }) {
+                                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                                        }
+                                        FriendDropdown(expanded, onDismiss = { expanded = false }, navigation, user = friend)
+                                    }
                                 }
                             }
                         }
@@ -363,7 +371,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
 
     object Friends : FriendsTabs(1, R.string.friends, R.string.create_party) {
         @Composable
-        override fun Content(model: FriendsTab.Model, repository: Repository) {
+        override fun Content(model: FriendsTab.Model, repository: Repository, navigation: NavHostController) {
             val scrollState = rememberScrollState()
             HideFABOnScroll(state = scrollState, setFABShown = model.scrollShowFAB.component2())
 
@@ -397,9 +405,12 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                                         )
                                         Text(text = "@${friend.tag}", style = MaterialTheme.typography.titleSmall)
                                     }
-                                    // TODO Implement menu to allow remove friend, more options
-                                    IconButton(onClick = { /*TODO*/ }) {
-                                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                                    Box {
+                                        var expanded by remember { mutableStateOf(false) }
+                                        IconButton(onClick = { expanded = true }) {
+                                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.options))
+                                        }
+                                        FriendDropdown(expanded, onDismiss = { expanded = false }, navigation, user = friend)
                                     }
                                 }
                             }
@@ -415,7 +426,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
     object FriendRequests : FriendsTabs(2, R.string.requests, R.string.add_friend) {
         @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
         @Composable
-        override fun Content(model: FriendsTab.Model, repository: Repository) {
+        override fun Content(model: FriendsTab.Model, repository: Repository, navigation: NavHostController) {
             // Show information about friend request
             val (requestInfo, setRequestInfo) = rememberSaveable(stateSaver = serializableSaver<SFriendRequest?>()) { mutableStateOf(null) }
 

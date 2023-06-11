@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.lifecycle.ViewModel
@@ -397,7 +398,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
+                            .border(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
                         tonalElevation = 1.dp,
                         shape = RoundedCornerShape(8.dp),
                     ) {
