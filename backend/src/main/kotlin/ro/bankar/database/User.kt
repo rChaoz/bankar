@@ -105,6 +105,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var disabled by Users.disabled
     var defaultAccount by BankAccount optionalReferencedOn Users.defaultAccount
     var alwaysUseDefaultAccount by Users.alwaysUseDefaultAccount
+    var notificationToken by Users.notificationToken
 
     private var passwordHash by Users.passwordHash
     private var passwordSalt by Users.passwordSalt
@@ -327,6 +328,7 @@ internal object Users : IntIdTable(columnName = "user_id") {
 
     val defaultAccount = reference("default_account", BankAccounts, onDelete = ReferenceOption.SET_NULL).nullable()
     val alwaysUseDefaultAccount = bool("always_use_default_account").default(false)
+    val notificationToken = varchar("notification_token", 200).nullable()
 
     val passwordHash = binary("password_hash", 256)
     val passwordSalt = binary("password_salt", 256)

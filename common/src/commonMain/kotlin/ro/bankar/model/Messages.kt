@@ -14,6 +14,9 @@ data class SUserMessage(
 typealias SConversation = List<SUserMessage>
 
 @Serializable
+data class SMessagingToken(val token: String)
+
+@Serializable
 data class SSendMessage(
     val message: String,
     val recipientTag: String

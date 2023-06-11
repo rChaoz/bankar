@@ -16,12 +16,11 @@ import java.util.concurrent.CancellationException
 
 val activeSockets: MutableMap<Int, DefaultWebSocketServerSession> = Collections.synchronizedMap(HashMap())
 
-suspend fun sendNotificationToUser(userID: EntityID<Int>, notification: SSocketNotification) {
+suspend fun sendNotificationToUser(userID: EntityID<Int>, notification: SSocketNotification): Boolean =
     // Encode to string is needed because we want to use SSocketNotification serializer (which is extracted from type, as
     // type is reified for Json.encodeToString) instead of the specific class serializer (e.g. SMessageNotification), to correctly
     // serialize the polymorphic classes
-    activeSockets[userID.value]?.send(Json.encodeToString(notification))
-}
+    activeSockets[userID.value]?.run { send(Json.encodeToString(notification)); true } ?: false
 
 fun Route.configureSockets() {
     webSocket("socket") {

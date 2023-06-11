@@ -124,7 +124,7 @@ class LoginModel : ViewModel() {
         usernameOrPasswordError = null
         try {
             // We need access to headers, so manually call instead of using safeRequest
-            val response = basicClient.post {
+            val response = basicClient.post("login/initial") {
                 // Allow the user to input tag prefixed with '@' symbol
                 setBody(SInitialLoginData(username.trim().removePrefix("@"), password))
             }

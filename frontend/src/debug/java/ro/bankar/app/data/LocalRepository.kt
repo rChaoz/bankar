@@ -279,6 +279,7 @@ private object MockRepository : Repository() {
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(Uri.parse("http://example.com"))
 
     override fun logout() {}
+    override fun initNotifications() {}
 
     init {
         init()

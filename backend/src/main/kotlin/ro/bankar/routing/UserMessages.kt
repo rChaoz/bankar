@@ -8,8 +8,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import ro.bankar.api.NotificationService
 import ro.bankar.database.User
 import ro.bankar.database.serializable
+import ro.bankar.model.SMessagingToken
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSocketNotification
 import ro.bankar.plugins.UserPrincipal
@@ -35,10 +37,22 @@ fun Route.configureUserMessaging() {
                     user.updateLastOpenedConversationWith(recipient)
                     user.sendMessage(recipient, request.message.trim())
                     // Notify recipient if he is connected
-                    sendNotificationToUser(recipient.id, SSocketNotification.SMessageNotification(user.tag))
+                    if (!sendNotificationToUser(recipient.id, SSocketNotification.SMessageNotification(user.tag)))
+                        // Otherwise, send a push notification
+                        NotificationService.sendMessageNotification(user, recipient, request.message)
                     call.respondSuccess()
                 }
             }
+        }
+
+        post("register") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val token = call.receive<SMessagingToken>().token
+            if (token.isBlank()) {
+                call.respondInvalidParam("token"); return@post
+            }
+            newSuspendedTransaction { user.notificationToken = token }
+            call.respondSuccess()
         }
 
         get("conversation/{id}") {

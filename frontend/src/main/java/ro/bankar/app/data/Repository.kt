@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
@@ -46,6 +47,7 @@ import ro.bankar.model.SCustomiseBankAccount
 import ro.bankar.model.SDefaultBankAccount
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
+import ro.bankar.model.SMessagingToken
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SPartyInformation
@@ -144,6 +146,7 @@ abstract class Repository {
     abstract fun createDownloadStatementRequest(statement: SStatement): DownloadManager.Request
 
     abstract fun logout()
+    abstract fun initNotifications()
 
     // Load data on Repository creation to avoid having to wait when going to each screen
     protected fun init() {
@@ -159,6 +162,8 @@ abstract class Repository {
         friendRequests.requestEmit()
         // Account statements
         statements.requestEmit()
+        // Initialize push notifications
+        initNotifications()
     }
 }
 
@@ -350,6 +355,12 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     override fun logout() {
         scope.launch { client.safeRequest<Unit> { get("signout") } }
         onLogout()
+    }
+
+    override fun initNotifications() {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener {
+            scope.launch { client.safeRequest<Unit> { post("messaging/register") { setBody(SMessagingToken(it)) } } }
+        }
     }
 
     init {

@@ -303,4 +303,5 @@
     <string name="from_date">De la data de</string>
     <string name="to_date">Până la data de</string>
     <string name="name">Nume</string>
+    <string name="messages">Mesaje</string>
 </resources>

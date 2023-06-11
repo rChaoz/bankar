@@ -2,7 +2,6 @@ package ro.bankar.app
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -36,7 +35,6 @@ import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
-import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -166,9 +164,6 @@ private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, 
                 onDispose {
                     lifecycle.removeObserver(observer)
                 }
-            }
-            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                Log.d(TAG, "Firebase token: $token")
             }
 
             CompositionLocalProvider(LocalRepository provides repository) {

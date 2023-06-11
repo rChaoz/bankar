@@ -22,6 +22,7 @@ shimmer-compose = "1.0.4"
 compose-settings = "0.26.0"
 androidx-biometric = "1.1.0"
 firebase-bom = "32.1.0"
+firebase-admin = "9.1.1"
 
 [libraries]
 com-android-tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "com-android-tools-desugaring" }
@@ -61,7 +62,7 @@ compose-settings-datastore-preferences = { group = "com.github.alorma", name = "
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
-
+firebase-admin = { group = "com.google.firebase", name = "firebase-admin", version.ref = "firebase-admin" }
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "com-android-application" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }
