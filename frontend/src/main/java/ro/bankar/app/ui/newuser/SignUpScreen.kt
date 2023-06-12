@@ -68,6 +68,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -106,6 +107,7 @@ import ro.bankar.app.data.RequestSuccess
 import ro.bankar.app.data.basicClient
 import ro.bankar.app.data.fold
 import ro.bankar.app.data.handle
+import ro.bankar.app.data.safeRawRequest
 import ro.bankar.app.data.safeRequest
 import ro.bankar.app.setPreference
 import ro.bankar.app.ui.components.ButtonField
@@ -127,7 +129,6 @@ import ro.bankar.model.SNewUser
 import ro.bankar.model.SSMSCodeData
 import ro.bankar.model.SUserValidation
 import ro.bankar.model.SuccessResponse
-import ro.bankar.model.ValueResponse
 import ro.bankar.util.format
 import ro.bankar.util.todayHere
 
@@ -344,15 +345,12 @@ class SignUpModel : ViewModel() {
 
     // Load country data, ignore errors silently
     suspend fun loadCountries() {
-        val result = basicClient.safeRequest<SCountries> { get("data/countries.json") }
+        val result = basicClient.safeRawRequest<SCountries> { get("data/countries.json") }
         if (result is RequestSuccess) {
-            val r = result.response
-            if (r is ValueResponse) {
-                countries = r.value
-                country.value = r.value[0]
-                state.value = r.value[0].states[0]
-            }
-        }
+            countries = result.response
+            country.value = result.response[0]
+            state.value = result.response[0].states[0]
+        } // else, fail silently (error will be displayed later)
     }
 }
 
@@ -777,7 +775,7 @@ private fun PhoneNumberStep(model: SignUpModel) {
                     supportingText = { Text(text = model.codeError) },
                     isError = model.codeError.isNotEmpty(),
                     placeholder = { Text(text = "123456") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { model.onNext(context, focusManager) })
                 )
             }

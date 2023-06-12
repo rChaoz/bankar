@@ -130,8 +130,8 @@ fun Route.configureBankTransfers() {
                 party
             } ?: return@get
 
-            // Delete the party associated with this request if everyone has responded
-            newSuspendedTransaction { if (party.members.all { it.request == null }) party.delete() }
+            // If every invitee has responded, mark the party as completed
+            newSuspendedTransaction { if (party.members.all { it.request == null }) party.completed = true }
         }
 
         get("cancel/{id}") {

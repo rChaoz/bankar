@@ -51,6 +51,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
 
     val cards by BankCard referrersOn BankCards.bankAccount
     val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or (BankTransfers.recipient eq id) }
+    val parties by Party referrersOn Parties.hostAccount
 
     /**
      * Returns a serializable object containing the data for this bank account
@@ -58,7 +59,8 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     fun serializable(user: User) = SBankAccountData(
         cards.map(BankCard::serializable),
         transfers.orderBy(BankTransfers.dateTime to SortOrder.DESC).serializable(user),
-        cards.flatMap { it.transactions.serializable() }
+        cards.flatMap { it.transactions.serializable() },
+        parties.orderBy(Parties.dateTime to SortOrder.DESC).previewSerializable(),
     )
 }
 

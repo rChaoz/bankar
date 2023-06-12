@@ -45,21 +45,22 @@ val basicClient = HttpClient(OkHttp) {
  */
 sealed class RequestResult<T>
 class RequestFail<T>(val message: Int) : RequestResult<T>()
-class RequestSuccess<T>(val response: Response<T>) : RequestResult<T>()
+class RequestSuccess<T>(val response: T) : RequestResult<T>()
+typealias ResponseRequestResult<T> = RequestResult<Response<T>>
 
 // Utility functions for dealing with RequestResults
-inline fun <T, R> RequestResult<T>.fold(onFail: (Int) -> R, onSuccess: (Response<T>) -> R) = when (this) {
+inline fun <T, R> RequestResult<T>.fold(onFail: (Int) -> R, onSuccess: (T) -> R) = when (this) {
     is RequestFail -> onFail(message)
     is RequestSuccess -> onSuccess(response)
 }
 
 // With snackbar
-inline fun <T> RequestResult<T>.handle(scope: CoroutineScope, snackbar: SnackbarHostState, context: Context, onResponse: (Response<T>) -> String?) = fold(
+inline fun <T> RequestResult<T>.handle(scope: CoroutineScope, snackbar: SnackbarHostState, context: Context, onResponse: (T) -> String?) = fold(
     onFail = { scope.launch { snackbar.show(context.getString(it)) } },
     onSuccess = { onResponse(it)?.let { r -> scope.launch { snackbar.show(r) } } }
 )
 
-inline fun <T> RequestResult<T>.handleSuccess(
+inline fun <T> RequestResult<Response<T>>.handleSuccess(
     scope: CoroutineScope,
     snackbar: SnackbarHostState,
     context: Context,
@@ -72,7 +73,7 @@ inline fun <T> RequestResult<T>.handleSuccess(
     }
 }
 
-inline fun <T> RequestResult<T>.handleValue(
+inline fun <T> RequestResult<Response<T>>.handleValue(
     scope: CoroutineScope,
     snackbar: SnackbarHostState,
     context: Context,
@@ -86,14 +87,14 @@ inline fun <T> RequestResult<T>.handleValue(
 }
 
 // With toast
-inline fun <T> RequestResult<T>.handle(context: Context, onResponse: (Response<T>) -> String?): Unit = fold(
+inline fun <T> RequestResult<T>.handle(context: Context, onResponse: (T) -> String?): Unit = fold(
     onFail = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() },
     onSuccess = {
         onResponse(it)?.let { r -> Toast.makeText(context, r, Toast.LENGTH_SHORT).show() }
     }
 )
 
-inline fun <T> RequestResult<T>.handleSuccess(context: Context, onSuccess: () -> Unit) = handle(context) {
+inline fun <T> RequestResult<Response<T>>.handleSuccess(context: Context, onSuccess: () -> Unit) = handle(context) {
     when (it) {
         SuccessResponse -> { onSuccess(); null }
         is InvalidParamResponse -> context.getString(R.string.invalid_field, it.param)
@@ -101,7 +102,10 @@ inline fun <T> RequestResult<T>.handleSuccess(context: Context, onSuccess: () ->
     }
 }
 
-suspend inline fun <reified T> HttpClient.safeRequest(crossinline request: suspend HttpClient.() -> HttpResponse): RequestResult<T> =
+suspend inline fun <reified T> HttpClient.safeRequest(crossinline request: suspend HttpClient.() -> HttpResponse): RequestResult<Response<T>> =
+    safeRawRequest(request)
+
+suspend inline fun <reified T> HttpClient.safeRawRequest(crossinline request: suspend HttpClient.() -> HttpResponse): RequestResult<T> =
     withContext(Dispatchers.IO) {
         runCatching { request() }.fold(
             onFailure = {

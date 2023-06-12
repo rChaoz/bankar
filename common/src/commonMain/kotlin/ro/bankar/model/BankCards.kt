@@ -1,5 +1,6 @@
 package ro.bankar.model
 
+import kotlinx.datetime.Month
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,7 +10,7 @@ data class SBankCard(
     val number: String?,
     val lastFour: String,
     val pin: String?,
-    val expirationMonth: Int?,
+    val expirationMonth: Month?,
     val expirationYear: Int?,
     val cvv: String?,
     val limit: Double,

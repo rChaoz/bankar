@@ -2,7 +2,6 @@ package ro.bankar.plugins
 
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.exists
 import org.jetbrains.exposed.sql.transactions.transaction
 import ro.bankar.database.AssetAccounts
 import ro.bankar.database.BankAccounts
@@ -37,8 +36,8 @@ fun Database.Companion.reset() {
     @Suppress("SpellCheckingInspection")
     transaction {
         // Needed because Exposed doesn't handle circular dependencies
-        if (TransferRequests.exists()) exec("ALTER TABLE TRANSFERREQUESTS DROP CONSTRAINT FK_TRANSFERREQUESTS_PARTY_MEMBER__ID;")
-        if (BankAccounts.exists()) exec("ALTER TABLE BANKACCOUNTS DROP CONSTRAINT FK_BANKACCOUNTS_USER_ID__USER_ID;")
+        exec("ALTER TABLE IF EXISTS TRANSFERREQUESTS DROP CONSTRAINT IF EXISTS FK_TRANSFERREQUESTS_PARTY_MEMBER__ID;")
+        exec("ALTER TABLE IF EXISTS BANKACCOUNTS DROP CONSTRAINT IF EXISTS FK_BANKACCOUNTS_USER_ID__USER_ID;")
         SchemaUtils.drop(*tables)
     }
 }

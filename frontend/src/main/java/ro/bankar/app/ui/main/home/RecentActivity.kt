@@ -1,38 +1,27 @@
 package ro.bankar.app.ui.main.home
 
 import android.content.res.Configuration
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -70,40 +58,28 @@ import ro.bankar.app.data.Repository
 import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.components.AcceptDeclineButtons
-import ro.bankar.app.ui.components.AccountsComboBox
-import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.FilledIcon
-import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.ReceivedTransferRequestDialog
 import ro.bankar.app.ui.components.RecentActivityRow
 import ro.bankar.app.ui.components.RecentActivityShimmerRow
-import ro.bankar.app.ui.components.Transaction
-import ro.bankar.app.ui.components.Transfer
+import ro.bankar.app.ui.components.SortedActivityItems
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
-import ro.bankar.app.ui.main.friend.FriendCard
-import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.rememberMockNavController
-import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SExchangeData
-import ro.bankar.banking.exchange
-import ro.bankar.banking.rate
-import ro.bankar.banking.reverseExchange
 import ro.bankar.model.SBankAccount
-import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SDirection
 import ro.bankar.model.SPartyPreview
 import ro.bankar.model.SPublicUser
 import ro.bankar.model.SRecentActivity
 import ro.bankar.model.STransferRequest
 import kotlin.math.abs
-import kotlin.math.absoluteValue
-import kotlin.math.sign
 
 class RecentActivityModel : ViewModel() {
     var countryData by mutableStateOf<SCountries?>(null)
@@ -138,8 +114,10 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
         icon = { Icon(painter = painterResource(R.drawable.baseline_recent_24), contentDescription = null) }) {
         if (recentActivity.isEmpty()) InfoCard(text = R.string.no_recent_activity, tonalElevation = 0.dp)
         else {
-            recentActivity.parties.forEach { party ->
-                CreatedParty(party, onNavigate = { navigation.navigate(MainNav.ViewParty(party.id)) })
+            val (completedParties, pendingParties) = recentActivity.parties.partition(SPartyPreview::completed)
+            // Display created parties & party invites first
+            pendingParties.forEach { party ->
+                PendingParty(party, onNavigate = { navigation.navigate(MainNav.ViewParty(party.id)) })
             }
             val (partyInvites, otherRequests) = recentActivity.transferRequests.partition { it.partyID != null }
             partyInvites.forEach { invitation ->
@@ -150,6 +128,7 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                     onNavigateToParty = { navigation.navigate(MainNav.ViewParty(it)) }
                 )
             }
+            // Then, display regular transfer requests
             otherRequests.forEach { request ->
                 if (request.direction == SDirection.Sent)
                     SentTransferRequest(
@@ -166,23 +145,10 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
                 )
             }
 
-            // Merge display transfers and transactions
+            // Finally, display transfers, transactions & completed parties
             val (transfers, transactions) = recentActivity
-            var transferI = 0
-            var transactionI = 0
-            // Limit total number of entries to 3
-            while (transferI + transactionI < 3 && (transferI < transfers.size || transactionI < transactions.size)) {
-                if (transferI < transfers.size && (transactionI >= transactions.size || transfers[transferI].dateTime > transactions[transactionI].dateTime))
-                    transfers[transferI++].let {
-                        Transfer(it, onNavigate = {
-                            navigation.navigate(if (it.sourceAccountID == null) MainNav.Transfer(it) else MainNav.SelfTransfer(it))
-                        })
-                    }
-                else {
-                    val transaction = transactions[transactionI++]
-                    Transaction(transaction, onNavigate = { navigation.navigate(MainNav.Transaction(transaction)) })
-                }
-            }
+            SortedActivityItems(transfers, transactions, completedParties, navigation)
+
             TextButton(
                 onClick = { navigation.navigate(MainNav.RecentActivity.route) },
                 modifier = Modifier
@@ -195,33 +161,15 @@ fun RecentActivity(recentActivity: SRecentActivity, accounts: List<SBankAccount>
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-private fun RecentActivityPreview() {
-    AppTheme {
-        LocalRepository.current.recentActivity.collectAsState(null).value?.let {
-            RecentActivity(it, emptyList(), rememberMockNavController())
-        } ?: RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
-    }
-}
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun RecentActivityPreviewDark() {
-    AppTheme {
-        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
-    }
-}
-
-@Composable
-private fun CreatedParty(party: SPartyPreview, onNavigate: () -> Unit) {
+private fun PendingParty(party: SPartyPreview, onNavigate: () -> Unit) {
     RecentActivityRow(onClick = onNavigate, elevated = true, icon = {
         FilledIcon(
             painter = painterResource(R.drawable.split_bill),
             contentDescription = null,
             color = MaterialTheme.colorScheme.primary,
         )
-    }, title = stringResource(R.string.my_party), subtitle = AnnotatedString(party.note)) {
+    }, title = stringResource(R.string.pending_party), subtitle = AnnotatedString(party.note)) {
         Column(horizontalAlignment = Alignment.End) {
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 Amount(amount = party.collected, currency = party.currency, textStyle = MaterialTheme.typography.titleSmall)
@@ -294,238 +242,26 @@ private fun ReceivedTransferRequest(
 ) {
     var isDeclining by rememberSaveable { mutableStateOf(false) }
     var dialogVisible by rememberSaveable { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val selectedAccount = rememberSaveable(stateSaver = serializableSaver()) { mutableStateOf(model.accounts.value.find { it.currency == request.currency }) }
-    val exchangeRate by remember {
-        derivedStateOf {
-            val account = selectedAccount.value ?: return@derivedStateOf null
-            if (account.currency == request.currency) return@derivedStateOf 1.0
-            model.exchangeData?.rate(
-                if (request.amount > 0) request.currency else account.currency,
-                if (request.amount > 0) account.currency else request.currency
-            )
-        }
-    }
-    val exchangedAmount by remember {
-        derivedStateOf {
-            val account = selectedAccount.value ?: return@derivedStateOf null
-            val data = model.exchangeData ?: return@derivedStateOf null
-            if (account.currency == request.currency) return@derivedStateOf request.amount.absoluteValue
-            if (request.amount > 0) data.exchange(request.currency, account.currency, request.amount)
-            else data.reverseExchange(account.currency, request.currency, -request.amount)
-        }
-    }
-
-    // Display transfer details with dialog
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    val showLoading by remember { derivedStateOf { isLoading || model.exchangeData == null } }
-    BottomDialog(
+    ReceivedTransferRequestDialog(
         visible = dialogVisible,
-        onDismissRequest = { dialogVisible = false },
-        buttonBar = {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                TextButton(onClick = { dialogVisible = false }, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(android.R.string.cancel))
-                }
-
-                val context = LocalContext.current
-                FilledTonalButton(
-                    enabled = !showLoading, onClick = {
-                        scope.launch {
-                            isLoading = true
-                            // Use toasts instead of snackbar because snackbar isn't visible over dialog
-                            model.repository.sendRespondToTransferRequest(request.id, false, null).handleSuccess(context) {
-                                model.repository.recentActivity.emitNow()
-                                dialogVisible = false
-                            }
-                            isLoading = false
-                        }
-                    }, modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = stringResource(R.string.decline))
-                }
-
-                Button(
-                    enabled = !showLoading && selectedAccount.value != null && exchangedAmount != null
-                            && (exchangedAmount!! <= selectedAccount.value!!.spendable || request.amount > 0), onClick = {
-                        scope.launch {
-                            val account = selectedAccount.value ?: return@launch
-                            isLoading = true
-                            // Use toasts instead of snackbar because snackbar isn't visible over dialog
-                            model.repository.sendRespondToTransferRequest(request.id, true, account.id).handleSuccess(context) {
-                                coroutineScope {
-                                    launch { model.repository.accounts.emitNow() }
-                                    launch { model.repository.recentActivity.emitNow() }
-                                }
-                                dialogVisible = false
-                            }
-                            isLoading = false
-                        }
-                    }, modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = stringResource(R.string.accept))
-                }
-            }
-        },
-    ) {
-        LoadingOverlay(showLoading) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 24.dp)
-            ) {
-                if (request.partyID != null) Text(
-                    text = stringResource(R.string.party_invitation),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .align(Alignment.CenterHorizontally)
-                )
-                if (request.user.isFriend) {
-                    Surface(
-                        onClick = { dialogVisible = false; onNavigateToFriend(request.user) },
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        tonalElevation = 4.dp
-                    ) {
-                        FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
-                    }
-                } else {
-                    Surface(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        tonalElevation = 4.dp
-                    ) {
-                        FriendCard(friend = request.user, model.countryData.nameFromCode(request.user.countryCode), modifier = Modifier.padding(12.dp))
-                    }
-                }
-                if (request.partyID != null) {
-                    OutlinedButton(
-                        onClick = { dialogVisible = false; onNavigateToParty(request.partyID!!) },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) {
-                        Text(text = stringResource(R.string.view_party))
-                    }
-                }
-
-                Divider()
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth()
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(text = stringResource(if (request.amount > 0) R.string.has_sent else R.string.has_requested))
-                        Amount(
-                            amount = request.amount.absoluteValue,
-                            currency = request.currency,
-                            textStyle = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            withPlusSign = request.amount > 0,
-                            color = request.amount.amountColor
-                        )
-                    }
-                    if (request.note.isNotBlank()) Text(
-                        text = "\"${request.note}\"",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Light,
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
-                }
-                Divider()
-                Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                    AccountsComboBox(
-                        selectedAccount,
-                        model.accounts.value,
-                        pickText = if (request.amount > 0) R.string.choose_account_request else R.string.choose_account_send,
-                        showBalance = true
-                    )
-                    val selectedCurrency = selectedAccount.value?.currency ?: Currency.EURO
-                    AnimatedVisibility(visible = selectedAccount.value != null && selectedCurrency != request.currency) {
-                        val rate = exchangeRate
-
-                        Column {
-                            Divider(modifier = Modifier.padding(vertical = 12.dp))
-
-                            val fromCurrency = if (request.amount > 0) request.currency else selectedCurrency
-                            val toCurrency = if (request.amount > 0) selectedCurrency else request.currency
-                            if (rate == null || exchangedAmount == null) Text(
-                                text = stringResource(R.string.exchange_not_available, fromCurrency, toCurrency),
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                            else {
-                                Row {
-                                    Text(text = stringResource(R.string.conversion_rate), style = MaterialTheme.typography.labelMedium)
-                                    Text(
-                                        text = "%s = %s".format(fromCurrency.format(1.0), toCurrency.format(rate)),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                                Row {
-                                    Text(
-                                        text = stringResource(if (request.amount > 0) R.string.you_will_receive else R.string.you_will_send),
-                                        style = MaterialTheme.typography.labelMedium
-                                    )
-                                    Text(
-                                        text = selectedCurrency.format(exchangedAmount ?: 0.0),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = request.amount.amountColor
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                val account = selectedAccount.value
-                                Text(
-                                    text = stringResource(
-                                        when {
-                                            account == null -> R.string.remaining_balance
-                                            account.type == SBankAccountType.Credit && request.amount > 0 -> R.string.credit_after_receiving
-                                            account.type != SBankAccountType.Credit && request.amount > 0 -> R.string.balance_after_receiving
-                                            account.type == SBankAccountType.Credit -> R.string.remaining_credit
-                                            else -> R.string.remaining_balance
-                                        }
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                if (account != null) exchangedAmount?.let {
-                                    val remaining = account.spendable + it * request.amount.sign
-                                    Text(
-                                        text = account.currency.format(remaining), style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold, color = remaining.amountColor
-                                    )
-                                } ?: Text(
-                                    text = stringResource(R.string.error), style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold, color = MaterialTheme.customColors.red
-                                )
-                            }
-
-                        }
-                    }
-                }
-            }
-        }
-    }
+        onDismiss = { dialogVisible = false },
+        user = request.user,
+        requestID = request.id,
+        amount = request.amount,
+        currency = request.currency,
+        partyID = request.partyID,
+        note = request.note,
+        onNavigateToFriend,
+        onNavigateToParty
+    )
 
     RecentActivityRow(
         elevated = true,
-        onClick = { if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show() else dialogVisible = true },
+        onClick = {
+            if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show()
+            else if (request.partyID != null) onNavigateToParty(request.partyID!!)
+            else dialogVisible = true
+        },
         icon = {
             FilledIcon(
                 painter = painterResource(if (request.partyID == null) R.drawable.transfer_request else R.drawable.split_bill),
@@ -549,6 +285,7 @@ private fun ReceivedTransferRequest(
             }
         }
     ) {
+        val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val snackbar = LocalSnackbar.current
 
@@ -578,6 +315,24 @@ fun RecentActivityShimmer(shimmer: Shimmer) {
                 .size(80.dp, 16.dp)
                 .grayShimmer(shimmer)
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecentActivityPreview() {
+    AppTheme {
+        LocalRepository.current.recentActivity.collectAsState(null).value?.let {
+            RecentActivity(it, emptyList(), rememberMockNavController())
+        } ?: RecentActivityShimmer(shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window))
+    }
+}
+
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun RecentActivityPreviewDark() {
+    AppTheme {
+        RecentActivity(SRecentActivity(emptyList(), emptyList(), emptyList(), emptyList()), emptyList(), rememberMockNavController())
     }
 }
 

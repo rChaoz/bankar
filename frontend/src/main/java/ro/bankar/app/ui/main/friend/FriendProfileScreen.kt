@@ -36,11 +36,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.valentinilk.shimmer.ShimmerBounds
+import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.datetime.Clock
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
+import ro.bankar.app.ui.components.RecentActivityShimmerRow
 import ro.bankar.app.ui.components.Transfer
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.nameFromCode
@@ -136,7 +139,12 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (recentActivity == null) Text(
+                    if (recentActivity == null) {
+                        val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
+                        repeat(3) {
+                            RecentActivityShimmerRow(shimmer)
+                        }
+                    } else if (recentActivity!!.isEmpty()) Text(
                         text = stringResource(R.string.no_friend_recent_transfers),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.outline,

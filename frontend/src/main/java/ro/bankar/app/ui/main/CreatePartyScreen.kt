@@ -248,7 +248,7 @@ private fun PickFriendsStep(model: CreatePartyScreenModel) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Box {
-                            Avatar(image = friend.avatar, size = 48.dp)
+                            Avatar(image = friend.avatar, size = 60.dp)
                             FilledIconButton(
                                 onClick = { model.added -= friend },
                                 modifier = Modifier

@@ -23,6 +23,10 @@ data class SBankTransfer(
     val user: SPublicUser?,
     val fullName: String,
     val iban: String,
+    /**
+     * If this transfer is not associated with a party, this is null.
+     */
+    val partyID: Int?,
 
     val amount: Double,
     /**
@@ -38,8 +42,8 @@ data class SBankTransfer(
     val exchangedCurrency: Currency,
     val note: String,
 
-    val dateTime: LocalDateTime,
-) {
+    override val dateTime: LocalDateTime,
+) : STimestamped {
     /**
      * Amount that is relevant to the user: sent amount/[amount] if direction is `Sent`; received amount/[exchangedAmount] if direction is `Received`.
      * This will be the exchanged amount if this is a self-transfer (exchange operation).
@@ -64,8 +68,8 @@ data class STransferRequest(
     val note: String,
 
     val partyID: Int?,
-    val dateTime: LocalDateTime,
-)
+    override val dateTime: LocalDateTime,
+) : STimestamped
 
 /**
  * Send or request money to/from another user, by tag

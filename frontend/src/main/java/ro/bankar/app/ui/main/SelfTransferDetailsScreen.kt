@@ -147,7 +147,7 @@ fun TransferAccountCard(text: Int, account: SBankAccount?, onNavigateToAccount: 
 private fun SelfTransferDetailsScreenPreview() {
     AppTheme {
         SelfTransferDetailsScreen(onDismiss = {}, data = SBankTransfer(
-            null, 1, 2, null, "Full Name", "hehe_iban", 100.0, null,
+            null, 1, 2, null, "Full Name", "hehe_iban", null, 100.0, null,
             Currency.ROMANIAN_LEU, Currency.ROMANIAN_LEU, "self transfer lore", Clock.System.nowUTC()
         ), onNavigateToAccount = {})
     }
@@ -158,7 +158,7 @@ private fun SelfTransferDetailsScreenPreview() {
 private fun SelfTransferDetailsScreenPreviewDark() {
     AppTheme {
         SelfTransferDetailsScreen(onDismiss = {}, data = SBankTransfer(
-            null, 1, 2, null, "Full Name", "hehe_iban", 100.0, 19.45,
+            null, 1, 2, null, "Full Name", "hehe_iban", null, 100.0, 19.45,
             Currency.ROMANIAN_LEU, Currency.EURO, "self transfer lore", Clock.System.nowUTC()
         ), onNavigateToAccount = {})
     }

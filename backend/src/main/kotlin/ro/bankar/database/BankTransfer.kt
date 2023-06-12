@@ -26,7 +26,8 @@ import java.math.BigDecimal
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankTransfer>(BankTransfers) {
         fun findRecent(user: User, count: Int) = user.bankAccountIds.let { ids ->
-            find { (BankTransfers.sender inList ids) or (BankTransfers.recipient inList ids) }
+            // Ignore party transfers to user (they are shown separately)
+            find { (BankTransfers.sender inList ids) or ((BankTransfers.recipient inList ids) and BankTransfers.party.isNull()) }
                 .orderBy(BankTransfers.dateTime to SortOrder.DESC)
                 .limit(count)
         }
@@ -71,7 +72,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
 
         fun transferExchanging(request: TransferRequest, otherAccount: BankAccount): Boolean {
             fun saveTransfer(senderAcc: BankAccount, recipientAcc: BankAccount, amount: BigDecimal, exchanged: BigDecimal?) {
-                request.partyMember?.transfer = new {
+                val transfer = new {
                     sender = senderAcc
                     senderName = senderAcc.user.fullName
                     senderIban = senderAcc.iban
@@ -82,7 +83,9 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
                     exchangedAmount = exchanged
                     currency = senderAcc.currency
                     note = request.note
+                    party = request.partyMember?.party
                 }
+                request.partyMember?.transfer = transfer
             }
 
             // Normal transfer (request.sourceAccount -> otherAccount)
@@ -131,6 +134,8 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var currency by BankTransfers.currency
     var note by BankTransfers.note
     var dateTime by BankTransfers.dateTime
+    private val partyID by BankTransfers.party
+    var party by Party optionalReferencedOn BankTransfers.party
 
     fun serializable(direction: SDirection?): SBankTransfer {
         val bankAccount = if (direction == SDirection.Sent) sender!! else recipient!!
@@ -140,7 +145,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
             sourceAccount?.user?.publicSerializable(sourceAccount.user.hasFriend(bankAccount.user)),
             if (direction == SDirection.Sent) recipientName else senderName,
             if (direction == SDirection.Sent) recipientIban else senderIban,
-            amount.toDouble(), exchangedAmount?.toDouble(), currency, bankAccount.currency, note, dateTime
+            partyID?.value, amount.toDouble(), exchangedAmount?.toDouble(), currency, bankAccount.currency, note, dateTime
         )
     }
 
@@ -170,6 +175,7 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
     val currency = currency("currency")
     val note = varchar("note", 200)
     val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
+    val party = reference("party", Parties).nullable()
 
     init {
         check("sender_or_recipient_not_null") { sender.isNotNull() or recipient.isNotNull() }

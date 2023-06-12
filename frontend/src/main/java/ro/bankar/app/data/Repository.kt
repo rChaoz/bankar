@@ -39,6 +39,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import ro.bankar.app.TAG
 import ro.bankar.banking.SCountries
+import ro.bankar.banking.SCreditData
 import ro.bankar.banking.SExchangeData
 import ro.bankar.model.Response
 import ro.bankar.model.SBankAccount
@@ -108,25 +109,26 @@ abstract class Repository {
     // Static data & password check
     abstract val countryData: RequestFlow<SCountries>
     abstract val exchangeData: RequestFlow<SExchangeData>
-    abstract suspend fun sendCheckPassword(password: String): RequestResult<Unit>
+    abstract val creditData: RequestFlow<List<SCreditData>>
+    abstract suspend fun sendCheckPassword(password: String): ResponseRequestResult<Unit>
 
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
-    abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): RequestResult<Unit>
-    abstract suspend fun sendUpdate(data: SNewUser): RequestResult<Unit>
-    abstract suspend fun sendAddFriend(id: String): RequestResult<Unit>
-    abstract suspend fun sendRemoveFriend(tag: String): RequestResult<Unit>
+    abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): ResponseRequestResult<Unit>
+    abstract suspend fun sendUpdate(data: SNewUser): ResponseRequestResult<Unit>
+    abstract suspend fun sendAddFriend(id: String): ResponseRequestResult<Unit>
+    abstract suspend fun sendRemoveFriend(tag: String): ResponseRequestResult<Unit>
     abstract val friends: RequestFlow<List<SFriend>>
     abstract val friendRequests: RequestFlow<List<SFriendRequest>>
-    abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): RequestResult<Unit>
-    abstract suspend fun sendCancelFriendRequest(tag: String): RequestResult<Unit>
+    abstract suspend fun sendFriendRequestResponse(tag: String, accept: Boolean): ResponseRequestResult<Unit>
+    abstract suspend fun sendCancelFriendRequest(tag: String): ResponseRequestResult<Unit>
     abstract fun conversation(tag: String): RequestFlow<SConversation>
-    abstract suspend fun sendFriendMessage(recipientTag: String, message: String): RequestResult<Unit>
+    abstract suspend fun sendFriendMessage(recipientTag: String, message: String): ResponseRequestResult<Unit>
 
     // Parties
-    abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): RequestResult<Unit>
+    abstract suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>): ResponseRequestResult<Unit>
     abstract fun partyData(id: Int): RequestFlow<SPartyInformation>
-    abstract suspend fun sendCancelParty(id: Int): RequestResult<Unit>
+    abstract suspend fun sendCancelParty(id: Int): ResponseRequestResult<Unit>
 
     // Recent activity
     abstract val recentActivity: RequestFlow<SRecentActivity>
@@ -135,17 +137,17 @@ abstract class Repository {
 
     // Bank accounts
     abstract val defaultAccount: RequestFlow<SDefaultBankAccount>
-    abstract suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean): RequestResult<Unit>
+    abstract suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean): ResponseRequestResult<Unit>
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
-    abstract suspend fun sendCreateAccount(account: SNewBankAccount): RequestResult<Unit>
-    abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): RequestResult<Unit>
-    abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): RequestResult<String>
-    abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): RequestResult<String>
-    abstract suspend fun sendCancelTransferRequest(id: Int): RequestResult<Unit>
-    abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): RequestResult<Unit>
+    abstract suspend fun sendCreateAccount(account: SNewBankAccount): ResponseRequestResult<Unit>
+    abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): ResponseRequestResult<Unit>
+    abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<String>
+    abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<String>
+    abstract suspend fun sendCancelTransferRequest(id: Int): ResponseRequestResult<Unit>
+    abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): ResponseRequestResult<Unit>
     abstract val statements: RequestFlow<List<SStatement>>
-    abstract suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate): RequestResult<SStatement>
+    abstract suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate): ResponseRequestResult<SStatement>
     abstract fun createDownloadStatementRequest(statement: SStatement): DownloadManager.Request
 
     abstract fun logout()
@@ -155,6 +157,7 @@ abstract class Repository {
     protected fun init() {
         countryData.requestEmit()
         exchangeData.requestEmit()
+        creditData.requestEmit()
         defaultAccount.requestEmit()
         // Home page (and profile)
         profile.requestEmit()
@@ -231,6 +234,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     // Static data & password check
     override val countryData = createRawFlow<SCountries>("data/countries.json")
     override val exchangeData = createRawFlow<SExchangeData>("data/exchange.json")
+    override val creditData = createRawFlow<List<SCreditData>>("data/credit.json")
     override suspend fun sendCheckPassword(password: String) = client.safeRequest<Unit> {
         post("verifyPassword") { setBody(SPasswordData(password)) }
     }
@@ -282,8 +286,8 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
 
 
     // Recent activity
-    override val recentActivity = createFlow<SRecentActivity>("recent")
-    override val allRecentActivity = createFlow<SRecentActivity>("recent?count=100000")
+    override val recentActivity = createFlow<SRecentActivity>("recentActivity/short")
+    override val allRecentActivity = createFlow<SRecentActivity>("recentActivity/long")
     override fun recentActivityWith(tag: String) = createFlow<List<SBankTransfer>>("transfer/list/$tag")
 
     // Bank accounts

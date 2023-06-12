@@ -65,12 +65,8 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
                 if (tab == 0) LazyColumn(modifier = Modifier.fillMaxSize()) {
                     if (activity == null) RecentActivityShimmer()
                     else {
-                        val (_, transfers, transactions) = activity!!
-                        RecentActivityContent(transfers, transactions, onNavigateToTransfer = {
-                            navigation.navigate(MainNav.Transfer(it))
-                        }, onNavigateToTransaction = {
-                            navigation.navigate(MainNav.Transaction(it))
-                        })
+                        val (_, transfers, transactions, parties) = activity!!
+                        RecentActivityContent(transfers, transactions, parties, navigation)
                     }
                 } else Box(modifier = Modifier.fillMaxSize()) {
                     Text(text = "todo")

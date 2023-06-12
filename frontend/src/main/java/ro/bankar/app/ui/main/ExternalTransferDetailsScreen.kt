@@ -15,6 +15,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +60,7 @@ fun ExternalTransferDetailsScreen(
     data: SBankTransfer,
     onNavigateToFriend: (SPublicUserBase) -> Unit,
     onNavigateToAccount: (SBankAccount) -> Unit,
+    onNavigateToParty: (Int) -> Unit,
     onCreateParty: (Double, Int) -> Unit
 ) {
     val countryData by LocalRepository.current.countryData.collectAsState(null)
@@ -117,6 +119,12 @@ fun ExternalTransferDetailsScreen(
                         Text(text = data.iban)
                     }
                 }
+                if (data.partyID != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    OutlinedButton(onClick = { onNavigateToParty(data.partyID!!) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text(text = stringResource(R.string.view_party))
+                    }
+                }
             }
             Divider()
             if (data.direction == SDirection.Received && data.exchangedAmount != null) {
@@ -163,9 +171,9 @@ private fun ExternalTransferDetailsScreenPreview() {
     AppTheme {
         ExternalTransferDetailsScreen(
             onDismiss = {}, data = SBankTransfer(
-                SDirection.Sent, 1, null, null, "Koleci Alexandru", "RO7832479823420", 25.0, 122.3,
-                Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
-            ), onNavigateToFriend = {}, onNavigateToAccount = {}, onCreateParty = { _, _ -> }
+                SDirection.Sent, 1, null, null, "Koleci Alexandru", "RO7832479823420", null,
+                25.0, 122.3, Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
+            ), onNavigateToFriend = {}, onNavigateToAccount = {}, onNavigateToParty = {}, onCreateParty = { _, _ -> }
         )
     }
 }
@@ -179,9 +187,9 @@ private fun ExternalTransferDetailsScreenPreviewDark() {
                 SDirection.Received, 1, null, SPublicUser(
                     "toaster", "Big", null, "Toaster", "RO",
                     Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "toastin' around", null, true
-                ), "Big Toaster", "RO7832479823420", 25.0, 122.3,
+                ), "Big Toaster", "RO7832479823420", 1, 25.0, 122.3,
                 Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
-            ), onNavigateToFriend = {}, onNavigateToAccount = {}, onCreateParty = { _, _ -> }
+            ), onNavigateToFriend = {}, onNavigateToAccount = {}, onNavigateToParty = {}, onCreateParty = { _, _ -> }
         )
     }
 }

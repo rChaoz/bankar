@@ -124,6 +124,7 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToFriend = { controller.navigate(MainNav.Friend(it)) },
                 onNavigateToAccount = { controller.navigate(MainNav.BankAccount(it)) },
+                onNavigateToParty = { controller.navigate(MainNav.ViewParty(it)) },
                 onCreateParty = { amount, account -> controller.navigate(MainNav.CreateParty(amount, account)) }
             )
         }

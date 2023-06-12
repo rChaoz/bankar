@@ -1,5 +1,6 @@
 package ro.bankar.model
 
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 import ro.bankar.banking.Currency
 
@@ -18,14 +19,16 @@ data class SCreateParty(
 
 @Serializable
 data class SPartyInformation(
-    /**
-     * Null if the user receiving the information is the host
-     */
-    val host: SPublicUser?,
+    val host: SPublicUser,
     val total: Double,
     val currency: Currency,
     val note: String,
-    val members: List<SPartyMember>
+    val self: SPartyMember,
+    val members: List<SPartyMember>,
+    /**
+     * If the user receiving the information is a member with pending status, this will be the request ID.
+     */
+    val requestID: Int?,
 )
 
 @Serializable
@@ -35,15 +38,20 @@ data class SPartyMember(
     val status: Status
 ) {
     enum class Status {
-        Pending, Declined, Accepted
+        /**
+         * Host is a separate status as the host is not an actual member of the party, so they don't have a status.
+         */
+        Host, Pending, Cancelled, Accepted
     }
 }
 
 @Serializable
 data class SPartyPreview(
     val id: Int,
+    val completed: Boolean,
+    override val dateTime: LocalDateTime,
     val total: Double,
     val collected: Double,
     val currency: Currency,
     val note: String
-)
+) : STimestamped

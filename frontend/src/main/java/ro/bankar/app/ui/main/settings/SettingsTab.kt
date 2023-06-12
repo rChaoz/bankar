@@ -227,6 +227,7 @@ private fun SettingsScreen(navigation: NavHostController) {
                     supportingText = {
                         if (passwordError != null) Text(text = passwordError!!)
                     },
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { onDone() }),
                     leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.minus
@@ -20,10 +21,12 @@ import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
-import ro.bankar.banking.SExchangeData
+import ro.bankar.banking.SCreditData
+import ro.bankar.model.Response
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
 import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SBankCard
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SConversation
@@ -64,7 +67,8 @@ private object MockRepository : Repository() {
             return value
         }
     }
-    private fun <T> mockResponse(): RequestResult<T> = RequestFail<T>(R.string.connection_error)
+
+    private fun <T> mockResponse(): RequestResult<Response<T>> = RequestFail(R.string.connection_error)
 
     // TODO If socket is ever used - change this to some mock version so it doesn't crash
     override lateinit var socket: DefaultClientWebSocketSession
@@ -75,11 +79,16 @@ private object MockRepository : Repository() {
 
 
     override val countryData = mockFlow<SCountries>(emptyList())
-    override val exchangeData: RequestFlow<SExchangeData> = mockFlow(
+    override val exchangeData = mockFlow(
         mapOf(
             Currency.EURO to listOf(Currency.ROMANIAN_LEU to 4.91, Currency.US_DOLLAR to 1.05),
             Currency.ROMANIAN_LEU to listOf(Currency.US_DOLLAR to 0.21, Currency.EURO to 0.20),
             Currency.US_DOLLAR to listOf(Currency.ROMANIAN_LEU to 4.55, Currency.EURO to 0.91),
+        )
+    )
+    override val creditData = mockFlow(
+        listOf<SCreditData>(
+            SCreditData(Currency.ROMANIAN_LEU, 15.5, 1000.0, 10000.0)
         )
     )
 
@@ -186,55 +195,59 @@ private object MockRepository : Repository() {
     override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<Unit>()
     override fun partyData(id: Int) = mockFlow(
         SPartyInformation(
-            bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", listOf(
+            bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", SPartyMember(koleci, 12.12, SPartyMember.Status.Pending),
+            listOf(
                 SPartyMember(koleci, 105.23, SPartyMember.Status.Pending),
-                SPartyMember(bombasticus, 51.01, SPartyMember.Status.Declined),
+                SPartyMember(bombasticus, 51.01, SPartyMember.Status.Cancelled),
                 SPartyMember(chadGPT, 999.99, SPartyMember.Status.Accepted)
-            )
+            ), 1
         )
     )
 
     override suspend fun sendCancelParty(id: Int) = mockResponse<Unit>()
 
-    private val mockRecentActivity = (Clock.System.now() - 5.minutes).toLocalDateTime(TimeZone.UTC).let { earlier ->
+    private val mockRecentActivity = (Clock.System.nowUTC() to (Clock.System.now() - 15.minutes).toLocalDateTime(TimeZone.UTC)).let { (now, earlier) ->
         SRecentActivity(
             listOf(
                 SBankTransfer(
-                    null, 1, 2, koleci, "Kolecii", "testIBAN.",
-                    100.0, 20.01, Currency.ROMANIAN_LEU, Currency.EURO, "", Clock.System.nowUTC()
+                    null, 1, 2, koleci, "Kolecii", "testIBAN.", null,
+                    100.0, 20.01, Currency.ROMANIAN_LEU, Currency.EURO, "", now
                 ),
                 SBankTransfer(
-                    SDirection.Received, 1, null, koleci, "Koleci 1", "test_iban",
-                    25.215, null, Currency.EURO, Currency.EURO, "ia bani", Clock.System.nowUTC()
+                    SDirection.Sent, 1, null, koleci, "Mister Sparanghel", "testIBAN!!1", 1,
+                    11.49, null, Currency.ROMANIAN_LEU, Currency.ROMANIAN_LEU, "O berica mica", earlier
                 ),
                 SBankTransfer(
-                    null, 1, 2, koleci, "Koleciii", "testIBAN123!!",
+                    SDirection.Received, 1, null, koleci, "Koleci 1", "test_iban", null,
+                    25.215, null, Currency.EURO, Currency.EURO, "ia bani", now
+                ),
+                SBankTransfer(
+                    null, 1, 2, koleci, "Koleciii", "testIBAN123!!", null,
                     5.5, null, Currency.US_DOLLAR, Currency.US_DOLLAR, "", earlier
-                ),
-                SBankTransfer(
-                    SDirection.Sent, 1, null, koleci, "Koleci 2", "testIBAN!!",
-                    15.0, 69.75, Currency.US_DOLLAR, Currency.ROMANIAN_LEU, "nu, ia tu bani :3", earlier
                 ),
             ),
             listOf(
                 SCardTransaction(
                     1L, 2, 1, "1373",
-                    23.2354, Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "Sushi Terra", "nimic bun"
+                    23.2354, Currency.ROMANIAN_LEU, now, "Sushi Terra", "nimic bun"
                 ),
                 SCardTransaction(
                     2L, 3, 1, "6969",
                     0.01, Currency.EURO, earlier, "200 houses", "yea.."
                 )
             ),
-            listOf(SPartyPreview(1, 57.3, 22.8, Currency.ROMANIAN_LEU, "to buy 23784923 grains of sand (real)")),
+            listOf(
+                SPartyPreview(1, false, now, 57.3, 22.8, Currency.ROMANIAN_LEU, "to buy 23784923 grains of sand (real)"),
+                SPartyPreview(1, true, earlier, 57.3, 22.8, Currency.ROMANIAN_LEU, "also for 23784924 grains of sand")
+            ),
             listOf(
                 STransferRequest(
                     0, SDirection.Received, bombasticus,
-                    50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, Clock.System.nowUTC()
+                    50.25, Currency.ROMANIAN_LEU, "Tesla Dealer for like 25 model S and idk what else", 5, now
                 ),
                 STransferRequest(
                     1, SDirection.Received, chadGPT,
-                    12345.0, Currency.EURO, "Like a lot of cash", null, Clock.System.nowUTC()
+                    12345.0, Currency.EURO, "Like a lot of cash", null, now
                 )
             ),
         )
@@ -244,7 +257,10 @@ private object MockRepository : Repository() {
 
 
     override val recentActivity = mockFlow(mockRecentActivity)
-    override val allRecentActivity = mockFlow(mockRecentActivity)
+    override val allRecentActivity = mockFlow(
+        mockRecentActivity.run { copy(transferRequests = emptyList(), parties = parties.filter(SPartyPreview::completed)) }
+    )
+
     override fun recentActivityWith(tag: String) = mockFlow(mockRecentActivity.transfers)
 
     override val defaultAccount = mockFlow(SDefaultBankAccount(1, true))
@@ -263,7 +279,31 @@ private object MockRepository : Repository() {
     )
 
     override fun account(id: Int) = mockFlow(
-        SBankAccountData(emptyList(), emptyList(), emptyList()) // TODO
+        SBankAccountData(
+            listOf(
+                SBankCard(
+                    1, "Physical Card", null, "1234", null, null, null,
+                    null, 0.0, 0.0,
+                    listOf(
+                        SCardTransaction(
+                            127836L, 1, 1, "1234", 25.55, Currency.ROMANIAN_LEU,
+                            Clock.System.nowUTC(), "Taco Bell", "details"
+                        ),
+                        SCardTransaction(
+                            7439287432897L, 1, 1, "1234", 13.12, Currency.ROMANIAN_LEU,
+                            Clock.System.nowUTC(), "Nimic bun", "detailssssss"
+                        ),
+                    )
+                ),
+                SBankCard(
+                    2, "Virtual Card", "1111222233334444", "4444", "1234", Month.JANUARY, 2025,
+                    "123", 100.0, 34.45, emptyList()
+                ),
+            ),
+            emptyList(),
+            emptyList(),
+            emptyList()
+        )
     )
 
     override suspend fun sendCreateAccount(account: SNewBankAccount) = mockResponse<Unit>()
@@ -272,9 +312,12 @@ private object MockRepository : Repository() {
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = mockResponse<String>()
     override suspend fun sendCancelTransferRequest(id: Int) = mockResponse<Unit>()
     override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockResponse<Unit>()
-    override val statements = mockFlow(listOf(
-        SStatement(1, "My Statement", Clock.System.nowUTC(), 1)
-    ))
+    override val statements = mockFlow(
+        listOf(
+            SStatement(1, "My Statement", Clock.System.nowUTC(), 1)
+        )
+    )
+
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) = mockResponse<SStatement>()
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(Uri.parse("http://example.com"))
 

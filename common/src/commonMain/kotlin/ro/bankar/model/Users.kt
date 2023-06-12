@@ -211,7 +211,9 @@ class SPublicUser(
     override val about: String,
     override val avatar: ByteArray?,
 
-    // True if this user is in the user's friend list
+    /**
+     * True if this user is in the friend list of the user that received this data
+     */
     val isFriend: Boolean
 ) : SPublicUserBase()
 

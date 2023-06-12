@@ -13,8 +13,8 @@ data class SCardTransaction(
 
     val amount: Double,
     val currency: Currency,
-    val dateTime: LocalDateTime,
+    override val dateTime: LocalDateTime,
 
     val title: String,
     val details: String,
-)
+) : STimestamped

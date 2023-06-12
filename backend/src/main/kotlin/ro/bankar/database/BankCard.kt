@@ -1,6 +1,10 @@
 package ro.bankar.database
 
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -44,7 +48,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         cardNumber.toString(),
         cardNumber.toString().takeLast(4),
         pin.toString(),
-        expiration.monthNumber,
+        expiration.month,
         expiration.year,
         cvv.toString(),
         limit.toDouble(),

@@ -1,12 +1,18 @@
 package ro.bankar.database
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 import ro.bankar.amount
 import ro.bankar.model.SPartyInformation
+import ro.bankar.model.SPartyMember
 import ro.bankar.model.SPartyPreview
 import java.math.BigDecimal
 
@@ -33,20 +39,49 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
         }
 
         fun byUser(user: User) = find { Parties.hostAccount inList user.bankAccountIds }
+
+        fun byUserCompleted(user: User) = find { (Parties.hostAccount inList user.bankAccountIds) and (Parties.completed eq true) }
     }
 
     var hostAccount by BankAccount referencedOn Parties.hostAccount
     var total by Parties.total
     var note by Parties.note
     val members by PartyMember referrersOn PartyMembers.party
+    var completed by Parties.completed
+    var dateTime by Parties.dateTime
 
-    fun serializable(user: User) = SPartyInformation(
-        hostAccount.user.takeIf { it.id != user.id }?.publicSerializable(true),
-        total.toDouble(), hostAccount.currency, note, members.serializable(user)
-    )
+    /**
+     * Cancel the party and delete all pending requests. If there are no accepted requests, the party will be deleted.
+     * @return true if the party was cancelled (wasn't already completed)
+     */
+    fun cancel(): Boolean {
+        if (completed) return false
+        var hasAccepted = false
+        for (member in members) {
+            member.request?.decline()
+            if (member.transfer != null) hasAccepted = true
+        }
+        // This will cascade delete all party members
+        if (!hasAccepted) delete()
+        else completed = true
+        return true
+    }
+
+    fun serializable(user: User): SPartyInformation {
+        val (selfList, others) = members.partition { it.user.id == user.id }
+        val self = selfList.firstOrNull()
+        val host = hostAccount.user
+        return SPartyInformation(
+            host.publicSerializable(host.hasFriend(user)), total.toDouble(), hostAccount.currency, note,
+            self?.serializable(user) ?: SPartyMember(
+                host.publicSerializable(false),
+                0.0, SPartyMember.Status.Host
+            ), others.serializable(user), self?.request?.id?.value
+        )
+    }
 
     fun previewSerializable() = SPartyPreview(
-        id.value, total.toDouble(), members.filter { it.transfer != null }.sumOf { it.amount }.toDouble(), hostAccount.currency, note
+        id.value, completed, dateTime, total.toDouble(), members.filter { it.transfer != null }.sumOf { it.amount }.toDouble(), hostAccount.currency, note
     )
 }
 
@@ -56,4 +91,9 @@ internal object Parties : IntIdTable() {
     val hostAccount = reference("host", BankAccounts)
     val total = amount("total")
     val note = varchar("note", 100)
+
+    // If true, the party is completed and there are no more pending requests
+    // "Completed" doesn't mean that all requests were accepted. A completed party will appear in the host's history.
+    val completed = bool("completed").default(false)
+    val dateTime = datetime("datetime").clientDefault { Clock.System.now().toLocalDateTime(TimeZone.UTC) }
 }

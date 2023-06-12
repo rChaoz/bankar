@@ -13,6 +13,7 @@ import ro.bankar.database.Party
 import ro.bankar.model.SCreateParty
 import ro.bankar.model.SSocketNotification
 import ro.bankar.plugins.UserPrincipal
+import ro.bankar.respondError
 import ro.bankar.respondInvalidParam
 import ro.bankar.respondNotFound
 import ro.bankar.respondSuccess
@@ -65,8 +66,8 @@ fun Route.configureParties() {
                     call.respondNotFound("party"); return@newSuspendedTransaction
                 }
                 for (member in party.members) sendNotificationToUser(member.user.id, SSocketNotification.SRecentActivityNotification)
-                party.delete()
-                call.respondSuccess()
+                if (party.cancel()) call.respondSuccess()
+                else call.respondError("already_cancelled")
             }
         }
     }

@@ -2,6 +2,7 @@ package ro.bankar.app
 
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -125,6 +126,7 @@ private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, 
 
             // Server data repository
             val sessionToken by dataStore.collectPreferenceAsState(KeyUserSession, defaultValue = initialPrefs[KeyUserSession])
+            Log.d(TAG, "sessionToken = $sessionToken")
             val repository = remember(sessionToken) {
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
@@ -132,7 +134,7 @@ private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, 
                         lifecycleScope.launch { dataStore.removePreference(KeyUserSession) }
                         // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
                         val current = controller.currentBackStackEntry?.destination?.route ?: return@repository
-                        if (current in listOf(NewUserNav.route, NewUserNav.Welcome.route, NewUserNav.SignIn.route, NewUserNav.SignUp.route))
+                        if (current !in listOf(NewUserNav.route, NewUserNav.Welcome.route, NewUserNav.SignIn.route, NewUserNav.SignUp.route))
                             controller.navigate(NewUserNav.route) {
                                 popUpTo(Nav.Main.route) { inclusive = true }
                             }

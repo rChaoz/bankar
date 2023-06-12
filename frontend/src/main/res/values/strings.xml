@@ -247,7 +247,7 @@
     <string name="party_invitation">Party invitation</string>
     <string name="view_party">View party</string>
     <string name="cancel_party">Cancel party</string>
-    <string name="my_party">My party</string>
+    <string name="pending_party">Pending party</string>
     <string name="you_brackets_s">(You) %s</string>
     <string name="english">English</string>
     <string name="romanian">Romanian</string>
@@ -311,4 +311,6 @@
     <string name="yesterday">Yesterday</string>
     <string name="unfriend">Unfriend</string>
     <string name="unfriend_confirm">Are you sure you want to remove \'%s\' from your friend list?</string>
+    <string name="completed_party">Completed party</string>
+    <string name="requested">Requested:</string>
 </resources>

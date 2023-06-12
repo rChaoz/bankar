@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,12 +37,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.NavScreen
+import ro.bankar.app.ui.components.ReceivedTransferRequestDialog
 import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
@@ -58,8 +61,9 @@ import ro.bankar.model.SPublicUserBase
 fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
-    val partyState = remember { repository.partyData(partyID).also { it.requestEmit() } }.collectAsState(null)
-    val party = partyState.value
+    val flow = repository.partyData(partyID)
+    val partyState = remember { flow.also { it.requestEmit() } }.collectAsState(null)
+    val party = partyState.value // extract to variable to allow null checks
 
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
     var isLoading by remember { mutableStateOf(false) }
@@ -68,22 +72,72 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    // Accept invite dialog
+    var showAcceptDialog by remember { mutableStateOf(false) }
+    if (party?.requestID != null) ReceivedTransferRequestDialog(
+        visible = showAcceptDialog,
+        onDismiss = { showAcceptDialog = false },
+        user = null,
+        requestID = party.requestID!!,
+        amount = -party.self.amount,
+        currency = party.currency,
+        partyID = null,
+        note = null,
+        onNavigateToFriend = onNavigateToFriend,
+        onNavigateToParty = {},
+        showDeclineOption = false
+    )
+
     NavScreen(
         onDismiss,
         title = R.string.party,
         isLoading = isLoading,
         snackbar = snackbar,
-        cancelText = R.string.close,
-        // TODO If not host, show accept/decline buttons
-        confirmText = R.string.cancel_party,
-        onConfirm = {
-            scope.launch {
-                isLoading = true
-                repository.sendCancelParty(partyID).handleSuccess(this, snackbar, context) {
-                    repository.recentActivity.emitNow()
-                    onDismiss()
+        bottomBar = {
+            Column {
+                Divider()
+                Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.close))
+                    }
+                    if (party != null && party.self.status == SPartyMember.Status.Host && party.members.any { it.status == SPartyMember.Status.Pending }) {
+                        // The user is the host - display cancel button if party isn't completed
+                        TextButton(onClick = {
+                            scope.launch {
+                                isLoading = true
+                                repository.sendCancelParty(partyID).handleSuccess(this, snackbar, context) {
+                                    repository.recentActivity.emitNow()
+                                    onDismiss()
+                                }
+                                isLoading = false
+                            }
+                        }, enabled = !isLoading, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.cancel_party), color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    // If we are a member and status is pending, show accept/decline buttons
+                    if (party?.requestID != null) {
+                        TextButton(onClick = {
+                            isLoading = true
+                            scope.launch {
+                                repository.sendRespondToTransferRequest(party.requestID!!, false, null)
+                                    .handleSuccess(this, snackbar, context) {
+                                        coroutineScope {
+                                            launch { flow.emitNow() }
+                                            launch { repository.recentActivity.emitNow() }
+                                        }
+                                        onDismiss()
+                                    }
+                                isLoading = false
+                            }
+                        }, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.decline), color = MaterialTheme.customColors.red)
+                        }
+                        TextButton(onClick = { showAcceptDialog = true }, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.accept), color = MaterialTheme.customColors.green)
+                        }
+                    }
                 }
-                isLoading = false
             }
         }
     ) {
@@ -102,15 +156,14 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                 )
                 else Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(text = stringResource(R.string.party_host), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    val host = party.host
-                    if (host == null) Surface(shape = MaterialTheme.shapes.small, tonalElevation = 4.dp) {
+                    if (party.self.status == SPartyMember.Status.Host) Surface(shape = MaterialTheme.shapes.small, tonalElevation = 4.dp) {
                         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             Text(text = stringResource(R.string.you_are_party_host), fontStyle = FontStyle.Italic, modifier = Modifier.padding(16.dp))
                         }
                     }
-                    else Surface(onClick = { onNavigateToFriend(host) }, shape = MaterialTheme.shapes.small, tonalElevation = 4.dp) {
+                    else Surface(onClick = { onNavigateToFriend(party.host) }, shape = MaterialTheme.shapes.small, tonalElevation = 4.dp) {
                         FriendCard(
-                            friend = host, country = countryData.nameFromCode(host.countryCode), modifier = Modifier
+                            friend = party.host, country = countryData.nameFromCode(party.host.countryCode), modifier = Modifier
                                 .padding(12.dp)
                                 .fillMaxWidth()
                         )
@@ -181,14 +234,14 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                     }
                 } else SurfaceList(modifier = Modifier.padding(vertical = 12.dp)) {
                     // Show self first, highlighted
-                    party.members.find { !it.profile.isFriend }?.let {
+                    if (party.self.status != SPartyMember.Status.Host) {
                         Surface(tonalElevation = 2.dp) {
-                            PartyMember(it, currency = party.currency, showYou = true)
+                            PartyMember(party.self, currency = party.currency, showYou = true)
                         }
                     }
                     // Then the other members
                     for (member in party.members) {
-                        if (member.profile.isFriend) Surface(onClick = { onNavigateToFriend(member.profile) }) {
+                        Surface(onClick = { onNavigateToFriend(member.profile) }) {
                             PartyMember(member, currency = party.currency)
                         }
                     }
@@ -221,16 +274,19 @@ private fun PartyMember(member: SPartyMember, currency: Currency, showYou: Boole
                 currency = currency,
                 color = when (member.status) {
                     SPartyMember.Status.Pending -> MaterialTheme.colorScheme.onSurface
-                    SPartyMember.Status.Declined -> MaterialTheme.customColors.red
+                    SPartyMember.Status.Cancelled -> MaterialTheme.customColors.red
                     SPartyMember.Status.Accepted -> MaterialTheme.customColors.green
+                    SPartyMember.Status.Host -> throw IllegalStateException("Host should not be in party members")
                 }
             )
             Text(
                 text = stringResource(
+                    @Suppress("KotlinConstantConditions")
                     when (member.status) {
                         SPartyMember.Status.Pending -> R.string.status_pending
-                        SPartyMember.Status.Declined -> R.string.status_declined
+                        SPartyMember.Status.Cancelled -> R.string.status_declined
                         SPartyMember.Status.Accepted -> R.string.status_accepted
+                        SPartyMember.Status.Host -> throw IllegalStateException("Host should not be in party members")
                     }
                 ), fontStyle = FontStyle.Italic
             )
