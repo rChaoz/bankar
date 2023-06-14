@@ -1,6 +1,5 @@
 package ro.bankar.app.ui.main.friend
 
-import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +39,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -67,7 +65,6 @@ import kotlinx.datetime.toJavaLocalDate
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.RequestFail
 import ro.bankar.app.data.RequestFlow
 import ro.bankar.app.data.RequestSuccess
 import ro.bankar.app.ui.main.MainNav
@@ -95,29 +92,25 @@ class ConversationScreenModel : ViewModel() {
     lateinit var conversationFlow: RequestFlow<SConversation>
     lateinit var repository: Repository
 
-    fun sendMessage(context: Context, recipientTag: String) {
+    fun sendMessage(recipientTag: String) {
         val message = this.message.trim()
         sentMessages = buildList(sentMessages.size + 1) { add(message); addAll(sentMessages) }
         this.message = ""
         viewModelScope.launch {
-            sendMessageImpl(context, message, recipientTag)
+            sendMessageImpl(message, recipientTag)
         }
     }
 
-    private tailrec suspend fun sendMessageImpl(context: Context, message: String, recipientTag: String) {
-        when (val result = repository.sendFriendMessage(recipientTag, message)) {
-            is RequestFail -> {
-                // Retry on connection/internal error
-                delay(2.seconds)
-                sendMessageImpl(context, message, recipientTag)
+    private suspend fun sendMessageImpl(message: String, recipientTag: String) {
+        var retryInterval = 2
+        while (true) {
+            val result = repository.sendFriendMessage(recipientTag, message)
+            if (result is RequestSuccess && result.response == SuccessResponse) {
+                conversationFlow.requestEmit()
+                break
             }
-            is RequestSuccess -> {
-                if (result.response == SuccessResponse) conversationFlow.requestEmit()
-                else {
-                    // TODO Make message red with retry button or remove it from list, show error message
-                    //Toast.makeText(context, R.string.unable_to_send_message)
-                }
-            }
+            delay(retryInterval.seconds)
+            if (retryInterval < 15) ++retryInterval
         }
     }
 }
@@ -261,7 +254,6 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                         }
                     }
                 }
-                val context = LocalContext.current
                 Surface(tonalElevation = 1.dp, border = BorderStroke(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant)) {
                     Row(modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         TextField(
@@ -276,7 +268,7 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                             colors = TextFieldDefaults.colors(unfocusedIndicatorColor = Color.Transparent, focusedIndicatorColor = Color.Transparent),
                             maxLines = 4
                         )
-                        FilledIconButton(onClick = { model.sendMessage(context, user.tag) }, enabled = model.message.isNotBlank()) {
+                        FilledIconButton(onClick = { model.sendMessage(user.tag) }, enabled = model.message.isNotBlank()) {
                             Icon(imageVector = Icons.Default.Send, contentDescription = stringResource(R.string.send))
                         }
                     }

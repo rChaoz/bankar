@@ -17,16 +17,16 @@ class PartyMember(id: EntityID<Int>) : IntEntity(id) {
     var transfer by BankTransfer optionalReferencedOn PartyMembers.transfer
     var request by TransferRequest optionalReferencedOn PartyMembers.request
 
-    fun serializable(user: User) = SPartyMember(
-        this.user.publicSerializable(this.user.hasFriend(user)), amount.toDouble(), when {
+    fun serializable(user: User, includeTransfer: Boolean) = SPartyMember(
+        this.user.publicSerializable(user.hasFriend(this.user)), amount.toDouble(), when {
             transfer != null -> SPartyMember.Status.Accepted
             request != null -> SPartyMember.Status.Pending
             else -> SPartyMember.Status.Cancelled
-        }
+        }, if (!includeTransfer) null else transfer?.serializable(user)
     )
 }
 
-fun Iterable<PartyMember>.serializable(user: User) = map { it.serializable(user) }
+fun Iterable<PartyMember>.serializable(user: User, includeTransfers: Boolean) = map { it.serializable(user, includeTransfers) }
 
 internal object PartyMembers : IntIdTable() {
     val party = reference("party", Parties, onDelete = ReferenceOption.CASCADE)

@@ -35,7 +35,11 @@ data class SPartyInformation(
 data class SPartyMember(
     val profile: SPublicUser,
     val amount: Double,
-    val status: Status
+    val status: Status,
+    /**
+     * The transfer for this party member. Only present if the user receiving the information is the host.
+     */
+    val transfer: SBankTransfer?
 ) {
     enum class Status {
         /**

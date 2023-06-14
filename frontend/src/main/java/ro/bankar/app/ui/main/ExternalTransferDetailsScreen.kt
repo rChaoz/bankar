@@ -107,9 +107,14 @@ fun ExternalTransferDetailsScreen(
                     FriendCard(friend = data.user!!, country = countryData.nameFromCode(data.user!!.countryCode), modifier = Modifier.padding(12.dp))
                 }
                 else Surface(shape = MaterialTheme.shapes.small, tonalElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
-                    if (data.user != null) Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (data.user != null) Column {
                         FriendCard(friend = data.user!!, country = countryData.nameFromCode(data.user!!.countryCode), modifier = Modifier.padding(12.dp))
-                        Text(text = stringResource(R.string.not_a_friend), color = MaterialTheme.colorScheme.outline, fontStyle = FontStyle.Italic)
+                        Text(
+                            text = stringResource(R.string.not_a_friend),
+                            color = MaterialTheme.colorScheme.outline,
+                            fontStyle = FontStyle.Italic,
+                            modifier = Modifier.padding(start = 12.dp, bottom = 12.dp)
+                        )
                     }
                     else Column(modifier = Modifier.padding(12.dp)) {
                         Text(text = data.fullName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

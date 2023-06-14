@@ -195,11 +195,12 @@ private object MockRepository : Repository() {
     override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = mockResponse<Unit>()
     override fun partyData(id: Int) = mockFlow(
         SPartyInformation(
-            bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell", SPartyMember(koleci, 12.12, SPartyMember.Status.Pending),
+            bombasticus, 180.05, Currency.ROMANIAN_LEU, "A lot of Taco Bell",
+            SPartyMember(koleci, 12.12, SPartyMember.Status.Pending, null),
             listOf(
-                SPartyMember(koleci, 105.23, SPartyMember.Status.Pending),
-                SPartyMember(bombasticus, 51.01, SPartyMember.Status.Cancelled),
-                SPartyMember(chadGPT, 999.99, SPartyMember.Status.Accepted)
+                SPartyMember(koleci, 105.23, SPartyMember.Status.Pending, null),
+                SPartyMember(bombasticus, 51.01, SPartyMember.Status.Cancelled, null),
+                SPartyMember(chadGPT, 999.99, SPartyMember.Status.Accepted, null)
             ), 1
         )
     )

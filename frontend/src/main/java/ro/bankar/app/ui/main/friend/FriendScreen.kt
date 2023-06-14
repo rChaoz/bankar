@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -166,8 +167,8 @@ fun FriendDropdown(expanded: Boolean, onDismiss: () -> Unit, navigation: NavHost
                     }
                     isLoading = false
                 }
-            }) {
-                Text(text = stringResource(R.string.remove), color = MaterialTheme.colorScheme.error)
+            }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                Text(text = stringResource(R.string.remove))
             }
         },
         title = { Text(text = stringResource(R.string.unfriend)) },

@@ -9,5 +9,5 @@ data class SRecentActivity(
     val parties: List<SPartyPreview>,
     val transferRequests: List<STransferRequest>,
 ) {
-    fun isEmpty() = transfers.isEmpty() && transactions.isEmpty() && transferRequests.isEmpty()
+    fun isEmpty() = transfers.isEmpty() && transactions.isEmpty() && parties.isEmpty() && transferRequests.isEmpty()
 }

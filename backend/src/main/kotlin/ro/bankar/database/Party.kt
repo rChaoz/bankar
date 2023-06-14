@@ -73,10 +73,10 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
         val host = hostAccount.user
         return SPartyInformation(
             host.publicSerializable(host.hasFriend(user)), total.toDouble(), hostAccount.currency, note,
-            self?.serializable(user) ?: SPartyMember(
+            self?.serializable(user, false) ?: SPartyMember(
                 host.publicSerializable(false),
-                0.0, SPartyMember.Status.Host
-            ), others.serializable(user), self?.request?.id?.value
+                0.0, SPartyMember.Status.Host, null
+            ), others.serializable(user, user.id == host.id), self?.request?.id?.value
         )
     }
 

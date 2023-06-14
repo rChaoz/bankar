@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -268,9 +269,9 @@ fun ReceivedTransferRequestDialog(
                             }
                             isLoading = false
                         }
-                    }, modifier = Modifier.weight(1f)
+                    }, modifier = Modifier.weight(1f), colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(text = stringResource(R.string.decline), color = MaterialTheme.customColors.red)
+                    Text(text = stringResource(R.string.decline))
                 }
 
                 TextButton(

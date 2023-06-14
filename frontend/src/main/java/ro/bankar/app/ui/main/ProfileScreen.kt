@@ -39,6 +39,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -441,6 +442,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                                 TextField(
                                     value = if (editingAbout != false) aboutValue else data.about,
                                     onValueChange = { aboutValue = it },
+                                    textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Light),
                                     placeholder = { Text(text = stringResource(R.string.nothing_here), color = MaterialTheme.colorScheme.outline) },
                                     modifier = Modifier
                                         .fillMaxWidth()

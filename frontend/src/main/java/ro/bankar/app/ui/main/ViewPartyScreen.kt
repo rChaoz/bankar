@@ -1,18 +1,26 @@
 package ro.bankar.app.ui.main
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -41,8 +49,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.handle
 import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.Avatar
+import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.MBottomSheet
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.ReceivedTransferRequestDialog
 import ro.bankar.app.ui.components.SurfaceList
@@ -54,11 +65,15 @@ import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
+import ro.bankar.banking.SCountries
+import ro.bankar.model.ErrorResponse
+import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SPartyMember
 import ro.bankar.model.SPublicUserBase
+import ro.bankar.model.SuccessResponse
 
 @Composable
-fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit) {
+fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit, onNavigateToTransfer: (SBankTransfer) -> Unit) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
     val flow = repository.partyData(partyID)
@@ -102,7 +117,7 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                     }
                     if (party != null && party.self.status == SPartyMember.Status.Host && party.members.any { it.status == SPartyMember.Status.Pending }) {
                         // The user is the host - display cancel button if party isn't completed
-                        TextButton(onClick = {
+                        TextButton(enabled = !isLoading, modifier = Modifier.weight(1f), onClick = {
                             scope.launch {
                                 isLoading = true
                                 repository.sendCancelParty(partyID).handleSuccess(this, snackbar, context) {
@@ -111,8 +126,8 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                                 }
                                 isLoading = false
                             }
-                        }, enabled = !isLoading, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.cancel_party), color = MaterialTheme.colorScheme.error)
+                        }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                            Text(text = stringResource(R.string.cancel_party))
                         }
                     }
                     // If we are a member and status is pending, show accept/decline buttons
@@ -133,8 +148,12 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                         }, modifier = Modifier.weight(1f)) {
                             Text(text = stringResource(R.string.decline), color = MaterialTheme.customColors.red)
                         }
-                        TextButton(onClick = { showAcceptDialog = true }, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.accept), color = MaterialTheme.customColors.green)
+                        TextButton(
+                            onClick = { showAcceptDialog = true },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.customColors.green)
+                        ) {
+                            Text(text = stringResource(R.string.accept))
                         }
                     }
                 }
@@ -233,16 +252,24 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                         )
                     }
                 } else SurfaceList(modifier = Modifier.padding(vertical = 12.dp)) {
-                    // Show self first, highlighted
                     if (party.self.status != SPartyMember.Status.Host) {
+                        // Show self first, highlighted
                         Surface(tonalElevation = 2.dp) {
-                            PartyMember(party.self, currency = party.currency, showYou = true)
+                            PartyMember(party.self, countryData, currency = party.currency, showYou = true)
                         }
-                    }
-                    // Then the other members
-                    for (member in party.members) {
-                        Surface(onClick = { onNavigateToFriend(member.profile) }) {
-                            PartyMember(member, currency = party.currency)
+                        // Then the other members
+                        for (member in party.members) Surface {
+                            PartyMember(member, countryData, currency = party.currency)
+                        }
+                    } // If host, entries are clickable to view transfer details
+                    else {
+                        for (member in party.members) {
+                            if (member.transfer != null) Surface(onClick = { onNavigateToTransfer(member.transfer!!) }) {
+                                PartyMember(member, countryData, currency = party.currency, onNavigateToFriend = onNavigateToFriend)
+                            }
+                            else Surface {
+                                PartyMember(member, countryData, currency = party.currency, onNavigateToFriend = onNavigateToFriend)
+                            }
                         }
                     }
                 }
@@ -251,14 +278,78 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun PartyMember(member: SPartyMember, currency: Currency, showYou: Boolean = false) {
+private fun PartyMember(
+    member: SPartyMember,
+    countryData: SCountries?,
+    currency: Currency,
+    showYou: Boolean = false,
+    onNavigateToFriend: ((SPublicUserBase) -> Unit)? = null
+) {
+    var showAddFriend by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    if (showAddFriend) MBottomSheet(onDismissRequest = { showAddFriend = false }) {
+        LoadingOverlay(isLoading) {
+            Column(
+                modifier = Modifier
+                    .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FriendCard(
+                    friend = member.profile,
+                    country = countryData.nameFromCode(member.profile.countryCode)
+                )
+                Divider()
+                Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = { showAddFriend = false }, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(android.R.string.cancel))
+                    }
+                    val context = LocalContext.current
+                    val repository = LocalRepository.current
+                    Button(onClick = {
+                        isLoading = true
+                        scope.launch {
+                            repository.sendAddFriend(member.profile.tag).handle(context) {
+                                context.getString(
+                                    when (it) {
+                                        SuccessResponse -> R.string.friend_request_sent
+                                        is ErrorResponse -> when (it.message) {
+                                            "user_is_friend" -> R.string.user_already_friend
+                                            "exists" -> R.string.friend_request_exists
+                                            else -> R.string.unknown_error
+                                        }
+                                        else -> R.string.unknown_error
+                                    }
+                                )
+                            }
+                            isLoading = false
+                        }
+                    }, modifier = Modifier.weight(1f), enabled = !isLoading) {
+                        Text(text = stringResource(R.string.add_friend))
+                    }
+                }
+            }
+        }
+    }
+
     Row(
         modifier = Modifier.padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Avatar(image = member.profile.avatar, size = 48.dp)
+        Avatar(
+            image = member.profile.avatar,
+            size = 48.dp,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable {
+                    if (member.profile.isFriend) onNavigateToFriend?.invoke(member.profile)
+                    else showAddFriend = true
+                }
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (showYou) stringResource(R.string.you_brackets_s, member.profile.firstName) else member.profile.firstName,
@@ -298,7 +389,7 @@ private fun PartyMember(member: SPartyMember, currency: Currency, showYou: Boole
 @Composable
 private fun PartyInformationScreenPreview() {
     AppTheme {
-        ViewPartyScreen(onDismiss = {}, partyID = 1, onNavigateToFriend = {})
+        ViewPartyScreen(onDismiss = {}, partyID = 1, onNavigateToFriend = {}, onNavigateToTransfer = {})
     }
 }
 
@@ -306,6 +397,6 @@ private fun PartyInformationScreenPreview() {
 @Composable
 private fun PartyInformationScreenPreviewDark() {
     AppTheme {
-        ViewPartyScreen(onDismiss = {}, partyID = 1, onNavigateToFriend = {})
+        ViewPartyScreen(onDismiss = {}, partyID = 1, onNavigateToFriend = {}, onNavigateToTransfer = {})
     }
 }

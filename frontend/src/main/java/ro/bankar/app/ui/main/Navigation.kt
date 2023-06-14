@@ -168,6 +168,8 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         composable(MainNav.ViewParty.route, arguments = MainNav.viewPartyArguments) { entry ->
             ViewPartyScreen(onDismiss = controller::popBackStack, partyID = entry.arguments!!.getInt("id"), onNavigateToFriend = {
                 controller.navigate(MainNav.Friend(it))
+            }, onNavigateToTransfer = {
+                controller.navigate(MainNav.Transfer(it))
             })
         }
     }
