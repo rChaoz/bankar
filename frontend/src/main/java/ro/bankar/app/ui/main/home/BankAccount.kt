@@ -83,11 +83,13 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                 .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues())
         ) {
             val iban = formatIBAN(data.iban)
+
             // Share IBAN
             val shareIntent = Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                 putExtra(Intent.EXTRA_TEXT, iban)
                 type = "text/plain"
             }, stringResource(R.string.share_iban))
+
             Surface(onClick = {
                 scope.launch { menuSheetState.hide(); showMenuSheet = false }
                 context.startActivity(shareIntent)
@@ -106,7 +108,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
             }
 
             // Print statements
-            Surface(onClick = { scope.launch { menuSheetState.hide(); onStatements() } }) {
+            Surface(onClick = { scope.launch { menuSheetState.hide() }; onStatements() }) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

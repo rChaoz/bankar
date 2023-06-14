@@ -38,13 +38,12 @@
     <string name="invalid_email">Adresă de e-mail invalidă</string>
     <string name="password_too_short">Parolă prea scurta</string>
     <string name="password_too_long">Parolă prea lungă</string>
-    <string name="password_doesnt_meet">Parola nu îndeplinește cerințele</string>
-    <string name="passwords_dont_match">Parolele nu se potrivesc</string>
+    <string name="password_does_not_meet">Parola nu îndeplinește cerințele</string>
+    <string name="passwords_do_not_match">Parolele nu se potrivesc</string>
     <string name="invalid_tag">Tag invalid</string>
     <string name="tag_already_exists">Tag-ul există deja</string>
     <string name="tag_too_short">Tag prea scurt (minim %d caractere)</string>
     <string name="tag_too_long">Tag prea lung (maximum %d caractere)</string>
-    <string name="signup_personal_information">Mai departe, sunt necesare niște date personale:</string>
     <string name="first_name">Prenume</string>
     <string name="middle_name">Nume mijlociu</string>
     <string name="last_name">Nume</string>
@@ -62,7 +61,6 @@
     <string name="code_has_6_digits">Codul de verificare are 6 cifre</string>
     <string name="invalid_phone">Număr de telefon invalid</string>
     <string name="phone">Număr de telefon</string>
-    <string name="select">Selectați…</string>
     <string name="prefix">Prefix</string>
     <string name="code_was_sent">Codul de 6 cifre a fost trimis la %s. Vă rugăm introduceți codul mai jos:</string>
     <string name="edit_phone">Schimbă numărul de telefon</string>
@@ -76,7 +74,6 @@
     <string name="email_already_in_use">Această adresă de e-mail este deja utilizată. Vă rugăm folosiți altă adresă.</string>
     <string name="see_more">Mai multe</string>
     <string name="recent_activity">Activitate recentă</string>
-    <string name="party_invite">Invitație party</string>
     <string name="accept">Acceptă</string>
     <string name="decline">Respinge</string>
     <string name="party_invite_from">Invitație de la %s</string>
@@ -101,7 +98,6 @@
     <string name="personalize_new_account">Personalizează-ți noul cont:</string>
     <string name="account_name">Numele contului</string>
     <string name="currency">Valută</string>
-    <string name="retry">Reîncearcă</string>
     <string name="no_credit_for_currency">Ne pare rău, nu există opțiuni de credit pentru această valută</string>
     <string name="invalid_bank_account_name">Nume de cont bancar invalid, trebuie să fie între %d..%d caractere</string>
     <string name="open_account">Deschide cont</string>
@@ -111,7 +107,6 @@
     <string name="credit_interest_is">Dobânda la credit este de %.2f%%.</string>
     <string name="open_bank_account">Deschidere cont bancar</string>
     <string name="unable_new_bank_account">Nu s-a putut deschide contul: %s invalid</string>
-    <string name="date_time_at_place">%s la %s</string>
     <string name="limit_is">Limită:</string>
     <string name="edit">Modifică</string>
     <string name="add_friend">Adaugă prieten</string>
@@ -124,7 +119,6 @@
     <string name="too_long">Prea lung</string>
     <string name="done">Gata</string>
     <string name="invalid_about">Câmp \"Despre\" invalid</string>
-    <string name="profile_picture">Poză de profil</string>
     <string name="user_not_found">Nu a fost găsit niciun utilizator. Te rugăm să verifici tag-ul/e-mail-ul/numărul de telefon</string>
     <string name="friend_request_sent">Cerere de prietenie trimisă</string>
     <string name="add_friend_by">Adaugă un prieten după tag, e-mail sau număr de telefon:</string>
@@ -171,11 +165,9 @@
     <string name="choose_account_request">Alege în ce cont vrei să îți primești banii:</string>
     <string name="request_sent">Cererea a fost trimisă cu success.</string>
     <string name="sending">Se trimite…</string>
-    <string name="failed_to_send_message">Eroare la trimiterea mesajului. Se reîncearcă…</string>
     <string name="send">Trimite</string>
     <string name="type_a_message">Scrie un mesaj…</string>
     <string name="no_accounts_send_receive">Nu ai niciun cont bancar încă. Deschide un cont bancar pentru a putea trimite și primi bani.</string>
-    <string name="no_bank_accounts_found">Nu a fost găsit niciun cont bancar</string>
     <string name="conversion_rate">"Rata de conversie: "</string>
     <string name="you_will_receive">"Vei primi: "</string>
     <string name="you_will_send">"Vei trimite: "</string>
@@ -201,12 +193,9 @@
     <string name="reference">Referință</string>
     <string name="not_user">Nu este utilizator pe această platformă</string>
     <string name="received_amount">"Suma primită: "</string>
-    <string name="sent_exchanged_amount">"Suma trimisă schimbată: "</string>
     <string name="from">De la</string>
     <string name="to">Către</string>
-    <string name="not_a_friend">Nu este prieten</string>
     <string name="card">Card</string>
-    <string name="exchanged_to">schimbat în</string>
     <string name="from_account">De la contul</string>
     <string name="to_account">Către contul</string>
     <string name="no_message">Fară mesaj</string>
@@ -270,7 +259,7 @@
     <string name="live_chat">Live chat</string>
     <string name="call_us">Sună-ne</string>
     <string name="choose_default_bank_account">Alege contul bancar implicit:</string>
-    <string name="dont_use_default_account">Nu folosi cont implicit</string>
+    <string name="do_not_use_default_account">Nu folosi cont implicit</string>
     <string name="use_account_for_all_currencies">Folosește acest cont pentru toate valutele</string>
     <string name="use_account_for_all_desc">Pentru transferuri sosite de alte valute, schimbă-le suma automat, la rata curentă.</string>
     <string name="pin">PIN</string>
@@ -309,5 +298,4 @@
     <string name="unfriend">Scoate din lista de prieteni</string>
     <string name="unfriend_confirm">Sigur vrei să îl scoți pe \'%s\' din lista ta de prieteni?</string>
     <string name="completed_party">Echipă încheiată</string>
-    <string name="requested">Cerut:</string>
 </resources>

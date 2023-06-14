@@ -39,7 +39,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     val transactions by CardTransaction referrersOn CardTransactions.card
 
     /**
-     * Returns a serializable object containg the data for this bank account.
+     * Returns a serializable object containing the data for this bank account.
      * @param includeSensitive Whether to include sensitive information, such as card number, PIN, expiration date or CVV
      */
     fun serializable(includeSensitive: Boolean = false) = if (includeSensitive) SBankCard(

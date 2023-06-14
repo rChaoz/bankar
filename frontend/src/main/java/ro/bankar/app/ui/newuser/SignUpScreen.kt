@@ -172,8 +172,16 @@ class SignUpModel : ViewModel() {
         )
     }
     val email = verifiableStateOf("", R.string.invalid_email) { SUserValidation.emailRegex.matches(it.trim()) }
-    val password = verifiableStateOf("", R.string.password_doesnt_meet) { SUserValidation.passwordRegex.matches(it) }
-    val confirmPassword = verifiableStateOf("", R.string.password_doesnt_meet) { it == password.value }
+    val password = verifiableStateOf("") {
+        when {
+            it.length < SUserValidation.passwordLengthRange.first -> getString(R.string.password_too_short)
+            it.length > SUserValidation.passwordLengthRange.last -> getString(R.string.password_too_long)
+            !SUserValidation.passwordRegex.matches(it) -> getString(R.string.password_does_not_meet)
+            else -> null
+        }
+
+    }
+    val confirmPassword = verifiableStateOf("", R.string.passwords_do_not_match) { it == password.value }
 
     // Second step
     val firstName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }

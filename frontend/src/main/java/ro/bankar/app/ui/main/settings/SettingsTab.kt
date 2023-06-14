@@ -579,7 +579,7 @@ private fun DefaultBankAccountScreen() = Surface {
                 Text(text = stringResource(R.string.choose_default_bank_account))
                 Spacer(modifier = Modifier.height(8.dp))
                 AccountsComboBox(selectedAccount = account, accounts = accounts,
-                    noneOptionText = R.string.dont_use_default_account, onPickAccount = {
+                    noneOptionText = R.string.do_not_use_default_account, onPickAccount = {
                         isLoading = true
                         scope.launch {
                             repository.sendDefaultAccount(it?.id, state!!.alwaysUse).handleSuccess(this, snackbar, context) {

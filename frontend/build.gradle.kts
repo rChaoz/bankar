@@ -51,6 +51,9 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.6"
     }
+    bundle {
+        language.enableSplit = false
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -71,6 +74,7 @@ dependencies {
     implementation(libs.shimmer.compose)
     implementation(libs.compose.settings)
     implementation(libs.compose.settings.datastore.preferences)
+    implementation(libs.kotlinx.serialization.protobuf)
     implementation(libs.androidx.biometric)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)

@@ -38,13 +38,12 @@
     <string name="password_too_short">Password too short</string>
     <string name="password_too_long">Password too long</string>
     <string name="password_requirements">Password must: be 8 characters or longer, contain a lowercase &amp; uppercase letter, a digit and a symbol</string>
-    <string name="password_doesnt_meet">Password does not met the requirements</string>
-    <string name="passwords_dont_match">Passwords don\'t match</string>
+    <string name="password_does_not_meet">Password does not met the requirements</string>
+    <string name="passwords_do_not_match">Passwords don\'t match</string>
     <string name="invalid_tag">Invalid tag</string>
     <string name="tag_already_exists">Tag already exists</string>
     <string name="tag_too_short">Tag too short (minimum %d characters)</string>
     <string name="tag_too_long">Tag too long (maximum %d characters)</string>
-    <string name="signup_personal_information">Next, we require some personal information:</string>
     <string name="first_name">First name</string>
     <string name="middle_name">Middle name</string>
     <string name="last_name">Last name</string>
@@ -62,7 +61,6 @@
     <string name="code_has_6_digits">Verification code has 6 digits</string>
     <string name="invalid_phone">Invalid phone number</string>
     <string name="phone">Phone number</string>
-    <string name="select">Select…</string>
     <string name="prefix">Prefix</string>
     <string name="code_was_sent">The 6-digit code has been sent to %s. Please enter the code below:</string>
     <string name="edit_phone">Edit phone number</string>
@@ -76,7 +74,6 @@
     <string name="email_already_in_use">This e-mail address is already in use. Please use a different e-mail.</string>
     <string name="see_more">See more</string>
     <string name="recent_activity">Recent activity</string>
-    <string name="party_invite">Party invite</string>
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
     <string name="party_invite_from">Invite from %s</string>
@@ -101,7 +98,6 @@
     <string name="personalize_new_account">Personalize your new account:</string>
     <string name="account_name">Account name</string>
     <string name="currency">Currency</string>
-    <string name="retry">Retry</string>
     <string name="no_credit_for_currency">Sorry, there are no credit options for this currency</string>
     <string name="invalid_bank_account_name">Invalid bank account name, must be between %d..%d characters</string>
     <string name="open_account">Open account</string>
@@ -111,7 +107,6 @@
     <string name="credit_interest_is">Credit interest is %.2f%%.</string>
     <string name="open_bank_account">Open bank account</string>
     <string name="unable_new_bank_account">Unable to open account: invalid %s</string>
-    <string name="date_time_at_place">%s at %s</string>
     <string name="limit_is">Limit:</string>
     <string name="edit">Edit</string>
     <string name="add_friend">Add friend</string>
@@ -124,7 +119,6 @@
     <string name="too_long">Too long</string>
     <string name="done">Done</string>
     <string name="invalid_about">Invalid about</string>
-    <string name="profile_picture">Profile picture</string>
     <string name="user_not_found">No user was found. Please check tag/e-mail/phone number</string>
     <string name="friend_request_sent">Friend request sent</string>
     <string name="add_friend_by">Add a friend by their tag, e-mail or phone number:</string>
@@ -171,11 +165,9 @@
     <string name="choose_account_request">Choose into what account you\'d like to receive the money:</string>
     <string name="request_sent">The request has been sent successfully.</string>
     <string name="sending">Sending…</string>
-    <string name="failed_to_send_message">Failed to send message. Retrying…</string>
     <string name="send">Send</string>
     <string name="type_a_message">Type a message…</string>
     <string name="no_accounts_send_receive">You don\'t have any bank accounts yet. Open a bank account to be able to send and receive money.</string>
-    <string name="no_bank_accounts_found">No bank accounts found</string>
     <string name="conversion_rate">"Conversion rate: "</string>
     <string name="you_will_receive">"You will receive: "</string>
     <string name="you_will_send">"You will send: "</string>
@@ -203,12 +195,9 @@
     <string name="not_user">Not a user on this platform</string>
     <string name="iban" translatable="false">IBAN</string>
     <string name="received_amount">"Received amount: "</string>
-    <string name="sent_exchanged_amount">"Sent exchanged amount: "</string>
     <string name="from">From</string>
     <string name="to">To</string>
-    <string name="not_a_friend">Not a friend</string>
     <string name="card">Card</string>
-    <string name="exchanged_to">exchanged to</string>
     <string name="from_account">From account</string>
     <string name="to_account">To account</string>
     <string name="no_message">No message</string>
@@ -272,7 +261,7 @@
     <string name="live_chat">Live chat</string>
     <string name="call_us">Call us</string>
     <string name="choose_default_bank_account">Choose default bank account:</string>
-    <string name="dont_use_default_account">Don\'t use default account</string>
+    <string name="do_not_use_default_account">Don\'t use default account</string>
     <string name="use_account_for_all_currencies">Use this account for all currencies</string>
     <string name="use_account_for_all_desc">For incoming transfers of other currencies, automatically exchange it at the current rate.</string>
     <string name="pin">PIN</string>
@@ -312,5 +301,4 @@
     <string name="unfriend">Unfriend</string>
     <string name="unfriend_confirm">Are you sure you want to remove \'%s\' from your friend list?</string>
     <string name="completed_party">Completed party</string>
-    <string name="requested">Requested:</string>
 </resources>

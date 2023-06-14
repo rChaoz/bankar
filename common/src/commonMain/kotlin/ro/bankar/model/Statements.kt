@@ -14,7 +14,7 @@ data class SStatementRequest(
     val endDate: LocalDate
 ) {
     companion object {
-        val maxNameLength = 20
+        const val maxNameLength = 20
     }
 
     fun validate() = when {

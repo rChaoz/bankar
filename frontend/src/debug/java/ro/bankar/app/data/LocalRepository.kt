@@ -87,7 +87,7 @@ private object MockRepository : Repository() {
         )
     )
     override val creditData = mockFlow(
-        listOf<SCreditData>(
+        listOf(
             SCreditData(Currency.ROMANIAN_LEU, 15.5, 1000.0, 10000.0)
         )
     )

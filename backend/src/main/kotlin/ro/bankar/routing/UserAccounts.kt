@@ -176,7 +176,7 @@ fun Route.configureUserAccounts() {
     }
 
     authenticate {
-        get("signout") {
+        get("signOut") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             newSuspendedTransaction { user.clearSession() }
             call.respondSuccess()

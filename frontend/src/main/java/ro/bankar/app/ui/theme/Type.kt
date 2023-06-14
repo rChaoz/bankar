@@ -1,5 +1,3 @@
-@file:Suppress("PrivatePropertyName")
-
 package ro.bankar.app.ui.theme
 
 import androidx.compose.material3.Typography

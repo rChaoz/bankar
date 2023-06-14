@@ -50,7 +50,7 @@ fun VerifiableField(
     if (id != null) mod = mod.layoutId(id)
     OutlinedTextField(
         value = verifiableState.value,
-        onValueChange = { valueTransform(it)?.let{ verifiableState.value = it } },
+        onValueChange = { newValue -> valueTransform(newValue)?.let{ verifiableState.value = it } },
         modifier = mod,
         enabled = enabled,
         singleLine = !multiLine,

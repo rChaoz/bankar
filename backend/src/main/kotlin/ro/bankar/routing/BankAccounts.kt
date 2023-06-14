@@ -89,7 +89,7 @@ fun Route.configureBankAccounts() {
                 // Create new card
                 newSuspendedTransaction t@{
                     val account = call.parameters["id"]?.toIntOrNull()?.let { BankAccount.findById(it) }?.takeIf { it.user.id == user.id } ?: run {
-                        call.respondNotFound("bank_acount"); return@t
+                        call.respondNotFound("bank_account"); return@t
                     }
                     BankCard.create(newCardData, account)
                 }

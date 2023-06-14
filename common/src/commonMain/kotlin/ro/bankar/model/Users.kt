@@ -27,6 +27,7 @@ object SUserValidation {
 
     // Password: between 8 and 32 characters (inclusive), at least one uppercase letter, at least one
     // lowercase letter, at least one digit, at least one special character
+    val passwordLengthRange = 8..32
     val passwordRegex = Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,32}$""")
 
     // Valid age range (in years)

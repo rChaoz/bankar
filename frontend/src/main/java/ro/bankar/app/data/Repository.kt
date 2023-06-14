@@ -364,7 +364,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     }
 
     override fun logout() {
-        scope.launch { client.safeRequest<Unit> { get("signout") } }
+        scope.launch { client.safeRequest<Unit> { get("signOut") } }
         onLogout()
     }
 

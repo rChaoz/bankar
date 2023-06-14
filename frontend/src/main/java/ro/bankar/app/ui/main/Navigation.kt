@@ -1,5 +1,3 @@
-@file:Suppress("ConstPropertyName")
-
 package ro.bankar.app.ui.main
 
 import android.net.Uri
@@ -10,7 +8,6 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.google.accompanist.navigation.animation.composable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ro.bankar.app.Nav

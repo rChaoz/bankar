@@ -44,7 +44,7 @@ class MessagingService : FirebaseMessagingService() {
             .setContentTitle("@$from")
             .setContentText(message)
             .setColor(getColor(R.color.primary))
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_stat_notification)
             .setAutoCancel(true)
             // TODO .setContentIntent(navDeepLink { uriPattern = "${Nav.Main.route}/" }.)
             .build().let { notificationManager.notify(Random.nextInt(), it) }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,7 +71,7 @@ class NewBankAccountModel : ViewModel() {
             else getString(R.string.invalid_bank_account_name, it.first, it.last)
         }
     }
-    var color = mutableStateOf(0)
+    var color = mutableIntStateOf(0)
     var currency = verifiableStateOf(Currency.ROMANIAN_LEU, R.string.no_credit_for_currency) {
         accountType != SBankAccountType.Credit || currencyCreditData != null
     }
@@ -94,7 +95,7 @@ class NewBankAccountModel : ViewModel() {
         viewModelScope.launch {
             repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value.trim().ifEmpty { context.getString(R.string.s_account, context.getString(accountType.rString)) },
-                    color.value, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
+                    color.intValue, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
             ).handle(this, snackBar, context) {
                 when (it) {
                     SuccessResponse -> {

@@ -1,6 +1,5 @@
 package ro.bankar.database
 
-import io.ktor.server.application.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream

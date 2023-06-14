@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -76,22 +75,6 @@ fun AccountsComboBox(
                 Text(text = stringResource(if (account.type == SBankAccountType.Credit) R.string.available_credit else R.string.current_balance))
                 Text(text = account.currency.format(account.spendable), color = MaterialTheme.customColors.green, fontWeight = FontWeight.Medium)
             }
-        }
-    }
-}
-
-@Composable
-fun AccountsDropdown(
-    expanded: Boolean,
-    accounts: List<SBankAccount>,
-    onDismissRequest: () -> Unit,
-    onPickAccount: (SBankAccount) -> Unit
-) {
-    DropdownMenu(expanded, onDismissRequest) {
-        for (account in accounts) {
-            DropdownMenuItem(text = {
-                AccountCard(account)
-            }, onClick = { onPickAccount(account) })
         }
     }
 }

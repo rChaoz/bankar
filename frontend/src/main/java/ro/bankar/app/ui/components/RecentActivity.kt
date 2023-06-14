@@ -223,7 +223,10 @@ fun ReceivedTransferRequestDialog(
 
     val selectedAccount = rememberSaveable(stateSaver = serializableSaver()) { mutableStateOf<SBankAccount?>(null) }
     LaunchedEffect(true) {
-        repository.accounts.collect { accounts = it; if (selectedAccount.value == null) selectedAccount.value = it.firstOrNull { it.currency == currency } }
+        repository.accounts.collect { newAccounts ->
+            accounts = newAccounts
+            if (selectedAccount.value == null) selectedAccount.value = newAccounts.firstOrNull { it.currency == currency }
+        }
     }
 
     val exchangeRate by remember {

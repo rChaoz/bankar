@@ -59,7 +59,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
-import androidx.constraintlayout.compose.ExperimentalMotionApi
 import androidx.constraintlayout.compose.MotionLayout
 import androidx.constraintlayout.compose.Visibility
 import androidx.lifecycle.ViewModel
@@ -113,7 +112,7 @@ fun MainScreen(initialTab: MainTab<*>, navigation: NavHostController) {
     MainScreen(tab, setTab, navigation)
 }
 
-@OptIn(ExperimentalMotionApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <T : MainTab.MainTabModel> MainScreen(tab: MainTab<T>, setTab: (MainTab<*>) -> Unit, navigation: NavHostController) {
     val tabModel = tab.viewModel()

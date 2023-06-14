@@ -2,7 +2,6 @@ package ro.bankar.app.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -18,7 +17,6 @@ import androidx.compose.ui.text.TextStyle
 /**
  * Button that looks like an OutlinedTextField
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonField(
     value: String,
