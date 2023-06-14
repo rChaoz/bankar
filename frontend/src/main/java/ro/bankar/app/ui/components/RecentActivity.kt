@@ -54,7 +54,7 @@ import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.MainNav
-import ro.bankar.app.ui.main.friend.FriendCard
+import ro.bankar.app.ui.main.friend.UserCard
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
@@ -324,7 +324,7 @@ fun ReceivedTransferRequestDialog(
                         shape = RoundedCornerShape(8.dp),
                         tonalElevation = 4.dp
                     ) {
-                        FriendCard(friend = user, countryData.nameFromCode(user.countryCode), modifier = Modifier.padding(12.dp))
+                        UserCard(user = user, countryData.nameFromCode(user.countryCode), modifier = Modifier.padding(12.dp))
                     }
                 } else {
                     Surface(
@@ -334,7 +334,7 @@ fun ReceivedTransferRequestDialog(
                         shape = RoundedCornerShape(8.dp),
                         tonalElevation = 4.dp
                     ) {
-                        FriendCard(friend = user, countryData.nameFromCode(user.countryCode), modifier = Modifier.padding(12.dp))
+                        UserCard(user = user, countryData.nameFromCode(user.countryCode), modifier = Modifier.padding(12.dp))
                     }
                 }
                 if (partyID != null) {

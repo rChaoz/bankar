@@ -96,8 +96,8 @@ import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.MainTab
-import ro.bankar.app.ui.main.friend.FriendCard
 import ro.bankar.app.ui.main.friend.FriendDropdown
+import ro.bankar.app.ui.main.friend.UserCard
 import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
@@ -438,7 +438,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                             .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        FriendCard(friend = it, country = model.countryData.nameFromCode(it.countryCode), modifier = Modifier.padding(horizontal = 12.dp))
+                        UserCard(user = it, country = model.countryData.nameFromCode(it.countryCode), modifier = Modifier.padding(horizontal = 12.dp))
                         if (it.about.isNotEmpty()) {
                             Surface(
                                 modifier = Modifier
