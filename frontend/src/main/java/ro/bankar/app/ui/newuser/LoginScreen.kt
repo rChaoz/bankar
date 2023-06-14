@@ -73,13 +73,13 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import ro.bankar.app.KeyUserSession
-import ro.bankar.app.LocalDataStore
 import ro.bankar.app.LocalThemeMode
 import ro.bankar.app.R
 import ro.bankar.app.TAG
+import ro.bankar.app.data.KeyUserSession
+import ro.bankar.app.data.LocalDataStore
 import ro.bankar.app.data.basicClient
-import ro.bankar.app.setPreference
+import ro.bankar.app.data.setPreference
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.ThemeToggle
 import ro.bankar.app.ui.show

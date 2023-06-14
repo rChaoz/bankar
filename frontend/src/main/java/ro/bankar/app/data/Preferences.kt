@@ -1,4 +1,4 @@
-package ro.bankar.app
+package ro.bankar.app.data
 
 import android.content.Context
 import androidx.compose.runtime.Composable

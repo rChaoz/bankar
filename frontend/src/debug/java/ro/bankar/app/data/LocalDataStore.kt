@@ -1,6 +1,6 @@
-package ro.bankar.app
+package ro.bankar.app.data
 
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -15,4 +15,4 @@ private object EmptyDataStore : DataStore<Preferences> {
 
 }
 
-val LocalDataStore = compositionLocalOf<DataStore<Preferences>> { EmptyDataStore }
+val LocalDataStore = staticCompositionLocalOf<DataStore<Preferences>> { EmptyDataStore }

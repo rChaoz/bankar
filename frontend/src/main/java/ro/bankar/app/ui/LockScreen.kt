@@ -38,13 +38,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import ro.bankar.app.KeyAuthenticationPin
-import ro.bankar.app.KeyFingerprintEnabled
 import ro.bankar.app.LocalActivity
-import ro.bankar.app.LocalDataStore
 import ro.bankar.app.R
-import ro.bankar.app.collectPreferenceAsState
+import ro.bankar.app.data.KeyAuthenticationPin
+import ro.bankar.app.data.KeyFingerprintEnabled
+import ro.bankar.app.data.LocalDataStore
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.collectPreferenceAsState
 import ro.bankar.app.data.fold
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.VerifiableField

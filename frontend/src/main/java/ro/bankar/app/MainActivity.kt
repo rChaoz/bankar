@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.datastore.core.DataStore
@@ -62,7 +63,7 @@ const val TAG = "BanKAR"
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
 
 val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
-val LocalActivity = compositionLocalOf<FragmentActivity?> { null }
+val LocalActivity = staticCompositionLocalOf<FragmentActivity?> { null }
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
