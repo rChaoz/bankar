@@ -25,12 +25,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,12 +49,10 @@ import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.launch
-import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.LoadingOverlay
-import ro.bankar.app.ui.components.MBottomSheet
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.main.BankAccountPersonalisation
@@ -70,12 +70,13 @@ import ro.bankar.util.formatIBAN
 @Composable
 // Use box to prevent parent Column from adding another spacer for the bottom sheet(s)
 fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> Unit) = Box {
+    val context = LocalContext.current
     var showCustomiseSheet by remember { mutableStateOf(false) }
     // Menu sheet
     val scope = rememberCoroutineScope()
     var showMenuSheet by remember { mutableStateOf(false) }
     val menuSheetState = rememberModalBottomSheetState(true)
-    if (showMenuSheet) MBottomSheet(sheetState = menuSheetState, onDismissRequest = { showMenuSheet = false }) {
+    if (showMenuSheet) ModalBottomSheet(sheetState = menuSheetState, onDismissRequest = { showMenuSheet = false }) {
         Column(
             modifier = Modifier
                 .padding(bottom = 12.dp)
@@ -87,10 +88,9 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                 putExtra(Intent.EXTRA_TEXT, iban)
                 type = "text/plain"
             }, stringResource(R.string.share_iban))
-            val activity = LocalActivity.current
             Surface(onClick = {
                 scope.launch { menuSheetState.hide(); showMenuSheet = false }
-                activity?.startActivity(shareIntent)
+                context.startActivity(shareIntent)
             }) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -151,7 +151,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
     // Customise sheet
     var isCustomiseLoading by remember { mutableStateOf(false) }
     val customiseSheetState = rememberModalBottomSheetState(true) { !isCustomiseLoading }
-    if (showCustomiseSheet) MBottomSheet(sheetState = customiseSheetState, onDismissRequest = { showCustomiseSheet = false }) {
+    if (showCustomiseSheet) ModalBottomSheet(sheetState = customiseSheetState, onDismissRequest = { showCustomiseSheet = false }) {
         LoadingOverlay(isCustomiseLoading) {
             Column(
                 modifier = Modifier
@@ -168,7 +168,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                         }
                     }
                 }
-                val color = remember { mutableStateOf(data.color) }
+                val color = remember { mutableIntStateOf(data.color) }
 
                 BankAccountPersonalisation(
                     title = R.string.personalize_your_account,
@@ -185,12 +185,11 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                     }) {
                         Text(text = stringResource(android.R.string.cancel))
                     }
-                    val context = LocalContext.current
                     val repository = LocalRepository.current
                     Button(modifier = Modifier.weight(1f), onClick = {
                         isCustomiseLoading = true
                         scope.launch {
-                            repository.sendCustomiseAccount(data.id, name.value.trim(), color.value).handleSuccess(context) {
+                            repository.sendCustomiseAccount(data.id, name.value.trim(), color.intValue).handleSuccess(context) {
                                 repository.accounts.emitNow()
                                 showCustomiseSheet = false
                             }

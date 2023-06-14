@@ -20,7 +20,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 
 val KeyUserSession = stringPreferencesKey("userSession")
 
-val KeyLanguage = intPreferencesKey("language")
+val KeyLanguage = stringPreferencesKey("language")
 val KeyTheme = intPreferencesKey("theme")
 val KeyPreferredCurrency = intPreferencesKey("preferredCurrency")
 

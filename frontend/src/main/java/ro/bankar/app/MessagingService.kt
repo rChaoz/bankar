@@ -40,7 +40,6 @@ class MessagingService : FirebaseMessagingService() {
             Notification.Builder(this)
         }
 
-        Log.d(TAG, "Sending notification to $from: \"$message\"")
         notification
             .setContentTitle("@$from")
             .setContentText(message)

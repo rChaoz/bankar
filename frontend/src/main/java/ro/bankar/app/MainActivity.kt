@@ -1,8 +1,8 @@
 package ro.bankar.app
 
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -15,16 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -38,18 +36,30 @@ import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import ro.bankar.app.data.Cache
 import ro.bankar.app.data.EmptyRepository
+import ro.bankar.app.data.KeyLanguage
+import ro.bankar.app.data.KeyTheme
+import ro.bankar.app.data.KeyUserSession
+import ro.bankar.app.data.LocalDataStore
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.cache
+import ro.bankar.app.data.collectPreferenceAsState
+import ro.bankar.app.data.dataStore
+import ro.bankar.app.data.mapCollectPreferenceAsState
+import ro.bankar.app.data.removePreference
 import ro.bankar.app.data.repository
+import ro.bankar.app.data.setPreference
 import ro.bankar.app.ui.LockScreen
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.mainNavigation
-import ro.bankar.app.ui.main.settings.Language
 import ro.bankar.app.ui.main.settings.Theme
 import ro.bankar.app.ui.newuser.NewUserNav
 import ro.bankar.app.ui.newuser.newUserNavigation
@@ -63,12 +73,34 @@ const val TAG = "BanKAR"
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
 
 val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
-val LocalActivity = staticCompositionLocalOf<FragmentActivity?> { null }
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { Main(this, dataStore, lifecycleScope) }
+
+        // Re-create activity if language changes
+        val currentLanguage = runBlocking { dataStore.data.first()[KeyLanguage] }
+        lifecycleScope.launch {
+            dataStore.data.map { it[KeyLanguage] }.filter { it != currentLanguage }.collect { recreate() }
+        }
+
+        setContent {
+            Main(dataStore, lifecycleScope)
+        }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        var context = newBase
+        val language = runBlocking { context.dataStore.data.first()[KeyLanguage] }
+
+        // Apply language changes
+        if (language != null) {
+            val locale = Locale(language)
+            context = context.createConfigurationContext(Configuration().apply { setLocale(locale) })
+            Locale.setDefault(locale)
+        }
+
+        super.attachBaseContext(context)
     }
 }
 
@@ -95,39 +127,18 @@ private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, 
         }
     }
 
-    // Allow programmatically changing language
-    val languages = remember { Language.values() }
-    val language by remember {
-        dataStore.data.map { data ->
-            data[KeyLanguage]?.let { languages[it.coerceIn(languages.indices)] } ?: Language.SystemDefault
-        }
-    }.collectAsState(initial = initialPrefs[KeyLanguage]?.let { languages[it.coerceIn(languages.indices)] } ?: Language.SystemDefault)
-
-    val context = LocalContext.current
-    val languageContext by remember {
-        derivedStateOf {
-            if (language == Language.SystemDefault) context
-            else context.createConfigurationContext(Configuration().apply {
-                setLocale(Locale(language.code!!))
-            })
-        }
-    }
-
     AppTheme(useDarkTheme = darkMode) {
         CompositionLocalProvider(
             LocalThemeMode provides ThemeMode(darkMode) {
                 scope.launch { dataStore.setPreference(KeyTheme, if (darkMode) Theme.Light.ordinal else Theme.Dark.ordinal) }
             },
             LocalDataStore provides dataStore,
-            LocalContext provides languageContext,
-            LocalActivity provides activity
         ) {
             // Setup navigation
             val controller = rememberAnimatedNavController()
 
             // Server data repository
             val sessionToken by dataStore.collectPreferenceAsState(KeyUserSession, defaultValue = initialPrefs[KeyUserSession])
-            Log.d(TAG, "sessionToken = $sessionToken")
             val repository = remember(sessionToken) {
                 sessionToken?.let {
                     repository(lifecycleScope, it) {
@@ -142,9 +153,13 @@ private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, 
                     }
                 } ?: EmptyRepository
             }
-            // App should start in locked state
+            // App should start in locked state. However, if the activity is re-created, we should not lock it again
+            var firstStart by rememberSaveable { mutableStateOf(true) }
             LaunchedEffect(true) {
-                if (sessionToken != null) controller.navigate(Nav.Lock.route)
+                if (sessionToken != null && firstStart) {
+                    controller.navigate(Nav.Lock.route)
+                    firstStart = false
+                }
             }
 
             // Open web socket
@@ -153,7 +168,10 @@ private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, 
             }
 
             // Track user inactivity
-            var lastActiveAt by remember { mutableStateOf(Clock.System.now()) }
+            var lastActiveAt by rememberSaveable(saver = Saver(
+                save = { it.value.toEpochMilliseconds() },
+                restore = { mutableStateOf(Instant.fromEpochMilliseconds(it)) }
+            )) { mutableStateOf(Clock.System.now()) }
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->

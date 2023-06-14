@@ -73,7 +73,6 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
-import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.handle
@@ -222,8 +221,7 @@ fun StatementsScreen(onDismiss: () -> Unit) {
                 data class Download(val id: Long, val job: Job)
 
                 val downloads = remember { mutableListOf<Download>() }
-                val activity = LocalActivity.current
-                if (activity != null) DisposableEffect(downloadManager) {
+                DisposableEffect(downloadManager) {
                     val receiver = object : BroadcastReceiver() {
                         override fun onReceive(context: Context, intent: Intent) {
                             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
@@ -250,12 +248,12 @@ fun StatementsScreen(onDismiss: () -> Unit) {
                     }
 
                     if (VERSION.SDK_INT >= 33)
-                        activity.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
+                        context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
                     else
-                        activity.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+                        context.registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
 
                     onDispose {
-                        activity.unregisterReceiver(receiver)
+                        context.unregisterReceiver(receiver)
                     }
                 }
 

@@ -38,7 +38,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.KeyAuthenticationPin
 import ro.bankar.app.data.KeyFingerprintEnabled
@@ -57,8 +56,8 @@ import ro.bankar.model.SuccessResponse
 fun LockScreen(onUnlock: () -> Unit) {
     // Don't allow exiting this screen via back button
     val context = LocalContext.current
-    val activity = LocalActivity.current
-    BackHandler(enabled = activity != null) { activity!!.moveTaskToBack(true) }
+    val activity = context.findActivity()
+    BackHandler { activity?.moveTaskToBack(true) }
 
     val repository = LocalRepository.current
     val scope = rememberCoroutineScope()
@@ -85,14 +84,13 @@ fun LockScreen(onUnlock: () -> Unit) {
     // Fingerprint
     val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
     val prompt = remember {
-        activity?.let {
-            BiometricPrompt(it, object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    onUnlock()
-                }
-            })
-        }
+        if (activity != null) BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onUnlock()
+            }
+        })
+        else null
     }
     val promptInfo = remember {
         BiometricPrompt.PromptInfo.Builder()

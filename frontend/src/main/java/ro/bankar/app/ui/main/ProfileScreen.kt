@@ -48,7 +48,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -96,7 +95,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.minus
-import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -233,8 +231,6 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
     var isLoading by rememberSaveable { mutableStateOf(false) }
     // Need to provide a real context to 'rememberLauncherForActivityResult', not the crap that Context.createConfigurationContext is
     // CompositionalLocalProvider can't be used due to no return value
-    val providers = LocalActivity.current?.let { arrayOf(LocalContext provides it) }
-    if (providers != null) currentComposer.startProviders(providers)
     val imagePicker = rememberLauncherForActivityResult(contract = CropImageContract()) { result ->
         if (!result.isSuccessful || result.uriContent == null) return@rememberLauncherForActivityResult
         isLoading = true
@@ -262,7 +258,6 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
             isLoading = false
         }
     }
-    if (providers != null) currentComposer.endProviders()
 
     // For loading animations
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)

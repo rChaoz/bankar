@@ -81,11 +81,8 @@ val MainTabs = listOf(HomeTab, FriendsTab, SettingsTab)
 abstract class MainTab<T : MainTab.MainTabModel>(val index: Int, val name: String, val title: Int) {
     companion object {
         val stateSaver = object : Saver<MutableState<MainTab<*>>, String> {
-            override fun restore(value: String): MutableState<MainTab<*>>? = when (value) {
-                FriendsTab.name -> mutableStateOf(FriendsTab)
-                HomeTab.name -> mutableStateOf(HomeTab)
-                else -> null
-            }
+            override fun restore(value: String): MutableState<MainTab<*>> =
+                mutableStateOf(MainTabs.first { it.name == value })
 
             override fun SaverScope.save(value: MutableState<MainTab<*>>) = value.value.name
         }

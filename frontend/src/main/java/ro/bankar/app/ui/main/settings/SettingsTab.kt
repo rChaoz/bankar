@@ -65,14 +65,12 @@ import androidx.navigation.NavHostController
 import com.alorma.compose.settings.storage.base.SettingValueState
 import com.alorma.compose.settings.storage.base.getValue
 import com.alorma.compose.settings.storage.base.setValue
-import com.alorma.compose.settings.storage.datastore.rememberPreferenceDataStoreIntSettingState
 import com.alorma.compose.settings.ui.SettingsCheckbox
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.launch
-import ro.bankar.app.LocalActivity
 import ro.bankar.app.R
 import ro.bankar.app.data.KeyAuthenticationPin
 import ro.bankar.app.data.KeyFingerprintEnabled
@@ -89,9 +87,11 @@ import ro.bankar.app.data.setPreference
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.findActivity
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainTab
 import ro.bankar.app.ui.rememberMockNavController
+import ro.bankar.app.ui.rememberPreferenceDataStoreSettingState
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.Currency
 import ro.bankar.model.ErrorResponse
@@ -307,7 +307,7 @@ enum class Language(val text: Int, val flag: Int?, val code: String?) {
 @Composable
 private fun LanguageScreen() = Surface {
     val datastore = LocalDataStore.current
-    var state by rememberPreferenceDataStoreIntSettingState(key = KeyLanguage.name, dataStore = datastore, defaultValue = 0)
+    var state by rememberPreferenceDataStoreSettingState(key = KeyLanguage, dataStore = datastore)
 
     Column(modifier = Modifier.fillMaxSize()) {
         for (language in Language.values()) {
@@ -320,7 +320,7 @@ private fun LanguageScreen() = Surface {
                     else Image(painter = painterResource(language.flag), contentDescription = null)
                 },
                 title = { Text(text = stringResource(id = language.text), style = MaterialTheme.typography.titleMedium) },
-                action = if (state == language.ordinal) {
+                action = if (state == language.code) {
                     {
                         Icon(
                             imageVector = Icons.Default.Check,
@@ -330,7 +330,7 @@ private fun LanguageScreen() = Surface {
                         )
                     }
                 } else null,
-                onClick = { state = language.ordinal },
+                onClick = { state = language.code },
             )
         }
     }
@@ -390,7 +390,6 @@ private fun AccessScreen() = Surface {
                 value = pin,
                 onValueChange = { pin = it.filter(Char::isDigit) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { if (pin.length in 4..8) onDone(pin) }),
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(requester),
@@ -401,9 +400,8 @@ private fun AccessScreen() = Surface {
 
     // Fingerprint
     val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
-    val activity = LocalActivity.current
     val prompt = remember {
-        activity?.let {
+        context.findActivity()?.let {
             BiometricPrompt(it, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
@@ -469,7 +467,7 @@ enum class Theme(val title: Int, val icon: Int) {
 @Composable
 private fun ThemeScreen() = Surface {
     val datastore = LocalDataStore.current
-    var state by rememberPreferenceDataStoreIntSettingState(key = KeyTheme.name, dataStore = datastore, defaultValue = 0)
+    var state by rememberPreferenceDataStoreSettingState(key = KeyTheme, dataStore = datastore, defaultValue = 0)
 
     Column(modifier = Modifier.fillMaxSize()) {
         for (theme in Theme.values()) {
@@ -530,7 +528,7 @@ private fun ContactScreen() = Surface {
 @Composable
 private fun PrimaryCurrencyScreen() = Surface {
     val datastore = LocalDataStore.current
-    var state by rememberPreferenceDataStoreIntSettingState(key = KeyPreferredCurrency.name, dataStore = datastore, defaultValue = 0)
+    var state by rememberPreferenceDataStoreSettingState(key = KeyPreferredCurrency, dataStore = datastore, defaultValue = 0)
 
     Column(modifier = Modifier.fillMaxSize()) {
         for (currency in Currency.values()) {

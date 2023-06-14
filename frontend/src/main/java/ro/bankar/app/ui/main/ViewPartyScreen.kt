@@ -22,6 +22,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,7 +54,6 @@ import ro.bankar.app.data.handle
 import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.Avatar
 import ro.bankar.app.ui.components.LoadingOverlay
-import ro.bankar.app.ui.components.MBottomSheet
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.ReceivedTransferRequestDialog
 import ro.bankar.app.ui.components.SurfaceList
@@ -291,7 +291,7 @@ private fun PartyMember(
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    if (showAddFriend) MBottomSheet(onDismissRequest = { showAddFriend = false }) {
+    if (showAddFriend) ModalBottomSheet(onDismissRequest = { showAddFriend = false }) {
         LoadingOverlay(isLoading) {
             Column(
                 modifier = Modifier

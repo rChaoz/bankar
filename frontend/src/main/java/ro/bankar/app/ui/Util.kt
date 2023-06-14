@@ -1,5 +1,8 @@
 package ro.bankar.app.ui
 
+import android.content.Context
+import android.content.ContextWrapper
+import android.util.Log
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -8,9 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,20 +22,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
+import com.alorma.compose.settings.storage.base.SettingValueState
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import ro.bankar.app.R
+import ro.bankar.app.TAG
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
@@ -39,6 +54,74 @@ import ro.bankar.model.SBankAccountType
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+
+fun Context.findActivity(): FragmentActivity? = when (this) {
+    is FragmentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> {
+        Log.w(TAG, "Context $this is not an activity")
+        null
+    }
+}
+
+/**
+ * Returns a [SettingValueState] that allows null values. A null value indicates that the setting
+ * has not been set yet. Setting the value to null will delete the setting.
+ */
+@Composable
+fun <T : Any> rememberPreferenceDataStoreSettingState(
+    dataStore: DataStore<Preferences>,
+    key: Preferences.Key<T>,
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+): SettingValueState<T?> {
+    return remember {
+        object : SettingValueState<T?> {
+            private var _value: T? = runBlocking { dataStore.data.first()[key] }
+            init {
+                coroutineScope.launch {
+                    dataStore.data.map { it[key] }.collect { _value = it }
+                }
+            }
+
+            private var job: Job? = null
+
+            override var value: T?
+                get() = _value
+                set(value) {
+                    job?.cancel()
+                    job = coroutineScope.launch {
+                        if (value != null) dataStore.edit { it[key] = value }
+                        else dataStore.edit { it -= key }
+                    }
+                }
+
+            override fun reset() {
+                value = null
+            }
+        }
+    }
+}
+
+@Composable
+fun <T : Any> rememberPreferenceDataStoreSettingState(
+    dataStore: DataStore<Preferences>,
+    key: Preferences.Key<T>,
+    defaultValue: T,
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+): SettingValueState<T> {
+    val base = rememberPreferenceDataStoreSettingState(dataStore, key, coroutineScope)
+    return object : SettingValueState<T> {
+        override var value: T
+            get() = base.value ?: defaultValue
+            set(value) {
+                base.value = value
+            }
+
+        override fun reset() {
+            base.value = defaultValue
+        }
+    }
+}
 
 fun Modifier.grayShimmer(shimmer: Shimmer) = shimmer(shimmer).composed { background(MaterialTheme.customColors.shimmer) }
 
@@ -55,7 +138,7 @@ val Double.amountColor @Composable get() = if (this < 0) MaterialTheme.customCol
 
 @Composable
 fun HideFABOnScroll(state: ScrollState, setFABShown: (Boolean) -> Unit) {
-    var previousScrollAmount by rememberSaveable { mutableStateOf(0) }
+    var previousScrollAmount by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(state.value) {
         if (abs(state.value - previousScrollAmount) < 20) return@LaunchedEffect
         else setFABShown(state.value <= previousScrollAmount)
