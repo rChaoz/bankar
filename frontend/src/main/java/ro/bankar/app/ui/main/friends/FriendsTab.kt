@@ -438,7 +438,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                             .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        UserCard(user = it, country = model.countryData.nameFromCode(it.countryCode), modifier = Modifier.padding(horizontal = 12.dp))
+                        UserCard(
+                            user = it,
+                            country = model.countryData.nameFromCode(it.countryCode),
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
                         if (it.about.isNotEmpty()) {
                             Surface(
                                 modifier = Modifier

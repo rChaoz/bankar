@@ -58,6 +58,7 @@ import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.friend.UserCard
+import ro.bankar.app.ui.main.friend.UserSurfaceCard
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.theme.AppTheme
@@ -176,15 +177,13 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                             Text(text = stringResource(R.string.you_are_party_host), fontStyle = FontStyle.Italic, modifier = Modifier.padding(16.dp))
                         }
                     }
-                    else Surface(onClick = { onNavigateToFriend(party.host) }, shape = MaterialTheme.shapes.small, tonalElevation = 4.dp) {
-                        UserCard(
-                            user = party.host, country = countryData.nameFromCode(party.host.countryCode), modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            snackbar = snackbar,
-                            showAddFriend = !party.host.isFriend
-                        )
-                    }
+                    else UserSurfaceCard(
+                        user = party.host,
+                        isFriend = party.host.isFriend,
+                        country = countryData.nameFromCode(party.host.countryCode),
+                        snackbar = snackbar,
+                        onClick = { onNavigateToFriend(party.host) }
+                    )
                 }
                 Divider()
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -301,7 +300,7 @@ private fun PartyMember(
                 user = member.profile,
                 country = countryData.nameFromCode(member.profile.countryCode),
                 snackbar = snackbar,
-                showAddFriend = !member.profile.isFriend
+                isFriend = member.profile.isFriend
             )
             Divider()
             TextButton(onClick = { scope.launch { addFriendState.hide(); showAddFriend = false} }, modifier = Modifier.fillMaxWidth()) {

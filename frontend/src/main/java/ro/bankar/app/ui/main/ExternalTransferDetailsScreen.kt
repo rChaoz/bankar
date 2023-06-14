@@ -41,7 +41,7 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.format
-import ro.bankar.app.ui.main.friend.UserCard
+import ro.bankar.app.ui.main.friend.UserSurfaceCard
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.mapCollectAsState
 import ro.bankar.app.ui.nameFromCode
@@ -101,35 +101,23 @@ fun ExternalTransferDetailsScreen(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = stringResource(if (data.direction == SDirection.Sent) R.string.to else R.string.from), fontWeight = FontWeight.Bold)
-                if (data.user != null && data.user!!.isFriend) Surface(
+                if (data.user != null) UserSurfaceCard(
+                    data.user!!,
+                    isFriend = data.user!!.isFriend,
+                    country = countryData.nameFromCode(data.user!!.countryCode),
+                    snackbar = snackbar,
                     onClick = { onNavigateToFriend(data.user!!) },
-                    shape = MaterialTheme.shapes.small,
-                    tonalElevation = 4.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    UserCard(user = data.user!!, country = countryData.nameFromCode(data.user!!.countryCode), modifier = Modifier.padding(12.dp))
-                }
-                else Surface(shape = MaterialTheme.shapes.small, tonalElevation = 4.dp) {
-                    if (data.user != null) UserCard(
-                        user = data.user!!,
-                        country = countryData.nameFromCode(data.user!!.countryCode),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        snackbar = snackbar,
-                        showAddFriend = data.user?.isFriend == false
+                )
+                else Column(modifier = Modifier.padding(12.dp)) {
+                    Text(text = data.fullName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = stringResource(R.string.not_user),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
                     )
-                    else Column(modifier = Modifier.padding(12.dp)) {
-                        Text(text = data.fullName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = stringResource(R.string.not_user),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = stringResource(R.string.iban), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(text = data.iban)
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = stringResource(R.string.iban), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(text = data.iban)
                 }
                 if (data.partyID != null) {
                     Spacer(modifier = Modifier.height(2.dp))

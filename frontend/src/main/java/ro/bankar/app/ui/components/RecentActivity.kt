@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
@@ -53,8 +52,9 @@ import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.amountColor
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
+import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
-import ro.bankar.app.ui.main.friend.UserCard
+import ro.bankar.app.ui.main.friend.UserSurfaceCard
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
@@ -251,7 +251,9 @@ fun ReceivedTransferRequestDialog(
     var isLoading by remember { mutableStateOf(false) }
     val showLoading by remember { derivedStateOf { isLoading || exchangeData == null } }
 
-    BottomDialog(visible, onDismiss, buttonBar = {
+    BottomDialog(
+        visible, onDismiss,
+        buttonBar = {
             Row(
                 modifier = Modifier.padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -314,29 +316,15 @@ fun ReceivedTransferRequestDialog(
                         .align(Alignment.CenterHorizontally)
                 )
                 @Suppress("ControlFlowWithEmptyBody")
-                if (user == null);
-                else if (user.isFriend) {
-                    Surface(
-                        onClick = { onDismiss(); onNavigateToFriend(user) },
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        tonalElevation = 4.dp
-                    ) {
-                        UserCard(user = user, countryData.nameFromCode(user.countryCode), modifier = Modifier.padding(12.dp))
-                    }
-                } else {
-                    Surface(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        tonalElevation = 4.dp
-                    ) {
-                        UserCard(user = user, countryData.nameFromCode(user.countryCode), modifier = Modifier.padding(12.dp))
-                    }
-                }
+                if (user == null) ;
+                else UserSurfaceCard(
+                    user,
+                    country = countryData.nameFromCode(user.countryCode),
+                    modifier = Modifier.padding(12.dp),
+                    snackbar = LocalSnackbar.current,
+                    isFriend = user.isFriend,
+                    onClick = { onDismiss(); onNavigateToFriend(user) }
+                )
                 if (partyID != null) {
                     OutlinedButton(
                         onClick = { onDismiss(); onNavigateToParty(partyID) },
