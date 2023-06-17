@@ -47,7 +47,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -109,6 +110,7 @@ import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.banking.SCountries
 import ro.bankar.banking.SCountry
 import ro.bankar.model.ErrorResponse
 import ro.bankar.model.InvalidParamResponse
@@ -122,6 +124,9 @@ import ro.bankar.util.todayHere
 import java.io.ByteArrayOutputStream
 
 class ProfileScreenModel : ViewModel() {
+    var data by mutableStateOf<SUser?>(null)
+    var countryData by mutableStateOf<SCountries?>(null)
+
     val email = verifiableStateOf("", R.string.invalid_email) { SUserValidation.emailRegex.matches(it.trim()) }
     val firstName = verifiableStateOf("", R.string.invalid_name) { SUserValidation.nameRegex.matches(it.trim()) }
     val middleName = verifiableStateOf("", R.string.invalid_name) { it.isBlank() || SUserValidation.nameRegex.matches(it.trim()) }
@@ -149,8 +154,18 @@ class ProfileScreenModel : ViewModel() {
     var editing by mutableStateOf(false)
         private set
     var isSaving by mutableStateOf(false)
+    val dirty by derivedStateOf {
+        val data = this.data ?: return@derivedStateOf true
+        val country = countryData?.find { it.code == data.countryCode } ?: return@derivedStateOf true
+        email.value != data.email || firstName.value != data.firstName || middleName.value != (data.middleName ?: "") || lastName.value != data.lastName
+                || dateOfBirth.value != data.dateOfBirth || this.country.value != country || state != data.state
+                || city.value != data.city || address.value != data.address
+    }
 
-    fun onEdit(data: SUser, country: SCountry) {
+    // countryData and data are assumed to be non-null for this function
+    fun onEdit() {
+        val data = this.data!!
+        val country = countryData!!.find { it.code == data.countryCode } ?: countryData!![0]
         email.value = data.email
         firstName.value = data.firstName
         middleName.value = data.middleName ?: ""
@@ -163,6 +178,7 @@ class ProfileScreenModel : ViewModel() {
         password.value = ""
         editing = true
     }
+
 
     fun onSave(context: Context, repository: Repository, snackBar: SnackbarHostState) = viewModelScope.launch {
         onSaveSuspending(context, repository, snackBar)
@@ -200,11 +216,13 @@ class ProfileScreenModel : ViewModel() {
                     editing = false
                     return@coroutineScope true
                 }
+
                 is ErrorResponse -> {
                     password.setError(context.getString(R.string.incorrect_password))
                     launch { passwordScrollRequester.bringIntoView() }
                     null
                 }
+
                 is InvalidParamResponse -> context.getString(R.string.invalid_field, it.param)
                 else -> context.getString(R.string.unknown_error)
             }
@@ -221,9 +239,11 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
     val repository = LocalRepository.current
     val snackbar = remember { SnackbarHostState() }
 
-    val countryData by repository.countryData.collectAsState(null)
-    val dataState = repository.profile.collectAsState(null)
-    val data = dataState.value // extract to variable to prevent "variable has custom getter" null-check errors
+    LaunchedEffect(true) {
+        launch { repository.profile.collect { model.data = it } }
+        launch { repository.countryData.collect { model.countryData = it } }
+    }
+    val data = model.data // extract to variable to prevent "variable has custom getter" null-check errors
 
     // Code to load picked image and submit to server
     val context = LocalContext.current
@@ -294,7 +314,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
             Text(text = stringResource(R.string.are_you_sure), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 18.dp))
         }
     ))
-    BackHandler(enabled = model.editing, onBack = exitDialogState::show)
+    BackHandler(enabled = model.editing && model.dirty, onBack = exitDialogState::show)
 
     // Main view
     val scrollState = rememberScrollState()
@@ -310,11 +330,11 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
         onIconButtonClick = { logoutDialogState.show() },
         isLoading = isLoading || model.isSaving,
         snackbar = snackbar,
-        isFABVisible = data != null && countryData != null && (model.editing || showFAB),
+        isFABVisible = data != null && model.countryData != null && (model.editing || showFAB),
         fabContent = {
             FloatingActionButton(onClick = {
                 if (model.editing) model.onSave(context, repository, snackbar)
-                else model.onEdit(data!!, countryData!!.first { it.code == data.countryCode })
+                else model.onEdit()
             }, shape = CircleShape) {
                 if (model.editing) Icon(imageVector = Icons.Default.Check, contentDescription = stringResource(R.string.save))
                 else Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
@@ -427,6 +447,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                                                     editingAbout = false
                                                     null
                                                 }
+
                                                 is InvalidParamResponse -> context.getString(R.string.invalid_about)
                                                 else -> context.getString(R.string.unknown_error)
                                             }
@@ -465,9 +486,11 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                                                 }) {
                                                     Icon(imageVector = Icons.Default.Create, contentDescription = stringResource(R.string.edit))
                                                 }
+
                                                 true -> IconButton(onClick = onDone) {
                                                     Icon(imageVector = Icons.Default.Done, contentDescription = stringResource(R.string.done))
                                                 }
+
                                                 null -> CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
                                             }
                                         }
@@ -590,7 +613,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                             model.state = it.states[0]
                         }
                     }, modifier = Modifier.weight(1f), outlined = true, supportingText = "",
-                    items = countryData!!
+                    items = model.countryData!!
                 ) { item, onClick -> DropdownMenuItem(text = { Text(text = item.country) }, onClick) }
                 else Surface(modifier = Modifier.weight(1f), tonalElevation = 1.dp, shape = RoundedCornerShape(8.dp)) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -603,7 +626,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                                 .size(100.dp, 16.dp)
                                 .grayShimmer(shimmer)
                         )
-                        else Text(text = countryData.nameFromCode(data.countryCode))
+                        else Text(text = model.countryData.nameFromCode(data.countryCode))
                     }
                 }
                 if (model.editing) ComboBox(
