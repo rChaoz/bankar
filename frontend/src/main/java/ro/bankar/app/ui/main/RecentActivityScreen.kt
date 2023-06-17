@@ -30,6 +30,7 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SPartyPreview
+import ro.bankar.util.here
 import java.text.DateFormatSymbols
 
 @Composable
@@ -72,11 +73,12 @@ fun LazyListScope.RecentActivityContent(
 ) {
     val localizedMonths: Array<String> = DateFormatSymbols.getInstance().months
     val items = (transfers + transactions + parties).sortedDescending()
-    items(items.size) {
-        val item = items[it]
+    items(items.size) { index ->
+        val item = items[index]
+        val dateTime = item.timestamp.here()
         Column {
-            if (it == 0 || item.dateTime.year != items[it - 1].dateTime.year || item.dateTime.month != items[it - 1].dateTime.month) Text(
-                text = "%s %d".format(localizedMonths[item.dateTime.monthNumber - 1], item.dateTime.year),
+            if (index == 0 || items[index - 1].timestamp.here().let { dateTime.year != it.year || dateTime.month != it.month }) Text(
+                text = "%s %d".format(localizedMonths[dateTime.monthNumber - 1], dateTime.year),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp)

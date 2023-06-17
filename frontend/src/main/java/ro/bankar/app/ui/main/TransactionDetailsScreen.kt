@@ -23,8 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.main.home.Amount
@@ -33,7 +31,6 @@ import ro.bankar.banking.Currency
 import ro.bankar.model.SCardTransaction
 import ro.bankar.util.format
 import ro.bankar.util.here
-import ro.bankar.util.nowUTC
 
 @Composable
 fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCreateParty: (Double, Int) -> Unit) {
@@ -43,7 +40,7 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCr
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Amount(amount = data.amount, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.headlineMedium)
                     Text(
-                        text = data.dateTime.toInstant(TimeZone.UTC).here().format(true),
+                        text = data.timestamp.here().format(true),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -118,7 +115,7 @@ private fun TransactionDetailsScreenPreview() {
         TransactionDetailsScreen(
             onDismiss = {}, data = SCardTransaction(
                 21837129371927L, 1, 1, "4838", 25.67,
-                Currency.ROMANIAN_LEU, Clock.System.nowUTC(), "TacoBell", "taco bell lore"
+                Currency.ROMANIAN_LEU, Clock.System.now(), "TacoBell", "taco bell lore"
             ), onCreateParty = { _, _ -> }
         )
     }

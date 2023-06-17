@@ -1,6 +1,6 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import ro.bankar.banking.Currency
 
@@ -13,7 +13,7 @@ data class SCardTransaction(
 
     val amount: Double,
     val currency: Currency,
-    override val dateTime: LocalDateTime,
+    override val timestamp: Instant,
 
     val title: String,
     val details: String,

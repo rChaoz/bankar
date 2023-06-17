@@ -1,9 +1,9 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
 
 sealed interface STimestamped : Comparable<STimestamped> {
-    val dateTime: LocalDateTime
+    val timestamp: Instant
 
-    override fun compareTo(other: STimestamped) = dateTime.compareTo(other.dateTime)
+    override fun compareTo(other: STimestamped) = timestamp.compareTo(other.timestamp)
 }

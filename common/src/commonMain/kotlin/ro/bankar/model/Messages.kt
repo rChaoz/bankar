@@ -1,6 +1,6 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 
@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 data class SUserMessage(
     val direction: SDirection,
     val message: String,
-    val dateTime: LocalDateTime
+    val timestamp: Instant,
 )
 
 typealias SConversation = List<SUserMessage>

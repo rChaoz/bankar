@@ -25,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.AccountCard
@@ -41,7 +39,6 @@ import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankTransfer
 import ro.bankar.util.format
 import ro.bankar.util.here
-import ro.bankar.util.nowUTC
 
 @Composable
 fun SelfTransferDetailsScreen(onDismiss: () -> Unit, data: SBankTransfer, onNavigateToAccount: (SBankAccount) -> Unit) {
@@ -75,7 +72,7 @@ fun SelfTransferDetailsScreen(onDismiss: () -> Unit, data: SBankTransfer, onNavi
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = data.dateTime.toInstant(TimeZone.UTC).here().format(true),
+                    text = data.timestamp.here().format(true),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -148,7 +145,7 @@ private fun SelfTransferDetailsScreenPreview() {
     AppTheme {
         SelfTransferDetailsScreen(onDismiss = {}, data = SBankTransfer(
             null, 1, 2, null, "Full Name", "hehe_iban", null, 100.0, null,
-            Currency.ROMANIAN_LEU, Currency.ROMANIAN_LEU, "self transfer lore", Clock.System.nowUTC()
+            Currency.ROMANIAN_LEU, Currency.ROMANIAN_LEU, "self transfer lore", Clock.System.now()
         ), onNavigateToAccount = {})
     }
 }
@@ -159,7 +156,7 @@ private fun SelfTransferDetailsScreenPreviewDark() {
     AppTheme {
         SelfTransferDetailsScreen(onDismiss = {}, data = SBankTransfer(
             null, 1, 2, null, "Full Name", "hehe_iban", null, 100.0, 19.45,
-            Currency.ROMANIAN_LEU, Currency.EURO, "self transfer lore", Clock.System.nowUTC()
+            Currency.ROMANIAN_LEU, Currency.EURO, "self transfer lore", Clock.System.now()
         ), onNavigateToAccount = {})
     }
 }

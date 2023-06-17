@@ -1,6 +1,6 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ro.bankar.banking.Currency
@@ -42,7 +42,7 @@ data class SBankTransfer(
     val exchangedCurrency: Currency,
     val note: String,
 
-    override val dateTime: LocalDateTime,
+    override val timestamp: Instant,
 ) : STimestamped {
     /**
      * Amount that is relevant to the user: sent amount/[amount] if direction is `Sent`; received amount/[exchangedAmount] if direction is `Received`.
@@ -68,7 +68,7 @@ data class STransferRequest(
     val note: String,
 
     val partyID: Int?,
-    override val dateTime: LocalDateTime,
+    override val timestamp: Instant,
 ) : STimestamped
 
 /**

@@ -12,11 +12,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.minus
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.banking.Currency
@@ -48,7 +49,6 @@ import ro.bankar.model.STransferRequest
 import ro.bankar.model.SUser
 import ro.bankar.model.SUserMessage
 import ro.bankar.model.SUserProfileUpdate
-import ro.bankar.util.nowUTC
 import ro.bankar.util.todayHere
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -132,7 +132,7 @@ private object MockRepository : Repository() {
     private fun SPublicUserBase.friend(lastMessage: String?, unreadCount: Int) =
         SFriend(
             tag, firstName, middleName, lastName, countryCode, joinDate, about, avatar,
-            lastMessage?.let { SUserMessage(SDirection.Received, it, Clock.System.nowUTC()) }, unreadCount
+            lastMessage?.let { SUserMessage(SDirection.Received, it, Clock.System.now()) }, unreadCount
         )
 
     override val friends = mockFlow(
@@ -162,30 +162,33 @@ private object MockRepository : Repository() {
     override fun conversation(tag: String): RequestFlow<SConversation> {
         val today = Clock.System.todayHere()
         val yesterday = today - DatePeriod(days = 1)
+
+        fun LocalDateTime.i() = toInstant(TimeZone.currentSystemDefault())
+
         return mockFlow(
             listOf(
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
-                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0)),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(0, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(1, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0).i()),
+                SUserMessage(SDirection.Received, "test", yesterday.atTime(5, 0).i()),
 
-                SUserMessage(SDirection.Received, "hello!", yesterday.atTime(17, 25)),
-                SUserMessage(SDirection.Sent, "no.", yesterday.atTime(18, 50)),
+                SUserMessage(SDirection.Received, "hello!", yesterday.atTime(17, 25).i()),
+                SUserMessage(SDirection.Sent, "no.", yesterday.atTime(18, 50).i()),
 
 
-                SUserMessage(SDirection.Received, "Hello again!", today.atTime(12, 41)),
+                SUserMessage(SDirection.Received, "Hello again!", today.atTime(12, 41).i()),
                 SUserMessage(
                     SDirection.Sent, "I see you learned how to capitalize the 'H' in 'Hello'. That's acceptable." +
-                            "How are you? Also this a pretty long message, for no apparent reason.", today.atTime(12, 44)
+                            "How are you? Also this a pretty long message, for no apparent reason.", today.atTime(12, 44).i()
                 ),
-                SUserMessage(SDirection.Sent, "Also I forgot to say I hate you", today.atTime(12, 44, 30)),
-                SUserMessage(SDirection.Received, ":(", today.atTime(12, 45)),
-                SUserMessage(SDirection.Received, "u mean", today.atTime(12, 45, 10)),
-                SUserMessage(SDirection.Sent, "unlucky.", today.atTime(15, 0))
+                SUserMessage(SDirection.Sent, "Also I forgot to say I hate you", today.atTime(12, 44, 30).i()),
+                SUserMessage(SDirection.Received, ":(", today.atTime(12, 45).i()),
+                SUserMessage(SDirection.Received, "u mean", today.atTime(12, 45, 10).i()),
+                SUserMessage(SDirection.Sent, "unlucky.", today.atTime(15, 0).i())
             ).reversed()
         )
     }
@@ -207,7 +210,7 @@ private object MockRepository : Repository() {
 
     override suspend fun sendCancelParty(id: Int) = mockResponse<Unit>()
 
-    private val mockRecentActivity = (Clock.System.nowUTC() to (Clock.System.now() - 15.minutes).toLocalDateTime(TimeZone.UTC)).let { (now, earlier) ->
+    private val mockRecentActivity = (Clock.System.now() to (Clock.System.now() - 15.minutes)).let { (now, earlier) ->
         SRecentActivity(
             listOf(
                 SBankTransfer(
@@ -288,11 +291,11 @@ private object MockRepository : Repository() {
                     listOf(
                         SCardTransaction(
                             127836L, 1, 1, "1234", 25.55, Currency.ROMANIAN_LEU,
-                            Clock.System.nowUTC(), "Taco Bell", "details"
+                            Clock.System.now(), "Taco Bell", "details"
                         ),
                         SCardTransaction(
                             7439287432897L, 1, 1, "1234", 13.12, Currency.ROMANIAN_LEU,
-                            Clock.System.nowUTC(), "Nimic bun", "detailssssss"
+                            Clock.System.now(), "Nimic bun", "detailssssss"
                         ),
                     )
                 ),
@@ -315,7 +318,7 @@ private object MockRepository : Repository() {
     override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = mockResponse<Unit>()
     override val statements = mockFlow(
         listOf(
-            SStatement(1, "My Statement", Clock.System.nowUTC(), 1)
+            SStatement(1, "My Statement", Clock.System.now(), 1)
         )
     )
 

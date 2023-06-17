@@ -35,7 +35,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -54,7 +53,6 @@ import ro.bankar.model.SPublicUser
 import ro.bankar.model.SPublicUserBase
 import ro.bankar.util.format
 import ro.bankar.util.here
-import ro.bankar.util.nowUTC
 
 @Composable
 fun ExternalTransferDetailsScreen(
@@ -85,7 +83,7 @@ fun ExternalTransferDetailsScreen(
                             textStyle = MaterialTheme.typography.headlineMedium
                         )
                         Text(
-                            text = data.dateTime.toInstant(TimeZone.UTC).here().format(true),
+                            text = data.timestamp.here().format(true),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
@@ -172,7 +170,7 @@ private fun ExternalTransferDetailsScreenPreview() {
         ExternalTransferDetailsScreen(
             onDismiss = {}, data = SBankTransfer(
                 SDirection.Sent, 1, null, null, "Koleci Alexandru", "RO7832479823420", null,
-                25.0, 122.3, Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
+                25.0, 122.3, Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.now()
             ), onNavigateToFriend = {}, onNavigateToAccount = {}, onNavigateToParty = {}, onCreateParty = { _, _ -> }
         )
     }
@@ -188,7 +186,7 @@ private fun ExternalTransferDetailsScreenPreviewDark() {
                     "toaster", "Big", null, "Toaster", "RO",
                     Clock.System.todayIn(TimeZone.UTC) - DatePeriod(days = 5), "toastin' around", null, true
                 ), "Big Toaster", "RO7832479823420", 1, 25.0, 122.3,
-                Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.nowUTC()
+                Currency.EURO, Currency.ROMANIAN_LEU, "bing chilling, take this", Clock.System.now()
             ), onNavigateToFriend = {}, onNavigateToAccount = {}, onNavigateToParty = {}, onCreateParty = { _, _ -> }
         )
     }

@@ -1,15 +1,13 @@
 package ro.bankar.database
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import ro.bankar.amount
 import ro.bankar.model.SPartyInformation
 import ro.bankar.model.SPartyMember
@@ -48,7 +46,7 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
     var note by Parties.note
     val members by PartyMember referrersOn PartyMembers.party
     var completed by Parties.completed
-    var dateTime by Parties.dateTime
+    var timestamp by Parties.timestamp
 
     /**
      * Cancel the party and delete all pending requests. If there are no accepted requests, the party will be deleted.
@@ -81,7 +79,7 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
     }
 
     fun previewSerializable() = SPartyPreview(
-        id.value, completed, dateTime, total.toDouble(), members.filter { it.transfer != null }.sumOf { it.amount }.toDouble(), hostAccount.currency, note
+        id.value, completed, timestamp, total.toDouble(), members.filter { it.transfer != null }.sumOf { it.amount }.toDouble(), hostAccount.currency, note
     )
 }
 
@@ -95,5 +93,5 @@ internal object Parties : IntIdTable() {
     // If true, the party is completed and there are no more pending requests
     // "Completed" doesn't mean that all requests were accepted. A completed party will appear in the host's history.
     val completed = bool("completed").default(false)
-    val dateTime = datetime("datetime").clientDefault { Clock.System.now().toLocalDateTime(TimeZone.UTC) }
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
 }

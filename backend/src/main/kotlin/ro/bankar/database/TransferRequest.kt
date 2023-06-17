@@ -1,6 +1,5 @@
 package ro.bankar.database
 
-import kotlinx.datetime.Clock
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -9,12 +8,12 @@ import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.model.SDirection
 import ro.bankar.model.STransferRequest
-import ro.bankar.util.nowUTC
 import java.math.BigDecimal
 
 class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
@@ -22,7 +21,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
         fun findRecent(user: User) = with(TransferRequests) {
             find {
                 ((sourceUser eq user.id) and partyMember.isNull()) or (targetUser eq user.id)
-            }.orderBy(dateTime to SortOrder.DESC)
+            }.orderBy(timestamp to SortOrder.DESC)
         }
 
         fun create(sourceAccount: BankAccount, target: User, amount: BigDecimal, note: String, partyMember: PartyMember? = null): TransferRequest? {
@@ -46,7 +45,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
 
     var partyMember by PartyMember optionalReferencedOn TransferRequests.partyMember
     var amount by TransferRequests.amount
-    var dateTime by TransferRequests.dateTime
+    var timestamp by TransferRequests.timestamp
     var note by TransferRequests.note
 
     /**
@@ -75,7 +74,7 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
         val user = if (direction == SDirection.Sent) sourceUser else targetUser
         val otherUser = if (direction == SDirection.Sent) targetUser else sourceUser
         return STransferRequest(id.value, direction, otherUser.publicSerializable(user.hasFriend(otherUser)),
-            amount.toDouble(), sourceAccount.currency, note, partyMember?.party?.id?.value, dateTime)
+            amount.toDouble(), sourceAccount.currency, note, partyMember?.party?.id?.value, timestamp)
     }
 
     /**
@@ -96,5 +95,5 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val note = varchar("note", 100)
     val partyMember = reference("party_member", PartyMembers, onDelete = ReferenceOption.CASCADE).nullable()
     val amount = amount("amount")
-    val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
 }

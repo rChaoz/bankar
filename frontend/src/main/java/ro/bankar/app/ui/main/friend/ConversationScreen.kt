@@ -58,9 +58,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.toJavaLocalDate
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -80,7 +78,6 @@ import ro.bankar.model.SuccessResponse
 import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.todayHere
-import ro.bankar.util.utcToHere
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
@@ -196,17 +193,19 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                             }
                         }
                     }
-                    items(conv.size) {
-                        val item = conv[it]
+                    val today = Clock.System.todayHere()
+                    val yesterday = today - DatePeriod(days = 1)
+                    items(conv.size) { index ->
+                        val item = conv[index]
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = if (item.direction == SDirection.Sent) Alignment.End else Alignment.Start
                         ) {
-                            val today = Clock.System.todayHere()
-                            val yesterday = today - DatePeriod(days = 1)
-                            val date = item.dateTime.utcToHere().date
-                            val differentDate = if ((it == conv.lastIndex && date != today)
-                                || (it != conv.lastIndex && date != conv[it + 1].dateTime.utcToHere().date)) {
+                            val dateTime = item.timestamp.here()
+                            val date = dateTime.date
+
+                            val differentDate = if ((index == conv.lastIndex && date != today)
+                                || (index != conv.lastIndex && date != conv[index + 1].timestamp.here().date)) {
                                 // Display a date badge for older messages
                                 val text = when(date) {
                                     today -> stringResource(R.string.today)
@@ -243,10 +242,10 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
                                         .run { if (item.direction == SDirection.Sent) padding(end = 8.dp) else padding(start = 8.dp) }
                                 )
                             }
-                            if (it == 0 || differentDate || conv[it - 1].dateTime.hour != item.dateTime.hour
-                                || conv[it - 1].dateTime.minute != item.dateTime.minute)
+                            if (index == 0 || differentDate
+                                || conv[index - 1].timestamp.here().time.let { it.hour != dateTime.hour || it.minute != dateTime.minute })
                                 Text(
-                                    text = item.dateTime.toInstant(TimeZone.UTC).here().time.format(),
+                                    text = item.timestamp.here().time.format(),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.outline,
                                     modifier = Modifier.padding(horizontal = 8.dp)

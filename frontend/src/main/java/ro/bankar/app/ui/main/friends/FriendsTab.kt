@@ -305,7 +305,7 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                             .padding(vertical = 8.dp)
                             .clip(RoundedCornerShape(12.dp))
                     ) {
-                        val conversations = model.friends?.filter { it.lastMessage != null }?.sortedByDescending { it.lastMessage!!.dateTime }
+                        val conversations = model.friends?.filter { it.lastMessage != null }?.sortedByDescending { it.lastMessage!!.timestamp }
                         if (conversations == null) ShimmerFriends()
                         else if (conversations.isEmpty()) InfoCard(onClick = model.onGoToFriendsTab, text = R.string.no_conversations)
                         else {

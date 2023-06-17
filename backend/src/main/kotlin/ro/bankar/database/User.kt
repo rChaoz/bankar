@@ -14,8 +14,10 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
@@ -332,7 +334,7 @@ internal object Users : IntIdTable(columnName = "user_id") {
 
     val passwordHash = binary("password_hash", 256)
     val passwordSalt = binary("password_salt", 256)
-    val sessionToken = varchar("session_token", 20).nullable()
+    val sessionToken = varchar("session_token", 32).nullable()
     val sessionTokenExpiration = datetime("session_token_exp").clientDefault { Clock.System.nowUTC() }
 
     val firstName = varchar("first_name", 20)
@@ -359,12 +361,12 @@ internal object FriendRequests : Table() {
 internal object FriendPairs : Table() {
     val sourceUser = reference("source_user_id", Users)
     val targetUser = reference("target_user_id", Users)
-    val lastOpenedConversation = datetime("last_opened_conversation").clientDefault { Clock.System.nowUTC() }
+    val lastOpenedConversation = timestamp("last_opened_conversation").defaultExpression(CurrentTimestamp())
     override val primaryKey = PrimaryKey(sourceUser, targetUser)
 
     fun getLastOpenedConversation(user: User, otherUser: User) =
         select { (sourceUser eq user.id) and (targetUser eq otherUser.id) }.first()[lastOpenedConversation]
 
     fun updateLastOpenedConversation(user: User, otherUser: User) =
-        update(where = { (sourceUser eq user.id) and (targetUser eq otherUser.id) }) { it[lastOpenedConversation] = Clock.System.nowUTC() }
+        update(where = { (sourceUser eq user.id) and (targetUser eq otherUser.id) }) { it[lastOpenedConversation] = Clock.System.now() }
 }

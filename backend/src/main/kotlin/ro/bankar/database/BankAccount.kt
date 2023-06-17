@@ -58,9 +58,9 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
      */
     fun serializable(user: User) = SBankAccountData(
         cards.map(BankCard::serializable),
-        transfers.orderBy(BankTransfers.dateTime to SortOrder.DESC).serializable(user),
+        transfers.orderBy(BankTransfers.timestamp to SortOrder.DESC).serializable(user),
         cards.flatMap { it.transactions.serializable() },
-        parties.orderBy(Parties.dateTime to SortOrder.DESC).previewSerializable(),
+        parties.orderBy(Parties.timestamp to SortOrder.DESC).previewSerializable(),
     )
 }
 

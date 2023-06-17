@@ -43,14 +43,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import ro.bankar.app.data.Cache
 import ro.bankar.app.data.EmptyRepository
 import ro.bankar.app.data.KeyLanguage
 import ro.bankar.app.data.KeyTheme
 import ro.bankar.app.data.KeyUserSession
 import ro.bankar.app.data.LocalDataStore
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.cache
 import ro.bankar.app.data.collectPreferenceAsState
 import ro.bankar.app.data.dataStore
 import ro.bankar.app.data.mapCollectPreferenceAsState
@@ -112,7 +110,7 @@ enum class Nav(val route: String) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun Main(activity: FragmentActivity, dataStore: DataStore<Preferences>, lifecycleScope: CoroutineScope) {
+private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineScope) {
     val scope = rememberCoroutineScope()
     val initialPrefs = remember { runBlocking { dataStore.data.first() } }
 

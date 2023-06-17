@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalDateTime
@@ -22,7 +23,7 @@ fun Clock.todayHere() = todayIn(TimeZone.currentSystemDefault())
 
 fun Instant.here() = toLocalDateTime(TimeZone.currentSystemDefault())
 
-fun LocalDateTime.utcToHere() = toInstant(TimeZone.UTC).here()
+fun LocalDate.atEndOfDayIn(timeZone: TimeZone) = atTime(23, 59, 59, 999_999_999).toInstant(timeZone)
 
 // Formatting
 private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!

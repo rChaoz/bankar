@@ -1,6 +1,6 @@
 package ro.bankar.model
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import ro.bankar.banking.Currency
 
@@ -53,7 +53,7 @@ data class SPartyMember(
 data class SPartyPreview(
     val id: Int,
     val completed: Boolean,
-    override val dateTime: LocalDateTime,
+    override val timestamp: Instant,
     val total: Double,
     val collected: Double,
     val currency: Currency,

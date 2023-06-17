@@ -1,9 +1,6 @@
 package ro.bankar.database
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
+import kotlinx.datetime.Instant
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -12,7 +9,8 @@ import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.exchange
@@ -20,7 +18,6 @@ import ro.bankar.banking.reverseExchange
 import ro.bankar.currency
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SDirection
-import ro.bankar.util.nowUTC
 import java.math.BigDecimal
 
 class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
@@ -28,22 +25,20 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
         fun findRecent(user: User, count: Int) = user.bankAccountIds.let { ids ->
             // Ignore party transfers to user (they are shown separately)
             find { (BankTransfers.sender inList ids) or ((BankTransfers.recipient inList ids) and BankTransfers.party.isNull()) }
-                .orderBy(BankTransfers.dateTime to SortOrder.DESC)
+                .orderBy(BankTransfers.timestamp to SortOrder.DESC)
                 .limit(count)
         }
 
         fun findBetween(user: User, otherUser: User) = with(BankTransfers) {
             find {
                 ((sender inList user.bankAccountIds) and (recipient inList otherUser.bankAccountIds)) or ((sender eq otherUser.id) and (recipient eq user.id))
-            }.orderBy(dateTime to SortOrder.DESC)
+            }.orderBy(timestamp to SortOrder.DESC)
         }
 
-        fun findInPeriod(account: BankAccount, range: ClosedRange<LocalDate>) = with(BankTransfers) {
-            val start = LocalDateTime(range.start, LocalTime(0, 0, 0))
-            val end = LocalDateTime(range.endInclusive, LocalTime(23, 59, 59, 999_999_999))
+        fun findInPeriod(account: BankAccount, range: ClosedRange<Instant>) = with(BankTransfers) {
             find {
-                ((sender eq account.id) or (recipient eq account.id)) and (dateTime greaterEq start) and (dateTime lessEq end)
-            }.orderBy(dateTime to SortOrder.DESC)
+                ((sender eq account.id) or (recipient eq account.id)) and (timestamp greaterEq range.start) and (timestamp lessEq range.endInclusive)
+            }.orderBy(timestamp to SortOrder.DESC)
         }
 
         fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String): Boolean {
@@ -133,7 +128,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
     var exchangedAmount by BankTransfers.exchangedAmount
     var currency by BankTransfers.currency
     var note by BankTransfers.note
-    var dateTime by BankTransfers.dateTime
+    var timestamp by BankTransfers.timestamp
     private val partyID by BankTransfers.party
     var party by Party optionalReferencedOn BankTransfers.party
 
@@ -145,7 +140,7 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
             sourceAccount?.user?.publicSerializable(sourceAccount.user.hasFriend(bankAccount.user)),
             if (direction == SDirection.Sent) recipientName else senderName,
             if (direction == SDirection.Sent) recipientIban else senderIban,
-            partyID?.value, amount.toDouble(), exchangedAmount?.toDouble(), currency, bankAccount.currency, note, dateTime
+            partyID?.value, amount.toDouble(), exchangedAmount?.toDouble(), currency, bankAccount.currency, note, timestamp
         )
     }
 
@@ -174,7 +169,7 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
     val exchangedAmount = amount("exchanged_amount").check("exchanged_amount_positive") { it greater BigDecimal.ZERO }.nullable()
     val currency = currency("currency")
     val note = varchar("note", 200)
-    val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
     val party = reference("party", Parties).nullable()
 
     init {

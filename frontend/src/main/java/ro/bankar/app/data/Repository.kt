@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 import ro.bankar.app.TAG
 import ro.bankar.banking.SCountries
@@ -66,6 +67,7 @@ import ro.bankar.model.SUser
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.model.ValueResponse
 import ro.bankar.util.dashFormat
+import ro.bankar.util.here
 import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
@@ -327,11 +329,11 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     override val statements = createFlow<List<SStatement>>("statements")
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) =
         client.safeRequest<SStatement> {
-            post("statements/request") { setBody(SStatementRequest(name, accountID, from, to)) }
+            post("statements/request") { setBody(SStatementRequest(name, accountID, from, to, TimeZone.currentSystemDefault())) }
         }
 
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(statement.downloadURI).apply {
-        val name = "Statement-${statement.dateTime.dashFormat()}.pdf"
+        val name = "Statement-${statement.timestamp.here().dashFormat()}.pdf"
         setDestinationUri(Uri.fromFile(File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), name)))
         setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
         addRequestHeader(HttpHeaders.Authorization, "Bearer $sessionToken")

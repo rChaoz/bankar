@@ -44,8 +44,6 @@ import androidx.navigation.NavHostController
 import com.valentinilk.shimmer.Shimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.handleSuccess
@@ -145,7 +143,7 @@ fun Transaction(data: SCardTransaction, onNavigate: () -> Unit) {
             contentDescription = stringResource(R.string.transaction),
             color = MaterialTheme.colorScheme.secondary,
         )
-    }, title = data.title, subtitle = AnnotatedString(data.dateTime.toInstant(TimeZone.UTC).here().format())) {
+    }, title = data.title, subtitle = AnnotatedString(data.timestamp.here().format())) {
         Amount(-data.amount, data.currency)
     }
 }
@@ -174,7 +172,7 @@ fun Transfer(data: SBankTransfer, onNavigate: () -> Unit) {
             data.exchangedAmount == null -> stringResource(R.string.self_transfer)
             else -> stringResource(R.string.exchange)
         },
-        subtitle = AnnotatedString(data.dateTime.toInstant(TimeZone.UTC).here().format())
+        subtitle = AnnotatedString(data.timestamp.here().format())
     ) {
         when {
             data.direction != null ->
@@ -454,7 +452,7 @@ fun CompletedParty(data: SPartyPreview, onNavigate: () -> Unit) {
                 color = MaterialTheme.colorScheme.primary,
             )
         }, title = stringResource(R.string.completed_party),
-        subtitle = AnnotatedString(data.dateTime.toInstant(TimeZone.UTC).here().format())
+        subtitle = AnnotatedString(data.timestamp.here().format())
     ) {
         Column(horizontalAlignment = Alignment.End) {
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {

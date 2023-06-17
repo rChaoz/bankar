@@ -92,6 +92,7 @@ import ro.bankar.app.ui.theme.color
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SStatementRequest
 import ro.bankar.util.format
+import ro.bankar.util.here
 import ro.bankar.util.todayHere
 import java.time.LocalDate
 
@@ -325,7 +326,7 @@ fun StatementsScreen(onDismiss: () -> Unit) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(text = acc.name)
                             }
-                            Text(text = statement.dateTime.format(true), color = MaterialTheme.colorScheme.outline)
+                            Text(text = statement.timestamp.here().format(true), color = MaterialTheme.colorScheme.outline)
                         }
                         Icon(painter = painterResource(R.drawable.baseline_download_24), contentDescription = stringResource(R.string.download))
                     }

@@ -22,7 +22,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -31,35 +33,38 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.transactions.transaction
 import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SStatement
 import ro.bankar.plugins.init
+import ro.bankar.util.atEndOfDayIn
 import ro.bankar.util.format
 import ro.bankar.util.formatIBAN
 import ro.bankar.util.nowHere
-import ro.bankar.util.nowUTC
-import ro.bankar.util.todayHere
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.text.DecimalFormat
 
 class Statement(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<Statement>(Statements) {
-        fun generate(name: String?, account: BankAccount, range: ClosedRange<LocalDate>): Statement {
+        fun generate(name: String?, account: BankAccount, dateRange: ClosedRange<LocalDate>, timeZone: TimeZone): Statement {
+            // Calculate period in user's timezone
+            val start = dateRange.start.atStartOfDayIn(timeZone)
+            val end = dateRange.endInclusive.atEndOfDayIn(timeZone)
+            val range = start..end
             // Generate statement
             val transfers = BankTransfer.findInPeriod(account, range)
             val transactions = CardTransaction.findInPeriod(account, range)
             val (stream, document) = createPDF()
-            document.generateStatement(name, range, account, transfers, transactions)
+            document.generateStatement(name, dateRange, timeZone, account, transfers, transactions)
             // Insert into database
             return new {
                 this.name = name
                 bankAccount = account
-                dateTime = Clock.System.nowUTC()
                 statement = ExposedBlob(stream.toByteArray())
             }
         }
@@ -67,11 +72,11 @@ class Statement(id: EntityID<Int>) : IntEntity(id) {
         fun findByUser(user: User) = find { Statements.bankAccount inList user.bankAccountIds }
     }
 
-    fun serializable() = SStatement(id.value, name, dateTime, bankAccount.id.value)
+    fun serializable() = SStatement(id.value, name, timestamp, bankAccount.id.value)
 
     var name by Statements.name
     var bankAccount by BankAccount referencedOn Statements.bankAccount
-    var dateTime by Statements.dateTime
+    var timestamp by Statements.timestamp
     var statement by Statements.statement
 }
 
@@ -80,7 +85,7 @@ fun SizedIterable<Statement>.serializable() = map(Statement::serializable)
 object Statements : IntIdTable() {
     val name = varchar("name", 20).nullable()
     val bankAccount = reference("bank_account", BankAccounts, onDelete = ReferenceOption.CASCADE)
-    val dateTime = datetime("datetime").clientDefault { Clock.System.nowUTC() }
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
     val statement = blob("statement")
 }
 
@@ -89,12 +94,15 @@ fun main() {
     Database.init()
     loadStaticData()
 
-    val range = LocalDate(2023, Month.APRIL, 25)..LocalDate(2023, Month.MAY, 30)
+    val dateRange = LocalDate(2023, Month.APRIL, 25)..LocalDate(2023, Month.MAY, 30)
+    val timeZone = TimeZone.currentSystemDefault()
+    val range = dateRange.start.atStartOfDayIn(timeZone)..dateRange.endInclusive.atEndOfDayIn(timeZone)
     val (stream, doc) = createPDF()
 
     transaction {
         val account = BankAccount.findById(1)!!
-        doc.generateStatement("My Statement", range, account, BankTransfer.findInPeriod(account, range), CardTransaction.findInPeriod(account, range))
+        doc.generateStatement("My Statement", dateRange, timeZone,
+            account, BankTransfer.findInPeriod(account, range), CardTransaction.findInPeriod(account, range))
     }
 
     stream.writeTo(FileOutputStream("test.pdf"))
@@ -160,6 +168,7 @@ private fun createPDF(): Pair<ByteArrayOutputStream, Document> {
 private fun Document.generateStatement(
     name: String?,
     range: ClosedRange<LocalDate>,
+    timeZone: TimeZone,
     account: BankAccount,
     transfers: Iterable<BankTransfer>,
     transactions: Iterable<CardTransaction>
@@ -167,7 +176,7 @@ private fun Document.generateStatement(
     // Add title
     add(
         Paragraph(
-            "Statement${if (name == null) "" else " \"$name\""} of ${Clock.System.todayHere().format()}",
+            "Statement${if (name == null) "" else " \"$name\""} of ${Clock.System.todayIn(timeZone).format()}",
             Font(Font.HELVETICA, 16f, Font.BOLD)
         ).apply { spacingBefore = 15f; alignment = Element.ALIGN_CENTER }
     )
@@ -282,10 +291,11 @@ private fun Document.generateStatement(
     var transfer: BankTransfer? = if (transferI.hasNext()) transferI.next() else null
     var transaction: CardTransaction? = if (transactionI.hasNext()) transactionI.next() else null
     while (transfer != null || transaction != null) {
-        if (transfer != null && (transaction == null || transfer.dateTime > transaction.dateTime)) {
-            if (transfer.dateTime.date != currentDate) table = beginTable(transfer.dateTime.date)
+        if (transfer != null && (transaction == null || transfer.timestamp > transaction.timestamp)) {
+            val dateTime = transfer.timestamp.toLocalDateTime(timeZone)
+            if (dateTime.date != currentDate) table = beginTable(dateTime.date)
             val sent = transfer.sender == account
-            table.addLine(transfer.dateTime, "${
+            table.addLine(dateTime, "${
                 if (sent) "To: ${transfer.recipientName}\n${transfer.recipientIban}"
                 else "From: ${transfer.senderName}\n${transfer.senderIban}"
             }\nTransfer note: ${transfer.note}",
@@ -294,9 +304,10 @@ private fun Document.generateStatement(
                 ), (if (sent) transfer.amount else (transfer.exchangedAmount ?: transfer.amount)).let { if (sent) -it.toDouble() else it.toDouble() })
             transfer = if (transferI.hasNext()) transferI.next() else null
         } else {
-            if (transaction!!.dateTime.date != currentDate) table = beginTable(transaction.dateTime.date)
+            val dateTime = transaction!!.timestamp.toLocalDateTime(timeZone)
+            if (dateTime.date != currentDate) table = beginTable(dateTime.date)
             // TODO Implement exchanging for transactions
-            table.addLine(transaction.dateTime, transaction.details, null, transaction.amount.toDouble())
+            table.addLine(dateTime, transaction.details, null, transaction.amount.toDouble())
             transaction = if (transactionI.hasNext()) transactionI.next() else null
         }
     }

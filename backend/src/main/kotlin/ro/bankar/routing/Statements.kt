@@ -32,7 +32,7 @@ fun Route.configureStatements() {
                 val account = user.bankAccounts.find { it.id.value == data.accountID } ?: run {
                     call.respondNotFound("bank_account"); return@newSuspendedTransaction
                 }
-                val statement = Statement.generate(data.name, account, data.startDate..data.endDate)
+                val statement = Statement.generate(data.name, account, data.startDate..data.endDate, data.timeZone)
                 call.respondValue(statement.serializable(), HttpStatusCode.Created)
             }
         }
