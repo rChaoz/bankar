@@ -158,6 +158,7 @@ fun LockScreen(onUnlock: () -> Unit) {
                             )
                         }
                     },
+                    valueTransform = { it.filter(Character::isDigit) },
                     onDone = { onDone() },
                     isLast = true
                 )
