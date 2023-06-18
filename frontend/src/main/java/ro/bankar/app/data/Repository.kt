@@ -227,6 +227,7 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 e.printStackTrace()
             }
             delay(5.seconds)

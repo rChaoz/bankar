@@ -345,7 +345,7 @@ private fun AccessScreen() = Surface {
 
     // Get data
     val datastore = LocalDataStore.current
-    val dataPin by datastore.collectPreferenceAsState(key = KeyAuthenticationPin, defaultValue = null)
+    val dataPin by datastore.collectPreferenceAsState(key = KeyAuthenticationPin, initial = null)
 
     // PIN entry dialog
     var pinDialogVisible by rememberSaveable { mutableStateOf(false) }
@@ -399,7 +399,7 @@ private fun AccessScreen() = Surface {
     }
 
     // Fingerprint
-    val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
+    val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, initial = false)
     val prompt = remember {
         context.findActivity()?.let {
             BiometricPrompt(it, object : BiometricPrompt.AuthenticationCallback() {
@@ -443,14 +443,14 @@ private fun AccessScreen() = Surface {
                 state = remember {
                     object : SettingValueState<Boolean> {
                         override var value
-                            get() = fingerprintEnabled
+                            get() = fingerprintEnabled == true
                             set(_) {}
 
                         override fun reset() {}
                     }
                 },
                 onCheckedChange = {
-                    if (fingerprintEnabled) scope.launch { datastore.setPreference(KeyFingerprintEnabled, false) }
+                    if (fingerprintEnabled == true) scope.launch { datastore.setPreference(KeyFingerprintEnabled, false) }
                     else prompt.authenticate(promptInfo)
                 }
             )

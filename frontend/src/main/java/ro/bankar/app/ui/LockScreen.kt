@@ -76,13 +76,13 @@ fun LockScreen(onUnlock: () -> Unit) {
     var showPassword by rememberSaveable { mutableStateOf(false) }
 
     // PIN authentication
-    val correctPIN by datastore.collectPreferenceAsState(KeyAuthenticationPin, defaultValue = null)
+    val correctPIN by datastore.collectPreferenceAsState(KeyAuthenticationPin, initial = null)
     var usingPin by remember { mutableStateOf(false) }
     LaunchedEffect(correctPIN) { if (correctPIN != null) usingPin = true }
     val pin = remember { verifiableStateOf("", R.string.incorrect_pin) { it == correctPIN } }
 
     // Fingerprint
-    val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, defaultValue = false)
+    val fingerprintEnabled by datastore.collectPreferenceAsState(key = KeyFingerprintEnabled, initial = false)
     val prompt = remember {
         if (activity != null) BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
@@ -98,7 +98,7 @@ fun LockScreen(onUnlock: () -> Unit) {
             .setNegativeButtonText(context.getString(android.R.string.cancel))
             .build()
     }
-    if (fingerprintEnabled && prompt != null) LaunchedEffect(true) {
+    if (fingerprintEnabled == true && prompt != null) LaunchedEffect(true) {
         datastore.data.first { if (it[KeyFingerprintEnabled] == true) prompt.authenticate(promptInfo); true }
     }
 
@@ -178,13 +178,14 @@ fun LockScreen(onUnlock: () -> Unit) {
                     onDone = { onDone() },
                     isLast = true
                 )
-                if (fingerprintEnabled && prompt != null) FilledIconButton(onClick = { prompt.authenticate(promptInfo) }, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_fingerprint_24),
-                        contentDescription = stringResource(R.string.use_fingerprint),
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                if (fingerprintEnabled == true && prompt != null)
+                    FilledIconButton(onClick = { prompt.authenticate(promptInfo) }, modifier = Modifier.size(40.dp)) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_fingerprint_24),
+                            contentDescription = stringResource(R.string.use_fingerprint),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                     if (correctPIN != null) {
                         TextButton(onClick = { usingPin = !usingPin }) {

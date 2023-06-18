@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,9 +37,12 @@ import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
@@ -117,7 +121,7 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
     // This is to prevent theme flickering on startup
     val systemDark = isSystemInDarkTheme()
     val initialDarkMode = initialPrefs[KeyTheme]?.let { it == Theme.Dark.ordinal } ?: systemDark
-    val darkMode by dataStore.mapCollectPreferenceAsState(key = KeyTheme, defaultValue = initialDarkMode) {
+    val darkMode by dataStore.mapCollectPreferenceAsState(key = KeyTheme, initial = initialDarkMode) {
         when (it) {
             Theme.Light.ordinal -> false
             Theme.Dark.ordinal -> true
@@ -136,21 +140,36 @@ private fun Main(dataStore: DataStore<Preferences>, lifecycleScope: CoroutineSco
             val controller = rememberAnimatedNavController()
 
             // Server data repository
-            val sessionToken by dataStore.collectPreferenceAsState(KeyUserSession, defaultValue = initialPrefs[KeyUserSession])
-            val repository = remember(sessionToken) {
-                sessionToken?.let {
-                    repository(lifecycleScope, it) {
-                        // Erase session token
-                        lifecycleScope.launch { dataStore.removePreference(KeyUserSession) }
-                        // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
-                        val current = controller.currentBackStackEntry?.destination?.route ?: return@repository
-                        if (current !in listOf(NewUserNav.route, NewUserNav.Welcome.route, NewUserNav.SignIn.route, NewUserNav.SignUp.route))
-                            controller.navigate(NewUserNav.route) {
-                                popUpTo(Nav.Main.route) { inclusive = true }
-                            }
-                    }
-                } ?: EmptyRepository
+            val sessionToken by dataStore.collectPreferenceAsState(KeyUserSession, initial = initialPrefs[KeyUserSession])
+
+            // Create repository object, which should be cancelled when the session token changes (e.g. is deleted - logout)
+            class RepositoryRememberObserver(sessionToken: String?) : RememberObserver {
+                private val repositoryScope = lifecycleScope.coroutineContext.let { CoroutineScope(it + Job(it.job)) }
+                val repository = if (sessionToken != null) repository(repositoryScope, sessionToken, cache) {
+                    // On auto logout (session expired)
+                    // Erase session token
+                    lifecycleScope.launch { dataStore.removePreference(KeyUserSession) }
+                    // Ensure that, if multiple calls attempt to navigate to NewUser simultaneously, we only navigate once
+                    val current = controller.currentBackStackEntry?.destination?.route ?: return@repository
+                    if (current !in listOf(NewUserNav.route, NewUserNav.Welcome.route, NewUserNav.SignIn.route, NewUserNav.SignUp.route))
+                        controller.navigate(NewUserNav.route) {
+                            popUpTo(Nav.Main.route) { inclusive = true }
+                        }
+                } else EmptyRepository
+
+                override fun onRemembered() {}
+
+                override fun onAbandoned() {
+                    repositoryScope.cancel()
+                }
+
+                override fun onForgotten() {
+                    repositoryScope.cancel()
+                }
             }
+
+            val repository = remember(sessionToken) { RepositoryRememberObserver(sessionToken) }.repository
+
             // App should start in locked state. However, if the activity is re-created, we should not lock it again
             var firstStart by rememberSaveable { mutableStateOf(true) }
             LaunchedEffect(true) {
