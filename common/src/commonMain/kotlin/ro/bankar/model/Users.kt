@@ -162,7 +162,26 @@ class SUser(
      * JPEG compressed image
      */
     val avatar: ByteArray?
-) : SUserBase() // No validate because this type is never sent by the client
+) : SUserBase() { // No validate because this type is never sent by the client
+    fun copy(
+        email: String = this.email,
+        tag: String = this.tag,
+        phone: String = this.phone,
+        firstName: String = this.firstName,
+        middleName: String? = this.middleName,
+        lastName: String = this.lastName,
+        dateOfBirth: LocalDate = this.dateOfBirth,
+        countryCode: String = this.countryCode,
+        state: String = this.state,
+        city: String = this.city,
+        address: String = this.address,
+        joinDate: LocalDate = this.joinDate,
+        about: String = this.about,
+        avatar: ByteArray? = this.avatar,
+    ) = SUser(
+        email, tag, phone, firstName, middleName, lastName, dateOfBirth, countryCode, state, city, address, joinDate, about, avatar
+    )
+}
 
 /**
  * Verify that the given data is a valid JPEG image with the correct size (as specified by [SUserValidation.avatarSize])

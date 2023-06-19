@@ -210,7 +210,6 @@ class ProfileScreenModel : ViewModel() {
         ).handle(this, snackbar, context) {
             when (it) {
                 SuccessResponse -> {
-                    repository.profile.emitNow()
                     launch { snackbar.showSnackbar(context.getString(R.string.updated_successfully), withDismissAction = true) }
                     isSaving = false
                     editing = false
@@ -269,11 +268,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bytes)
             // Send image to server
             repository.sendAboutOrPicture(SUserProfileUpdate(null, bytes.toByteArray())).handle(this, snackbar, context) {
-                // Wait for image update to be received
-                if (it == SuccessResponse) {
-                    repository.profile.emitNow()
-                    null
-                } else context.getString(R.string.profile_picture_problem)
+                context.getString(R.string.profile_picture_problem)
             }
             isLoading = false
         }
@@ -443,7 +438,6 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
                                         repository.sendAboutOrPicture(SUserProfileUpdate(aboutValue.trim(), null)).handle(this, snackbar, context) {
                                             when (it) {
                                                 SuccessResponse -> {
-                                                    repository.profile.emitNow()
                                                     editingAbout = false
                                                     null
                                                 }

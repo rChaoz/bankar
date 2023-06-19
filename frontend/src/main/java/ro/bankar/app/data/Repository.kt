@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.datastore.core.DataStore
 import com.google.firebase.messaging.FirebaseMessaging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -29,12 +30,15 @@ import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
@@ -74,16 +78,22 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * A Shared flow with the option to request emitting
  */
-abstract class RequestFlow<T> protected constructor(
+interface RequestFlow<T> : SharedFlow<T> {
+    fun requestEmit()
+
+    suspend fun emitNow(): T
+}
+
+
+abstract class AbstractRequestFlow<T> protected constructor(
     private val scope: CoroutineScope,
     private val flow: MutableSharedFlow<T> = MutableSharedFlow(replay = 1)
-) : SharedFlow<T> by flow.asSharedFlow() {
-
-    fun requestEmit() {
+) : RequestFlow<T>, SharedFlow<T> by flow.asSharedFlow() {
+    override fun requestEmit() {
         scope.launch { emitNow() }
     }
 
-    suspend fun emitNow(): T {
+    override suspend fun emitNow(): T {
         var timer = 1
         var result = emit()
         while (result == null) {
@@ -98,9 +108,64 @@ abstract class RequestFlow<T> protected constructor(
     protected abstract suspend fun emit(): T?
 }
 
+/**
+ * A request flow cached locally
+ */
+abstract class CachedRequestFlow<T> protected constructor(
+    protected val scope: CoroutineScope,
+    protected val cache: DataStore<Cache>,
+    protected val mapFunc: (Cache) -> T?,
+    protected val updateFunc: Cache.(T) -> Cache
+) : RequestFlow<T>, SharedFlow<T> by (MutableSharedFlow<T>(replay = 1).apply {
+    scope.launch(Dispatchers.IO) { cache.data.map(mapFunc).collect {
+        Log.d(TAG, "Emitting cached value: $it")
+        if (it != null) emit(it)
+    } }
+}).asSharedFlow() {
+    override fun requestEmit() {
+        scope.launch { emitNow() }
+    }
+
+    override suspend fun emitNow(): T {
+        var timer = 1
+        var result = emit()
+        while (result == null) {
+            if (timer < 10) ++timer
+            delay(timer.seconds)
+            result = emit()
+        }
+        withContext(Dispatchers.IO) {
+            cache.updateData { it.updateFunc(result) }
+        }
+        return result
+    }
+
+    protected abstract suspend fun emit(): T?
+}
+
+abstract class UpdateRequestFlow<T> protected constructor(
+    scope: CoroutineScope,
+    cache: DataStore<Cache>,
+    mapFunc: (Cache) -> T?,
+    updateFunc: Cache.(T) -> Cache
+) : CachedRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
+    fun sendUpdate(update: suspend T?.() -> T) = scope.launch { updateNow(update) }
+    suspend fun updateNow(update: suspend T.() -> T) = withContext(Dispatchers.IO) {
+        var shouldEmit = false
+        cache.updateData {
+            val old = mapFunc(it)
+            if (old == null) {
+                shouldEmit = true
+                it
+            } else it.updateFunc(update(old))
+        }
+        if (shouldEmit) emitNow()
+    }
+}
+
 // LocalRepository defined in debug/release source sets
-fun repository(scope: CoroutineScope, sessionToken: String, onLogout: () -> Unit): Repository =
-    RepositoryImpl(scope, sessionToken, onLogout)
+fun repository(scope: CoroutineScope, sessionToken: String, cache: DataStore<Cache>, onLogout: () -> Unit): Repository =
+    RepositoryImpl(scope, sessionToken, cache, onLogout)
 
 abstract class Repository {
     // WebSocket for transmitting live data
@@ -175,7 +240,12 @@ abstract class Repository {
     }
 }
 
-private class RepositoryImpl(private val scope: CoroutineScope, private val sessionToken: String, private val onLogout: () -> Unit) : Repository() {
+private class RepositoryImpl(
+    private val scope: CoroutineScope,
+    private val sessionToken: String,
+    private val cache: DataStore<Cache>,
+    private val onLogout: () -> Unit,
+) : Repository() {
 
     private val client = HttpClient(OkHttp) {
         defaultRequest {
@@ -235,23 +305,39 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
     }
 
     // Static data & password check
-    override val countryData = createRawFlow<SCountries>("data/countries.json")
-    override val exchangeData = createRawFlow<SExchangeData>("data/exchange.json")
-    override val creditData = createRawFlow<List<SCreditData>>("data/credit.json")
+    override val countryData = createFlow<SCountries>("data/countries.json", raw = true)
+    override val exchangeData = createFlow<SExchangeData>("data/exchange.json", raw = true)
+    override val creditData = createFlow<List<SCreditData>>("data/credit.json", raw = true)
     override suspend fun sendCheckPassword(password: String) = client.safeRequest<Unit> {
         post("verifyPassword") { setBody(SPasswordData(password)) }
     }
 
     // User profile & friends
-    override val profile = createFlow<SUser>("profile")
+    override val profile = createUpdateFlow<SUser>("profile", { it.profile }, { copy(profile = it) })
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeRequest<Unit> {
         put("profile/update") {
             setBody(data)
         }
-    }
+    }.onSuccess { profile.updateNow { copy(about = data.about ?: about, avatar = data.avatar ?: avatar) } }
 
     override suspend fun sendUpdate(data: SNewUser) = client.safeRequest<Unit> {
         put("updateAccount") { setBody(data) }
+    }.onSuccess {
+        profile.updateNow {
+            copy(
+                data.email,
+                data.tag,
+                data.phone,
+                data.firstName,
+                data.middleName,
+                data.lastName,
+                data.dateOfBirth,
+                data.countryCode,
+                data.state,
+                data.city,
+                data.address
+            )
+        }
     }
 
     override suspend fun sendAddFriend(id: String) = client.safeRequest<Unit> {
@@ -340,31 +426,48 @@ private class RepositoryImpl(private val scope: CoroutineScope, private val sess
         addRequestHeader(HttpHeaders.Authorization, "Bearer $sessionToken")
     }
 
-    // Utility functions
-    private inline fun <reified T> createRawFlow(url: String) = object : RequestFlow<T>(scope) {
-        override suspend fun emit(): T? = try {
-            client.get(url).body<T>()
-        } catch (e: Exception) {
-            Log.w(TAG, "Exception in raw flow", e)
-            null
+    // Flow utilities
+    private suspend inline fun <reified T> getRequest(url: String, raw: Boolean): T? = try {
+        val result = client.get(url)
+        when {
+            result.status == HttpStatusCode.Unauthorized -> {
+                onLogout()
+                null
+            }
+            raw -> result.body<T>()
+            else -> {
+                val response = result.body<Response<T>>()
+                if (response is ValueResponse) response.value
+                else {
+                    Log.w(TAG, "Invalid server response for flow \"$url\": $response")
+                    null
+                }
+            }
         }
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Log.w(TAG, "Exception in repository flow", e)
+        null
     }
 
-    private inline fun <reified T> createFlow(url: String) = object : RequestFlow<T>(scope) {
-        override suspend fun emit(): T? {
-            try {
-                val result = client.get(url)
-                if (result.status == HttpStatusCode.Unauthorized) onLogout()
-                val response = result.body<Response<T>>()
-                if (response is ValueResponse) return response.value
-                else Log.w(TAG, "Invalid server response for flow \"$url\": $response")
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                Log.w(TAG, "Exception in repository flow", e)
-            }
-            return null
-        }
+    private inline fun <reified T> createFlow(url: String, raw: Boolean = false) = object : AbstractRequestFlow<T>(scope) {
+        override suspend fun emit(): T? = getRequest(url, raw)
     }
+
+    private inline fun <reified T> createCachedFlow(
+        url: String,
+        noinline mapFunc: (Cache) -> T?,
+        noinline updateFunc: Cache.(T) -> Cache,
+        raw: Boolean = false
+    ) = object : CachedRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
+        override suspend fun emit(): T? = getRequest(url, raw)
+    }
+
+    private inline fun <reified T> createUpdateFlow(url: String, noinline mapFunc: (Cache) -> T?, noinline updateFunc: Cache.(T) -> Cache) =
+        object : UpdateRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
+            override suspend fun emit(): T? = getRequest(url, false)
+        }
+
 
     override fun logout() {
         scope.launch { client.safeRequest<Unit> { get("signOut") } }

@@ -54,6 +54,12 @@ inline fun <T, R> RequestResult<T>.fold(onFail: (Int) -> R, onSuccess: (T) -> R)
     is RequestSuccess -> onSuccess(response)
 }
 
+inline fun <T> RequestResult<Response<T>>.onSuccess(onSuccess: () -> Unit) =
+    if (this is RequestSuccess && response == SuccessResponse) {
+        onSuccess()
+        this
+    } else this
+
 // With snackbar
 inline fun <T> RequestResult<T>.handle(scope: CoroutineScope, snackbar: SnackbarHostState, context: Context, onResponse: (T) -> String?) = fold(
     onFail = { scope.launch { snackbar.show(context.getString(it)) } },

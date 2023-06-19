@@ -23,7 +23,7 @@ image-cropper = "4.5.0"
 shimmer-compose = "1.0.4"
 compose-settings = "0.26.0"
 androidx-biometric = "1.1.0"
-firebase-bom = "32.1.0"
+firebase-bom = "32.1.1"
 firebase-admin = "9.1.1"
 
 [libraries]
@@ -33,7 +33,6 @@ accompanist-navigation-animation = { group = "com.google.accompanist", name = "a
 accompanist-swipe-refresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist-swipe-refresh" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidx-datastore-preferences" }
 kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
-kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "androidx-biometric" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
