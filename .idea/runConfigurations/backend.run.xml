@@ -1,5 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="backend" type="JetRunConfigurationType">
+    <envs>
+      <env name="DB_USER" value="bankar" />
+      <env name="DB_PASS" value="bankar" />
+      <env name="DB_URL" value="postgresql://localhost:5432/bankar" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="ro.bankar.ApplicationKt" />
     <module name="BanKAR.backend.main" />
     <shortenClasspath name="NONE" />

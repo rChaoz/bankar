@@ -1,8 +1,8 @@
 package ro.bankar
 
-import org.h2.security.SHA256
 import org.jetbrains.exposed.sql.Table
 import ro.bankar.banking.Currency
+import java.security.MessageDigest
 import java.security.SecureRandom
 
 private val random = SecureRandom()
@@ -16,7 +16,10 @@ fun generateSalt() = ByteArray(32).also { random.nextBytes(it) }
 /**
  * Calculates the SHA-256 of the String, using the given salt
  */
-fun String.sha256(salt: ByteArray): ByteArray = SHA256.getHashWithSalt(this.toByteArray(), salt)
+fun String.sha256(salt: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").apply {
+    update(salt)
+    update(this@sha256.toByteArray())
+}.digest()
 
 /**
  * Generates a 32-character long alphanumeric secure random token
