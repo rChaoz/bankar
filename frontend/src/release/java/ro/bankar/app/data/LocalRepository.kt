@@ -1,20 +1,13 @@
 package ro.bankar.app.data
 
 import androidx.compose.runtime.compositionLocalOf
-import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import kotlinx.coroutines.DelicateCoroutinesApi
+import io.ktor.client.plugins.websocket.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
-import ro.bankar.model.SBankAccount
-import ro.bankar.model.SNewBankAccount
-import ro.bankar.model.SNewUser
-import ro.bankar.model.SSocketNotification
-import ro.bankar.model.SStatement
-import ro.bankar.model.SUserProfileUpdate
+import ro.bankar.model.*
 
 val LocalRepository = compositionLocalOf<Repository> { throw RuntimeException("LocalRepository provider not found") }
 
-@OptIn(DelicateCoroutinesApi::class)
 object EmptyRepository : Repository() {
     // Web socket
     override val socket: DefaultClientWebSocketSession get() = throw RuntimeException("EmptyRepository cannot be accessed")
@@ -23,6 +16,7 @@ object EmptyRepository : Repository() {
     // Static data
     override val countryData get() = throw RuntimeException("EmptyRepository cannot be accessed")
     override val exchangeData get() = throw RuntimeException("EmptyRepository cannot be accessed")
+    override val creditData get() = throw RuntimeException("EmptyRepository cannot be accessed")
     override suspend fun sendCheckPassword(password: String) = throw RuntimeException("EmptyRepository cannot be accessed")
     // User profile & friends
     override val profile get() = throw RuntimeException("EmptyRepository cannot be accessed")
@@ -68,6 +62,6 @@ object EmptyRepository : Repository() {
         throw RuntimeException("EmptyRepository cannot be accessed")
     override fun createDownloadStatementRequest(statement: SStatement) = throw RuntimeException("EmptyRepository cannot be accessed")
 
-    override fun logout() {
-    }
+    override fun logout() {}
+    override fun initNotifications() {}
 }

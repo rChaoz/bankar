@@ -1,4 +1,4 @@
-package ro.bankar.app
+package ro.bankar.app.data
 
 import androidx.compose.runtime.compositionLocalOf
 import androidx.datastore.core.DataStore

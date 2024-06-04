@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
 	jvm()
-	android()
+	androidTarget()
 
     sourceSets {
         val commonMain by getting {
@@ -25,7 +25,6 @@ android {
 
     defaultConfig {
         minSdk = 24
-        targetSdk = 33
     }
 	compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
