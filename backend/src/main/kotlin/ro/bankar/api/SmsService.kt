@@ -14,7 +14,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ro.bankar.DEV_MODE
 import ro.bankar.SKIP_DELIVERY_CHECK
-import ro.bankar.generateNumeric
+import ro.bankar.generateToken
 import kotlin.collections.set
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -40,7 +40,7 @@ object SmsService {
         this.username = username
         this.apiKey = apiKey
         this.reportURL = reportURL
-        if (DEV_MODE && (username == null || apiKey == null || reportURL == null))
+        if (!DEV_MODE && (username == null || apiKey == null || reportURL == null))
             throw IllegalStateException("SmsService requires non-null username, apiKey, reportURL outside DEV mode")
     }
 
@@ -59,8 +59,7 @@ object SmsService {
         val user = username
         val key = apiKey
         if (user == null || key == null) throw IllegalStateException("Cannot send SMS if username/key are not set outside DEV mode")
-        val messageID = generateNumeric(10)
-        println(messageID)
+        val messageID = generateToken()
 
         // Send request
         val response = client.get {
