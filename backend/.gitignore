@@ -37,6 +37,4 @@ out/
 
 ### Private keys/data ###
 *.private.env.*
-*.jks
-!selfsigned.jks
 *.private.json

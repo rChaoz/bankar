@@ -1,19 +1,9 @@
 ktor:
-  development: true
-  sms:
-    reportURL: "https://rct33b.asuscomm.com/api/sms_report?status=%d"
   application:
     modules:
       - ro.bankar.ApplicationKt.module
   deployment:
     port: 8080
-    sslPort: 8443
     watch:
       - classes
       - resources
-  security:
-    ssl:
-      keyStore: "$KEYSTORE:selfsigned.jks"
-      keyAlias: "$KEYSTORE_ALIAS:bankar"
-      keyStorePassword: "$KEYSTORE_PASS:bankar"
-      privateKeyPassword: "$KEYSTORE_PASS:bankar"

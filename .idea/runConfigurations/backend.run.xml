@@ -3,6 +3,7 @@
     <option name="MAIN_CLASS_NAME" value="ro.bankar.ApplicationKt" />
     <module name="BanKAR.backend.main" />
     <shortenClasspath name="NONE" />
+    <option name="VM_PARAMETERS" value="-Dio.ktor.development=true" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
     <method v="2">
       <option name="Make" enabled="true" />
