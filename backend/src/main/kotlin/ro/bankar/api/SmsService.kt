@@ -7,19 +7,21 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.util.logging.*
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ro.bankar.DEV_MODE
-import ro.bankar.SKIP_DELIVERY_CHECK
 import ro.bankar.generateToken
 import kotlin.collections.set
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 
 object SmsService {
+    private val log = KtorSimpleLogger(SmsService::class.qualifiedName ?: "BankarSmsService")
+
     @Serializable
     data class SmsResponse(val status: Int)
 
@@ -40,8 +42,12 @@ object SmsService {
         this.username = username
         this.apiKey = apiKey
         this.reportURL = reportURL
-        if (!DEV_MODE && (username == null || apiKey == null || reportURL == null))
-            throw IllegalStateException("SmsService requires non-null username, apiKey, reportURL outside DEV mode")
+        if (!DEV_MODE) {
+            if (username == null || apiKey == null)
+                throw IllegalStateException("SmsService requires non-null username, apiKey, reportURL outside DEV mode")
+            if (reportURL === null)
+                log.warn("SmsService was configured without a reportURL - delivery check will not happen")
+        }
     }
 
     private val smsMap = HashMap<String, Continuation<Boolean>>()
@@ -58,7 +64,7 @@ object SmsService {
 
         val user = username
         val key = apiKey
-        if (user == null || key == null) throw IllegalStateException("Cannot send SMS if username/key are not set outside DEV mode")
+        if (user == null || key == null) throw IllegalStateException("Cannot send SMS if username/key have not been configured")
         val messageID = generateToken()
 
         // Send request
@@ -78,7 +84,7 @@ object SmsService {
         }.body<SmsResponse>()
         // Check status code
         if (response.status != 1) return false
-        if (SKIP_DELIVERY_CHECK) return true
+        if (reportURL == null) return true
         // Await delivery confirmation
         return try {
             withTimeout(10000) { suspendCancellableCoroutine { smsMap[messageID] = it } }
