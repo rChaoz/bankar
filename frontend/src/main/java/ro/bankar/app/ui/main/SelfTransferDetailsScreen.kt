@@ -1,15 +1,8 @@
 package ro.bankar.app.ui.main
 
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Divider
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -89,7 +82,7 @@ fun SelfTransferDetailsScreen(onDismiss: () -> Unit, data: SBankTransfer, onNavi
                     }
                 }
             }
-            Divider()
+            HorizontalDivider()
             TransferAccountCard(text = R.string.from_account, sourceAccount, onNavigateToAccount)
             TransferAccountCard(text = R.string.to_account, destinationAccount, onNavigateToAccount)
 

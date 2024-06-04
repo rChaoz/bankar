@@ -5,21 +5,10 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators
 import androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
 import androidx.biometric.BiometricPrompt
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,15 +18,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -72,18 +53,7 @@ import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
-import ro.bankar.app.data.KeyAuthenticationPin
-import ro.bankar.app.data.KeyFingerprintEnabled
-import ro.bankar.app.data.KeyLanguage
-import ro.bankar.app.data.KeyPreferredCurrency
-import ro.bankar.app.data.KeyTheme
-import ro.bankar.app.data.LocalDataStore
-import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.collectPreferenceAsState
-import ro.bankar.app.data.fold
-import ro.bankar.app.data.handleSuccess
-import ro.bankar.app.data.removePreference
-import ro.bankar.app.data.setPreference
+import ro.bankar.app.data.*
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
@@ -255,41 +225,41 @@ private fun SettingsScreen(navigation: NavHostController) {
             title = { Text(text = stringResource(id = R.string.language), style = MaterialTheme.typography.titleMedium) },
             onClick = { navigation.navigate(SettingsNav.Language.route) }
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             icon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },
             title = { Text(text = stringResource(R.string.access_options), style = MaterialTheme.typography.titleMedium) },
             subtitle = { Text(text = stringResource(R.string.access_options_desc)) },
             onClick = { authenticateDialogVisible = true },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             icon = { Icon(painter = painterResource(R.drawable.baseline_palette_24), contentDescription = null) },
             title = { Text(text = stringResource(R.string.theme), style = MaterialTheme.typography.titleMedium) },
             subtitle = { Text(text = stringResource(R.string.theme_desc)) },
             onClick = { navigation.navigate(SettingsNav.Theme.route) },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             icon = { Icon(imageVector = Icons.Default.Person, contentDescription = null) },
             title = { Text(text = stringResource(R.string.contact_us), style = MaterialTheme.typography.titleMedium) },
             onClick = { navigation.navigate(SettingsNav.ContactUs.route) },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             icon = { Icon(painter = painterResource(R.drawable.baseline_money_24), contentDescription = null) },
             title = { Text(text = stringResource(R.string.preferred_currency), style = MaterialTheme.typography.titleMedium) },
             subtitle = { Text(text = stringResource(R.string.preferred_currency_desc)) },
             onClick = { navigation.navigate(SettingsNav.PrimaryCurrency.route) },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             icon = { Icon(painter = painterResource(R.drawable.baseline_card_24), contentDescription = null) },
             title = { Text(text = stringResource(R.string.default_bank_account), style = MaterialTheme.typography.titleMedium) },
             subtitle = { Text(text = stringResource(R.string.default_bank_account_desk)) },
             onClick = { navigation.navigate(SettingsNav.DefaultBankAccount.route) },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             icon = { Icon(imageVector = Icons.Default.Delete, contentDescription = "Disable Account", tint = Color.Red) },
             title = { Text(text = stringResource(id = R.string.disable_account), style = MaterialTheme.typography.titleMedium, color = Color.Red) },
@@ -312,7 +282,7 @@ private fun LanguageScreen() = Surface {
     Column(modifier = Modifier.fillMaxSize()) {
         for (language in Language.values()) {
             if (language.ordinal != 0) {
-                Divider()
+                HorizontalDivider()
             }
             SettingsMenuLink(
                 icon = {
@@ -435,7 +405,7 @@ private fun AccessScreen() = Surface {
             onCheckedChange = { pin = ""; pinDialogVisible = true }
         )
         if (fingerprintAvailable && prompt != null) {
-            Divider()
+            HorizontalDivider()
             SettingsCheckbox(
                 icon = { Icon(painter = painterResource(R.drawable.baseline_fingerprint_24), contentDescription = null) },
                 title = { Text(text = stringResource(id = R.string.fingerprint), style = MaterialTheme.typography.titleMedium) },
@@ -471,7 +441,7 @@ private fun ThemeScreen() = Surface {
 
     Column(modifier = Modifier.fillMaxSize()) {
         for (theme in Theme.values()) {
-            if (theme.ordinal != 0) Divider()
+            if (theme.ordinal != 0) HorizontalDivider()
             SettingsMenuLink(
                 icon = { Icon(painter = painterResource(theme.icon), contentDescription = null) },
                 title = { Text(text = stringResource(theme.title), style = MaterialTheme.typography.titleMedium) },
@@ -502,22 +472,22 @@ private fun ContactScreen() = Surface {
             title = { Text(text = stringResource(R.string.about_app), style = MaterialTheme.typography.titleMedium) },
             onClick = { /*TODO*/ },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             title = { Text(text = stringResource(R.string.faq), style = MaterialTheme.typography.titleMedium) },
             onClick = { /*TODO*/ },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             title = { Text(text = stringResource(R.string.send_us_email), style = MaterialTheme.typography.titleMedium) },
             onClick = { /*TODO*/ },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             title = { Text(text = stringResource(R.string.live_chat), style = MaterialTheme.typography.titleMedium) },
             onClick = { /*TODO*/ },
         )
-        Divider()
+        HorizontalDivider()
         SettingsMenuLink(
             title = { Text(text = stringResource(R.string.call_us), style = MaterialTheme.typography.titleMedium) },
             onClick = { /*TODO*/ },
@@ -532,7 +502,7 @@ private fun PrimaryCurrencyScreen() = Surface {
 
     Column(modifier = Modifier.fillMaxSize()) {
         for (currency in Currency.values()) {
-            if (currency.ordinal == 0) Divider()
+            if (currency.ordinal == 0) HorizontalDivider()
             SettingsMenuLink(
                 title = { Text(text = currency.code, style = MaterialTheme.typography.titleMedium) },
                 action = if (state == currency.ordinal) {
@@ -589,7 +559,7 @@ private fun DefaultBankAccountScreen() = Surface {
                         }
                     })
             }
-            Divider()
+            HorizontalDivider()
             SettingsCheckbox(
                 state = remember {
                     object : SettingValueState<Boolean> {

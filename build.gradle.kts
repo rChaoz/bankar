@@ -2,9 +2,14 @@ group = "ro.bankar"
 version = "1.0"
 
 plugins {
-    kotlin("multiplatform") version "1.8.20" apply false
-    kotlin("android") version "1.8.10" apply false
-	id("com.android.application") version "8.0.0" apply false
-	id("com.android.library") version "8.0.0" apply false
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.20" apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.kotlin.android) apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.android.application) apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.android.library) apply false
+    @Suppress("DSL_SCOPE_VIOLATION")
+    alias(libs.plugins.kotlin.plugin.serialization) apply false
 }

@@ -1,22 +1,21 @@
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    @Suppress("DSL_SCOPE_VIOLATION")
-    alias(libs.plugins.com.android.application)
-    @Suppress("DSL_SCOPE_VIOLATION")
-    alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.plugin.serialization)
 
-    id("org.jetbrains.kotlin.plugin.serialization")
     // For Firebase
     id("com.google.gms.google-services") version "4.3.15"
 }
 
 android {
     namespace = "ro.bankar.app"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "ro.bankar.app"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -49,7 +48,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.6"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
     bundle {
         language.enableSplit = false

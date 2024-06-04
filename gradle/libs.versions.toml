@@ -1,21 +1,21 @@
 [versions]
-com-android-tools-desugaring = "2.0.3"
-com-android-application = "8.0.0"
-constraintlayout-compose = "1.1.0-alpha10"
+com-android-tools-desugaring = "2.0.4"
+android-gradle = "8.1.1"
+kotlin = "1.9.24"
+constraintlayout-compose = "1.1.0-alpha13"
 accompanist-navigation-animation = "0.31.0-alpha"
 accompanist-swipe-refresh = "0.31.2-alpha"
-androidx-datastore-preferences = "1.0.0"
+androidx-datastore-preferences = "1.1.1"
 kotlinx-serialization = "1.5.1"
 kotlinx-datetime = "0.4.0"
-org-jetbrains-kotlin-android = "1.8.10"
-core-ktx = "1.10.1"
+core-ktx = "1.13.1"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.1.5"
 espresso-core = "3.5.1"
-lifecycle-runtime-ktx = "2.6.1"
-lifecycle-viewmodel-compose = "2.6.1"
-activity-compose = "1.7.2"
-compose-bom = "2023.06.00"
+lifecycle-runtime-ktx = "2.8.1"
+lifecycle-viewmodel-compose = "2.8.1"
+activity-compose = "1.9.0"
+compose-bom = "2024.05.00"
 io-ktor-client = "2.2.4"
 maxkeppeler-compose = "1.1.1"
 io-coil = "2.3.0"
@@ -23,7 +23,7 @@ image-cropper = "4.5.0"
 shimmer-compose = "1.0.4"
 compose-settings = "0.26.0"
 androidx-biometric = "1.1.0"
-firebase-bom = "32.1.1"
+firebase-bom = "33.1.0"
 firebase-admin = "9.1.1"
 
 [libraries]
@@ -67,9 +67,13 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
 firebase-admin = { group = "com.google.firebase", name = "firebase-admin", version.ref = "firebase-admin" }
+
 [plugins]
-com-android-application = { id = "com.android.application", version.ref = "com-android-application" }
-org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }
+android-application = { id = "com.android.application", version.ref = "android-gradle" }
+android-library = { id = "com.android.library", version.ref = "android-gradle" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [bundles]
 

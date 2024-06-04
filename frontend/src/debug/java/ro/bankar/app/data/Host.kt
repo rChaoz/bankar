@@ -1,10 +1,8 @@
 package ro.bankar.app.data
 
 import android.net.Uri
-import io.ktor.client.plugins.DefaultRequest
-import io.ktor.http.URLBuilder
-import io.ktor.http.URLProtocol
-import io.ktor.http.path
+import io.ktor.client.plugins.*
+import io.ktor.http.*
 import ro.bankar.model.SStatement
 
 fun DefaultRequest.DefaultRequestBuilder.configUrl() {

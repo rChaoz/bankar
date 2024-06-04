@@ -33,7 +33,7 @@ fun LoadingOverlay(
                     label = "Progress Animation",
                     animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
                 )
-                CircularProgressIndicator(progress = animatedProgress)
+                CircularProgressIndicator(progress = { animatedProgress },)
             }
         }
     }

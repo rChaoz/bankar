@@ -1,26 +1,13 @@
 package ro.bankar.app.ui.main.friend
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -91,7 +78,7 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                     CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(.8f)) {
                             ProfileButton(onClick = { navigation.navigate(MainNav.Conversation(profile)) }, text = R.string.send_message) {
-                                Icon(imageVector = Icons.Default.Send, contentDescription = null, modifier = Modifier.size(28.dp))
+                                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(28.dp))
                             }
                             ProfileButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {
                                 Icon(painter = painterResource(R.drawable.transfer), contentDescription = null, modifier = Modifier.size(28.dp))
