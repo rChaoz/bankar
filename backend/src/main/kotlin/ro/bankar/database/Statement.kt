@@ -85,7 +85,7 @@ fun SizedIterable<Statement>.serializable() = map(Statement::serializable)
 object Statements : IntIdTable() {
     val name = varchar("name", 20).nullable()
     val bankAccount = reference("bank_account", BankAccounts, onDelete = ReferenceOption.CASCADE)
-    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp)
     val statement = blob("statement")
 }
 

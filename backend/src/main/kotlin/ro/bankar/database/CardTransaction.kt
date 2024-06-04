@@ -47,7 +47,7 @@ internal object CardTransactions : IntIdTable(columnName = "transaction_id") {
     val card = reference("card_id", BankCards)
     val amount = amount("amount")
     val currency = currency("currency")
-    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp)
     val details = varchar("details", 500)
     val title = varchar("title", 50)
 }

@@ -93,5 +93,5 @@ internal object Parties : IntIdTable() {
     // If true, the party is completed and there are no more pending requests
     // "Completed" doesn't mean that all requests were accepted. A completed party will appear in the host's history.
     val completed = bool("completed").default(false)
-    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp)
 }

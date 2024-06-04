@@ -361,7 +361,7 @@ internal object FriendRequests : Table() {
 internal object FriendPairs : Table() {
     val sourceUser = reference("source_user_id", Users)
     val targetUser = reference("target_user_id", Users)
-    val lastOpenedConversation = timestamp("last_opened_conversation").defaultExpression(CurrentTimestamp())
+    val lastOpenedConversation = timestamp("last_opened_conversation").defaultExpression(CurrentTimestamp)
     override val primaryKey = PrimaryKey(sourceUser, targetUser)
 
     fun getLastOpenedConversation(user: User, otherUser: User) =
