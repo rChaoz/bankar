@@ -169,7 +169,7 @@ internal object BankTransfers : IntIdTable(columnName = "transfer_id") {
     val exchangedAmount = amount("exchanged_amount").check("exchanged_amount_positive") { it greater BigDecimal.ZERO }.nullable()
     val currency = currency("currency")
     val note = varchar("note", 200)
-    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp)
     val party = reference("party", Parties).nullable()
 
     init {

@@ -54,5 +54,5 @@ internal object UserMessages : IntIdTable() {
     val targetUser = reference("target_user_id", Users.id)
 
     val message = varchar("message", 500)
-    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp)
 }

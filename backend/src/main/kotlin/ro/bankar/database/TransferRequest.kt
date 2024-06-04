@@ -95,5 +95,5 @@ internal object TransferRequests : IntIdTable(columnName = "transfer_req_id") {
     val note = varchar("note", 100)
     val partyMember = reference("party_member", PartyMembers, onDelete = ReferenceOption.CASCADE).nullable()
     val amount = amount("amount")
-    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp())
+    val timestamp = timestamp("timestamp").defaultExpression(CurrentTimestamp)
 }
