@@ -14,6 +14,20 @@ GET https://api.sendsms.ro/json?action=user_allow_token_request&username={{usern
 ### Get API Key
 GET https://api.sendsms.ro/json?action=user_get_api_key&request_key={{request_key}}
 
+> {%
+    // noinspection JSUnresolvedReferenc
+    client.global.set("api_key", response.body.details.api_key)
+%}
+
+### Check IP address associated with API key
+GET https://api.sendsms.ro/json?action=token_list_ips&username={{username}}&password={{api_key}}
+
+### Add IP address to be associated with API key
+GET https://api.sendsms.ro/json?action=token_add_ip&
+    username={{username}}&
+    password={{api_key}}&
+    ipaddr=1.2.3.4
+
 ### Send SMS to incorrect number
 GET https://api.sendsms.ro/json?
     action=message_send&
