@@ -1,14 +1,9 @@
 package ro.bankar
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
-import ro.bankar.model.ErrorResponse
-import ro.bankar.model.InvalidParamResponse
-import ro.bankar.model.NotFoundResponse
-import ro.bankar.model.Response
-import ro.bankar.model.SuccessResponse
-import ro.bankar.model.ValueResponse
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.response.*
+import ro.bankar.model.*
 
 /**
  * Respond to a call with the given serializable value, to be boxed in [ValueResponse].
@@ -29,7 +24,7 @@ suspend inline fun ApplicationCall.respondInvalidParam(param: String, reason: St
     respond<Response<Unit>>(HttpStatusCode.BadRequest, InvalidParamResponse(param, reason))
 
 /**
- * Respond to a call with a error message identifier.
+ * Respond to a call with an error message identifier.
  */
 suspend inline fun ApplicationCall.respondError(message: String, status: HttpStatusCode = HttpStatusCode.BadRequest) =
     respond<Response<Unit>>(status, ErrorResponse(message))

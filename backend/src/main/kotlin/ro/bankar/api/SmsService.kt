@@ -87,9 +87,11 @@ object SmsService {
         if (reportURL == null) return true
         // Await delivery confirmation
         return try {
-            withTimeout(10000) { suspendCancellableCoroutine { smsMap[messageID] = it } }
+            withTimeout(5000) { suspendCancellableCoroutine { smsMap[messageID] = it } }
         } catch (e: TimeoutCancellationException) {
-            false
+            // Sometimes, delivery check doesn't work, which won't allow us to detect bad phone number/similar
+            // But don't prevent user from logging in due to this
+            true
         } finally {
             smsMap.remove(messageID)
         }
