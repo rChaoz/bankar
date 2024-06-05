@@ -21,7 +21,7 @@ maxkeppeler-compose = "1.1.1"
 io-coil = "2.3.0"
 image-cropper = "4.5.0"
 shimmer-compose = "1.0.4"
-compose-settings = "0.26.0"
+compose-settings = "2.4.0"
 androidx-biometric = "1.1.0"
 firebase-bom = "33.1.0"
 firebase-admin = "9.1.1"
@@ -61,8 +61,7 @@ maxkeppeler-compose-info = { group = "com.maxkeppeler.sheets-compose-dialogs", n
 io-coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "io-coil" }
 image-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "image-cropper" }
 shimmer-compose = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version.ref = "shimmer-compose" }
-compose-settings = { group = "com.github.alorma", name = "compose-settings-ui-m3", version.ref = "compose-settings" }
-compose-settings-datastore-preferences = { group = "com.github.alorma", name = "compose-settings-storage-datastore", version.ref = "compose-settings" }
+compose-settings = { group = "com.github.alorma.compose-settings", name = "ui-tiles", version.ref = "compose-settings" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }

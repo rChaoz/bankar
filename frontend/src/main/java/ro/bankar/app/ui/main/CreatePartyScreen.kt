@@ -2,10 +2,26 @@ package ro.bankar.app.ui.main
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -13,7 +29,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,7 +71,12 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
 import ro.bankar.app.data.handleSuccess
-import ro.bankar.app.ui.components.*
+import ro.bankar.app.ui.components.AccountsComboBox
+import ro.bankar.app.ui.components.Avatar
+import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.NavScreen
+import ro.bankar.app.ui.components.VerifiableField
+import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
@@ -119,12 +149,12 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, account: Int
         }
     }
     // Back button should go back to previous step
-    BackHandler(enabled = model.step != CreatePartyStep.AccountAndTotal) { model.step = CreatePartyStep.values()[model.step.ordinal - 1] }
+    BackHandler(enabled = model.step != CreatePartyStep.AccountAndTotal) { model.step = CreatePartyStep.entries[model.step.ordinal - 1] }
 
     NavScreen(
         onDismiss = {
             if (model.isLoading) return@NavScreen
-            if (model.step != CreatePartyStep.AccountAndTotal) model.step = CreatePartyStep.values()[model.step.ordinal - 1] else onDismiss()
+            if (model.step != CreatePartyStep.AccountAndTotal) model.step = CreatePartyStep.entries[model.step.ordinal - 1] else onDismiss()
         },
         title = R.string.create_party,
         snackbar = model.snackbar

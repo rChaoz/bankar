@@ -9,7 +9,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
@@ -30,11 +32,9 @@ import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
-import com.alorma.compose.settings.storage.base.SettingValueState
 import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -65,61 +65,30 @@ fun Context.findActivity(): FragmentActivity? = when (this) {
 }
 
 /**
- * Returns a [SettingValueState] that allows null values. A null value indicates that the setting
- * has not been set yet. Setting the value to null will delete the setting.
+ * Returns a state for a preference key in a DataStore. A `null` value means the key is not set.
+ * The state is mutable and can be used to change the value in the DataStore.
  */
 @Composable
 fun <T : Any> rememberPreferenceDataStoreSettingState(
     dataStore: DataStore<Preferences>,
     key: Preferences.Key<T>,
+    defaultValue: T? = null,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
-): SettingValueState<T?> {
-    return remember {
-        object : SettingValueState<T?> {
-            private var _value: T? = runBlocking { dataStore.data.first()[key] }
-            init {
-                coroutineScope.launch {
-                    dataStore.data.map { it[key] }.collect { _value = it }
-                }
-            }
-
-            private var job: Job? = null
-
-            override var value: T?
-                get() = _value
-                set(value) {
-                    job?.cancel()
-                    job = coroutineScope.launch {
-                        if (value != null) dataStore.edit { it[key] = value }
-                        else dataStore.edit { it -= key }
-                    }
-                }
-
-            override fun reset() {
-                value = null
-            }
-        }
-    }
-}
-
-@Composable
-fun <T : Any> rememberPreferenceDataStoreSettingState(
-    dataStore: DataStore<Preferences>,
-    key: Preferences.Key<T>,
-    defaultValue: T,
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
-): SettingValueState<T> {
-    val base = rememberPreferenceDataStoreSettingState(dataStore, key, coroutineScope)
-    return object : SettingValueState<T> {
-        override var value: T
-            get() = base.value ?: defaultValue
+): MutableState<T?> {
+    val initialValue = runBlocking { dataStore.data.first()[key] }
+    val value by remember { dataStore.data.map { it[key] } }.collectAsState(initialValue)
+    return object : MutableState<T?> {
+        override var value: T?
+            get() = value ?: defaultValue
             set(value) {
-                base.value = value
+                coroutineScope.launch {
+                    if (value != null) dataStore.edit { it[key] = value }
+                    else dataStore.edit { it -= key }
+                }
             }
 
-        override fun reset() {
-            base.value = defaultValue
-        }
+        override fun component1() = value
+        override fun component2() = { value: T? -> this.value = value }
     }
 }
 

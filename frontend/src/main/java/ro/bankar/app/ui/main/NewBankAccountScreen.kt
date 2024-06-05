@@ -142,7 +142,7 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
             ButtonRow(
                 currentValue = model.accountType,
                 onValueChange = { model.accountType = it; model.currency.check(context, true) },
-                values = SBankAccountType.values().toList(),
+                values = SBankAccountType.entries,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
@@ -155,7 +155,7 @@ fun NewBankAccountScreen(onDismiss: () -> Unit) {
                 selectedItemText = model.currency.value.code,
                 onSelectItem = { model.currency.value = it; model.currency.check(context) },
                 label = R.string.currency,
-                items = Currency.values().toList(),
+                items = Currency.entries,
                 fillWidth = true,
                 isError = model.currency.hasError,
                 supportingText = model.currency.error ?: ""

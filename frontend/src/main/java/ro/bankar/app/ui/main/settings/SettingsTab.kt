@@ -5,10 +5,21 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators
 import androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
 import androidx.biometric.BiometricPrompt
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,7 +29,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,9 +62,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.alorma.compose.settings.storage.base.SettingValueState
-import com.alorma.compose.settings.storage.base.getValue
-import com.alorma.compose.settings.storage.base.setValue
 import com.alorma.compose.settings.ui.SettingsCheckbox
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.google.accompanist.navigation.animation.AnimatedNavHost
@@ -53,7 +69,18 @@ import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
-import ro.bankar.app.data.*
+import ro.bankar.app.data.KeyAuthenticationPin
+import ro.bankar.app.data.KeyFingerprintEnabled
+import ro.bankar.app.data.KeyLanguage
+import ro.bankar.app.data.KeyPreferredCurrency
+import ro.bankar.app.data.KeyTheme
+import ro.bankar.app.data.LocalDataStore
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.collectPreferenceAsState
+import ro.bankar.app.data.fold
+import ro.bankar.app.data.handleSuccess
+import ro.bankar.app.data.removePreference
+import ro.bankar.app.data.setPreference
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
@@ -280,7 +307,7 @@ private fun LanguageScreen() = Surface {
     var state by rememberPreferenceDataStoreSettingState(key = KeyLanguage, dataStore = datastore)
 
     Column(modifier = Modifier.fillMaxSize()) {
-        for (language in Language.values()) {
+        for (language in Language.entries) {
             if (language.ordinal != 0) {
                 HorizontalDivider()
             }
@@ -393,15 +420,7 @@ private fun AccessScreen() = Surface {
             icon = { Icon(painter = painterResource(R.drawable.baseline_pin_24), contentDescription = null) },
             title = { Text(text = stringResource(R.string.pin), style = MaterialTheme.typography.titleMedium) },
             subtitle = { Text(text = stringResource(R.string.pin_desc)) },
-            state = remember {
-                object : SettingValueState<Boolean> {
-                    override var value
-                        get() = dataPin != null
-                        set(_) {}
-
-                    override fun reset() {}
-                }
-            },
+            state = dataPin != null,
             onCheckedChange = { pin = ""; pinDialogVisible = true }
         )
         if (fingerprintAvailable && prompt != null) {
@@ -410,15 +429,7 @@ private fun AccessScreen() = Surface {
                 icon = { Icon(painter = painterResource(R.drawable.baseline_fingerprint_24), contentDescription = null) },
                 title = { Text(text = stringResource(id = R.string.fingerprint), style = MaterialTheme.typography.titleMedium) },
                 subtitle = { Text(text = stringResource(R.string.fingerprint_desc)) },
-                state = remember {
-                    object : SettingValueState<Boolean> {
-                        override var value
-                            get() = fingerprintEnabled == true
-                            set(_) {}
-
-                        override fun reset() {}
-                    }
-                },
+                state = fingerprintEnabled == true,
                 onCheckedChange = {
                     if (fingerprintEnabled == true) scope.launch { datastore.setPreference(KeyFingerprintEnabled, false) }
                     else prompt.authenticate(promptInfo)
@@ -440,7 +451,7 @@ private fun ThemeScreen() = Surface {
     var state by rememberPreferenceDataStoreSettingState(key = KeyTheme, dataStore = datastore, defaultValue = 0)
 
     Column(modifier = Modifier.fillMaxSize()) {
-        for (theme in Theme.values()) {
+        for (theme in Theme.entries) {
             if (theme.ordinal != 0) HorizontalDivider()
             SettingsMenuLink(
                 icon = { Icon(painter = painterResource(theme.icon), contentDescription = null) },
@@ -501,7 +512,7 @@ private fun PrimaryCurrencyScreen() = Surface {
     var state by rememberPreferenceDataStoreSettingState(key = KeyPreferredCurrency, dataStore = datastore, defaultValue = 0)
 
     Column(modifier = Modifier.fillMaxSize()) {
-        for (currency in Currency.values()) {
+        for (currency in Currency.entries) {
             if (currency.ordinal == 0) HorizontalDivider()
             SettingsMenuLink(
                 title = { Text(text = currency.code, style = MaterialTheme.typography.titleMedium) },
@@ -561,28 +572,19 @@ private fun DefaultBankAccountScreen() = Surface {
             }
             HorizontalDivider()
             SettingsCheckbox(
-                state = remember {
-                    object : SettingValueState<Boolean> {
-                        override var value: Boolean
-                            get() = state?.alwaysUse ?: false
-                            set(value) {
-                                isLoading = true
-                                scope.launch {
-                                    repository.sendDefaultAccount(state!!.id, value).handleSuccess(this, snackbar, context) {
-                                        repository.defaultAccount.emitNow()
-                                    }
-                                    isLoading = false
-                                }
-                            }
-
-                        override fun reset() {
-                            value = false
-                        }
-                    }
-                },
+                state = state?.alwaysUse ?: false,
                 title = { Text(text = stringResource(R.string.use_account_for_all_currencies)) },
                 subtitle = { Text(text = stringResource(R.string.use_account_for_all_desc)) },
-                enabled = account.value != null
+                enabled = account.value != null,
+                onCheckedChange = {
+                    isLoading = true
+                    scope.launch {
+                        repository.sendDefaultAccount(state!!.id, it).handleSuccess(this, snackbar, context) {
+                            repository.defaultAccount.emitNow()
+                        }
+                        isLoading = false
+                    }
+                }
             )
         }
     }
