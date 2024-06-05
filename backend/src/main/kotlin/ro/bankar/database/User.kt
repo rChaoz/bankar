@@ -7,30 +7,12 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.SizedCollection
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
-import org.jetbrains.exposed.sql.kotlin.datetime.date
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
-import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.kotlin.datetime.*
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
-import org.jetbrains.exposed.sql.update
 import ro.bankar.generateSalt
 import ro.bankar.generateToken
-import ro.bankar.model.SDefaultBankAccount
-import ro.bankar.model.SDirection
-import ro.bankar.model.SFriend
-import ro.bankar.model.SFriendRequest
-import ro.bankar.model.SNewUser
-import ro.bankar.model.SPublicUser
-import ro.bankar.model.SUser
+import ro.bankar.model.*
 import ro.bankar.sha256
 import ro.bankar.util.nowUTC
 import kotlin.time.Duration.Companion.days
@@ -365,7 +347,7 @@ internal object FriendPairs : Table() {
     override val primaryKey = PrimaryKey(sourceUser, targetUser)
 
     fun getLastOpenedConversation(user: User, otherUser: User) =
-        select { (sourceUser eq user.id) and (targetUser eq otherUser.id) }.first()[lastOpenedConversation]
+        select(lastOpenedConversation).where { (sourceUser eq user.id) and (targetUser eq otherUser.id) }.first()[lastOpenedConversation]
 
     fun updateLastOpenedConversation(user: User, otherUser: User) =
         update(where = { (sourceUser eq user.id) and (targetUser eq otherUser.id) }) { it[lastOpenedConversation] = Clock.System.now() }

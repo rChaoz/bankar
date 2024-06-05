@@ -1,17 +1,14 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.request.receive
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
-import io.ktor.server.routing.put
-import io.ktor.server.routing.route
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import ro.bankar.*
 import ro.bankar.database.FriendRequests
 import ro.bankar.database.User
 import ro.bankar.database.friendsSerializable
@@ -19,11 +16,6 @@ import ro.bankar.model.SDirection
 import ro.bankar.model.SSocketNotification
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.plugins.UserPrincipal
-import ro.bankar.respondError
-import ro.bankar.respondInvalidParam
-import ro.bankar.respondNotFound
-import ro.bankar.respondSuccess
-import ro.bankar.respondValue
 
 fun Route.configureUserProfiles() {
     route("profile") {
@@ -78,7 +70,7 @@ fun Route.configureUserProfiles() {
                 val user = call.authentication.principal<UserPrincipal>()!!.user
                 val requests = newSuspendedTransaction {
                     with(FriendRequests) {
-                        FriendRequests.select { (sourceUser eq user.id) or (targetUser eq user.id) }.map {
+                        FriendRequests.select(sourceUser, targetUser).where { (sourceUser eq user.id) or (targetUser eq user.id) }.map {
                             val isSent = it[sourceUser] == user.id
                             val otherUser = User.findById(if (isSent) it[targetUser] else it[sourceUser])!!
                             otherUser.friendRequestSerializable(if (isSent) SDirection.Sent else SDirection.Received)
