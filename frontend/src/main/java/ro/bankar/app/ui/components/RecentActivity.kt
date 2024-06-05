@@ -1,13 +1,35 @@
 package ro.bankar.app.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,18 +46,31 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.RequestFlow
 import ro.bankar.app.data.handleSuccess
-import ro.bankar.app.ui.*
+import ro.bankar.app.ui.amountColor
+import ro.bankar.app.ui.format
+import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.main.friend.UserSurfaceCard
 import ro.bankar.app.ui.main.home.Amount
+import ro.bankar.app.ui.nameFromCode
+import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.exchange
 import ro.bankar.banking.rate
 import ro.bankar.banking.reverseExchange
-import ro.bankar.model.*
+import ro.bankar.model.SBankAccount
+import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SBankTransfer
+import ro.bankar.model.SCardTransaction
+import ro.bankar.model.SDirection
+import ro.bankar.model.SPartyPreview
+import ro.bankar.model.SPublicUser
+import ro.bankar.model.STimestamped
+import ro.bankar.model.STransferRequest
 import ro.bankar.util.format
 import ro.bankar.util.here
 import kotlin.math.absoluteValue
@@ -177,6 +212,7 @@ fun ReceivedTransferRequestDialog(
     note: String?,
     onNavigateToFriend: (SPublicUser) -> Unit,
     onNavigateToParty: (Int) -> Unit,
+    refreshOnAccept: RequestFlow<*>? = null,
     showDeclineOption: Boolean = true
 ) {
     val repository = LocalRepository.current
@@ -233,7 +269,10 @@ fun ReceivedTransferRequestDialog(
                             isLoading = true
                             // Use toasts instead of snackbar because snackbar isn't visible over dialog
                             repository.sendRespondToTransferRequest(requestID, false, null).handleSuccess(context) {
-                                repository.recentActivity.emitNow()
+                                coroutineScope {
+                                    launch { repository.recentActivity.emitNow() }
+                                    if (refreshOnAccept != null) launch { refreshOnAccept.emitNow() }
+                                }
                                 onDismiss()
                             }
                             isLoading = false
@@ -254,6 +293,7 @@ fun ReceivedTransferRequestDialog(
                                 coroutineScope {
                                     launch { repository.accounts.emitNow() }
                                     launch { repository.recentActivity.emitNow() }
+                                    if (refreshOnAccept != null) launch { refreshOnAccept.emitNow() }
                                 }
                                 onDismiss()
                             }

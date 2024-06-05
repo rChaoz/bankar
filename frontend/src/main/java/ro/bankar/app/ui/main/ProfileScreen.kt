@@ -268,7 +268,7 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bytes)
             // Send image to server
             repository.sendAboutOrPicture(SUserProfileUpdate(null, bytes.toByteArray())).handle(this, snackbar, context) {
-                context.getString(R.string.profile_picture_problem)
+                if (it != SuccessResponse) context.getString(R.string.profile_picture_problem) else null
             }
             isLoading = false
         }

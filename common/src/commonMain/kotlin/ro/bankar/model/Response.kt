@@ -34,13 +34,13 @@ data class ErrorResponse<T>(val message: String) : Response<T>()
  * Used to indicate success, when no data should be sent
  */
 @Serializable
-object SuccessResponse : Response<Unit>()
+data object SuccessResponse : Response<Unit>()
 
 /**
  * Used to indicate success, returning requested data
  */
 @Serializable
-class ValueResponse<T>(val value: T) : Response<T>()
+data class ValueResponse<T>(val value: T) : Response<T>()
 
 private class ResponseSerializer<T : Any>(tKSerializer: KSerializer<T>) : KSerializer<Response<T>> {
     @Serializable

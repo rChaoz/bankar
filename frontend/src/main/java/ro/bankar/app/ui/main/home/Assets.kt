@@ -35,11 +35,14 @@ import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
+import ro.bankar.model.SBankAccount
 
 @Composable
-fun Assets() {
+fun Assets(accounts: List<SBankAccount>) {
+    val cash = accounts.sumOf { it.balance }
+
     HomeCard(title = stringResource(R.string.assets), icon = {
-        Amount(amount = 1225.35, currency = Currency.ROMANIAN_LEU, textStyle = MaterialTheme.typography.headlineSmall)
+        Amount(amount = .215 + cash, currency = Currency.ROMANIAN_LEU, textStyle = MaterialTheme.typography.headlineSmall)
     }) {
         Row(
             modifier = Modifier
@@ -49,7 +52,7 @@ fun Assets() {
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.cash), contentDescription = null, modifier = Modifier.size(32.dp))
-            }, title = R.string.cash, amount = 1234.56, currency = Currency.EURO, onClick = {}, modifier = Modifier.weight(1f))
+            }, title = R.string.cash, amount = cash, currency = Currency.EURO, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.stocks), contentDescription = null, modifier = Modifier.size(32.dp))
@@ -67,7 +70,7 @@ fun Assets() {
 @Composable
 private fun AssetsPreview() {
     AppTheme {
-        Assets()
+        Assets(emptyList())
     }
 }
 
@@ -75,7 +78,7 @@ private fun AssetsPreview() {
 @Composable
 private fun AssetsPreviewDark() {
     AppTheme {
-        Assets()
+        Assets(emptyList())
     }
 }
 

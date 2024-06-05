@@ -9,12 +9,15 @@ import com.google.firebase.messaging.FirebaseMessaging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.receiveDeserialized
 import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -117,10 +120,12 @@ abstract class CachedRequestFlow<T> protected constructor(
     protected val mapFunc: (Cache) -> T?,
     protected val updateFunc: Cache.(T) -> Cache
 ) : RequestFlow<T>, SharedFlow<T> by (MutableSharedFlow<T>(replay = 1).apply {
-    scope.launch(Dispatchers.IO) { cache.data.map(mapFunc).collect {
-        Log.d(TAG, "Emitting cached value: $it")
-        if (it != null) emit(it)
-    } }
+    scope.launch(Dispatchers.IO) {
+        cache.data.map(mapFunc).collect {
+            Log.d(TAG, "Emitting cached value: $it")
+            if (it != null) emit(it)
+        }
+    }
 }).asSharedFlow() {
     override fun requestEmit() {
         scope.launch { emitNow() }
@@ -256,6 +261,7 @@ private class RepositoryImpl(
         install(ContentNegotiation) {
             json()
         }
+        install(HttpTimeout)
         install(WebSockets) {
             pingInterval = 15_000L
             maxFrameSize = Int.MAX_VALUE.toLong()
@@ -309,7 +315,8 @@ private class RepositoryImpl(
     override val exchangeData = createFlow<SExchangeData>("data/exchange.json", raw = true)
     override val creditData = createFlow<List<SCreditData>>("data/credit.json", raw = true)
     override suspend fun sendCheckPassword(password: String) = client.safeRequest<Unit> {
-        post("verifyPassword") { setBody(SPasswordData(password)) }
+        post("verifyPassword") { setBody(SPasswordData(password))
+            configureTimeout() }
     }
 
     // User profile & friends
@@ -317,11 +324,15 @@ private class RepositoryImpl(
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeRequest<Unit> {
         put("profile/update") {
             setBody(data)
+            configureTimeout()
         }
     }.onSuccess { profile.updateNow { copy(about = data.about ?: about, avatar = data.avatar ?: avatar) } }
 
     override suspend fun sendUpdate(data: SNewUser) = client.safeRequest<Unit> {
-        put("updateAccount") { setBody(data) }
+        put("updateAccount") {
+            setBody(data)
+            configureTimeout()
+        }
     }.onSuccess {
         profile.updateNow {
             copy(
@@ -341,32 +352,36 @@ private class RepositoryImpl(
     }
 
     override suspend fun sendAddFriend(id: String) = client.safeRequest<Unit> {
-        get("profile/friends/add/$id")
+        get("profile/friends/add/$id") { configureTimeout() }
     }
 
     override suspend fun sendRemoveFriend(tag: String) = client.safeRequest<Unit> {
-        get("profile/friends/remove/$tag")
+        get("profile/friends/remove/$tag") { configureTimeout() }
     }
 
     override val friends = createFlow<List<SFriend>>("profile/friends")
     override val friendRequests = createFlow<List<SFriendRequest>>("profile/friend_requests")
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = client.safeRequest<Unit> {
-        get("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag")
+        get("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag") { configureTimeout() }
     }
 
     override suspend fun sendCancelFriendRequest(tag: String) = client.safeRequest<Unit> {
-        get("profile/friend_requests/cancel/$tag")
+        get("profile/friend_requests/cancel/$tag") { configureTimeout() }
     }
 
     override fun conversation(tag: String) = createFlow<SConversation>("messaging/conversation/$tag")
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = client.safeRequest<Unit> {
-        post("messaging/send") { setBody(SSendMessage(message, recipientTag)) }
+        post("messaging/send") {
+            setBody(SSendMessage(message, recipientTag))
+            configureTimeout()
+        }
     }
 
     // Parties
     override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = client.safeRequest<Unit> {
         post("party/create") {
             setBody(SCreateParty(account, note, amounts))
+            configureTimeout()
         }
     }
 
@@ -382,41 +397,62 @@ private class RepositoryImpl(
     // Bank accounts
     override val defaultAccount = createFlow<SDefaultBankAccount>("defaultAccount")
     override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) =
-        client.safeRequest<Unit> { post("defaultAccount") { setBody(SDefaultBankAccount(id, alwaysUse)) } }
+        client.safeRequest<Unit> {
+            post("defaultAccount") {
+                setBody(SDefaultBankAccount(id, alwaysUse))
+                configureTimeout()
+            }
+        }
 
     override val accounts = createFlow<List<SBankAccount>>("accounts")
     override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
     override suspend fun sendCreateAccount(account: SNewBankAccount) = client.safeRequest<Unit> {
-        post("accounts/new") { setBody(account) }
+        post("accounts/new") {
+            setBody(account)
+            configureTimeout()
+        }
     }
 
     override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = client.safeRequest<Unit> {
-        post("accounts/$id/customise") { setBody(SCustomiseBankAccount(name, color)) }
+        post("accounts/$id/customise") {
+            setBody(SCustomiseBankAccount(name, color))
+            configureTimeout()
+        }
     }
 
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<String> {
-        post("transfer/send") { setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note)) }
+        post("transfer/send") {
+            setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+            configureTimeout()
+        }
     }
 
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<String> {
-        post("transfer/request") { setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note)) }
+        post("transfer/request") {
+            setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+            configureTimeout()
+        }
     }
 
     override suspend fun sendCancelTransferRequest(id: Int) = client.safeRequest<Unit> {
-        get("transfer/cancel/$id")
+        get("transfer/cancel/$id") { configureTimeout() }
     }
 
     override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = client.safeRequest<Unit> {
         get("transfer/respond/$id") {
             parameter("action", if (accept) "accept" else "decline")
             parameter("accountID", sourceAccountID)
+            configureTimeout()
         }
     }
 
     override val statements = createFlow<List<SStatement>>("statements")
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) =
         client.safeRequest<SStatement> {
-            post("statements/request") { setBody(SStatementRequest(name, accountID, from, to, TimeZone.currentSystemDefault())) }
+            post("statements/request") {
+                setBody(SStatementRequest(name, accountID, from, to, TimeZone.currentSystemDefault()))
+                configureTimeout()
+            }
         }
 
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(statement.downloadURI).apply {
@@ -424,6 +460,13 @@ private class RepositoryImpl(
         setDestinationUri(Uri.fromFile(File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), name)))
         setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
         addRequestHeader(HttpHeaders.Authorization, "Bearer $sessionToken")
+    }
+
+    // Request utility
+    private fun HttpRequestBuilder.configureTimeout() {
+        timeout {
+            requestTimeoutMillis = 10_000
+        }
     }
 
     // Flow utilities

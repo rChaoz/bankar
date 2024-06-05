@@ -5,14 +5,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class SSocketNotification {
     @Serializable
-    class SMessageNotification(val fromTag: String): SSocketNotification()
+    data class SMessageNotification(val fromTag: String): SSocketNotification()
 
     @Serializable
-    object STransferNotification: SSocketNotification()
+    data object STransferNotification: SSocketNotification()
 
     @Serializable
-    object SFriendNotification: SSocketNotification()
+    data object SFriendNotification: SSocketNotification()
 
     @Serializable
-    object SRecentActivityNotification: SSocketNotification()
+    data object SRecentActivityNotification: SSocketNotification()
 }

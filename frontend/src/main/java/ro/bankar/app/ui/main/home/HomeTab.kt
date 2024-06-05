@@ -106,7 +106,7 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
                     if (model.accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {
                         navigation.navigate(MainNav.NewBankAccount.route)
                     })
-                    Assets()
+                    Assets(model.accounts!!)
                 }
             }
         }

@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
@@ -47,6 +46,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import ro.bankar.app.R
 import ro.bankar.app.TAG
+import ro.bankar.app.data.collectPreferenceAsState
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
@@ -76,7 +76,7 @@ fun <T : Any> rememberPreferenceDataStoreSettingState(
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
 ): MutableState<T?> {
     val initialValue = runBlocking { dataStore.data.first()[key] }
-    val value by remember { dataStore.data.map { it[key] } }.collectAsState(initialValue)
+    val value by dataStore.collectPreferenceAsState(key, initialValue)
     return object : MutableState<T?> {
         override var value: T?
             get() = value ?: defaultValue

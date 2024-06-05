@@ -65,7 +65,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -117,7 +117,11 @@ class CreatePartyScreenModel : ViewModel() {
 
     fun onCreateParty(context: Context, repository: Repository) = viewModelScope.launch {
         isLoading = true
-        val amounts = amounts.map { it.key.tag to (it.value.removeSuffix(".").toDoubleOrNull() ?: 0.0) }
+        val amounts = added.map { it.tag to (amounts[it]?.removeSuffix(".")?.toDoubleOrNull() ?: run {
+            snackbar.showSnackbar(context.getString(R.string.invalid_amount))
+            isLoading = false
+            return@launch
+        }) }
         repository.sendCreateParty(account.value!!.id, note.value, amounts).handleSuccess(this, snackbar, context) {
             repository.recentActivity.emitNow()
             onDismiss()
@@ -142,9 +146,8 @@ fun CreatePartyScreen(onDismiss: () -> Unit, initialAmount: Double, account: Int
         }
         launch { repository.friends.collect { model.allFriends = it } }
         if (account != -1) launch {
-            repository.accounts.collect { accounts ->
+            repository.accounts.first().let { accounts ->
                 accounts.find { it.id == account }?.let { model.account.value = it }
-                cancel()
             }
         }
     }
@@ -336,6 +339,13 @@ private fun PickFriendsStep(model: CreatePartyScreenModel) {
 
 @Composable
 private fun ChooseAmountsStep(model: CreatePartyScreenModel) {
+    LaunchedEffect(true) {
+        if (model.amounts.isEmpty()) model.amounts = buildMap {
+            val amount = ((model.total.value.toDoubleOrNull() ?: 0.0) / (model.added.size + 1)).toString().removeSuffix(".0")
+            model.added.forEach { put(it, amount) }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
