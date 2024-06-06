@@ -62,11 +62,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.alorma.compose.settings.ui.SettingsCheckbox
 import com.alorma.compose.settings.ui.SettingsMenuLink
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.composable
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.KeyAuthenticationPin
@@ -116,7 +116,7 @@ object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     override fun Content(model: Model, navigation: NavHostController) {
-        val settingsNav = rememberAnimatedNavController()
+        val settingsNav = rememberNavController()
 
         LaunchedEffect(settingsNav) {
             val onBack = { settingsNav.popBackStack(); Unit }
@@ -125,7 +125,7 @@ object SettingsTab : MainTab<SettingsTab.Model>(2, "settings", R.string.settings
             }
         }
 
-        AnimatedNavHost(
+        NavHost(
             navController = settingsNav,
             startDestination = SettingsNav.route,
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) { it / 2 } + fadeIn(spring()) },

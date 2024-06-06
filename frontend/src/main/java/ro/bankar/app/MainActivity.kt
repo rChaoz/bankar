@@ -33,9 +33,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.composable
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -139,7 +139,7 @@ private fun Main(dataStore: DataStore<Preferences>, cache: DataStore<Cache>, lif
             LocalDataStore provides dataStore,
         ) {
             // Setup navigation
-            val controller = rememberAnimatedNavController()
+            val controller = rememberNavController()
 
             // Server data repository
             val sessionToken by dataStore.collectPreferenceAsState(KeyUserSession, initial = initialPrefs[KeyUserSession])
@@ -207,7 +207,7 @@ private fun Main(dataStore: DataStore<Preferences>, cache: DataStore<Cache>, lif
             }
 
             CompositionLocalProvider(LocalRepository provides repository) {
-                AnimatedNavHost(
+                NavHost(
                     controller,
                     startDestination = if (initialPrefs[KeyUserSession] == null) Nav.NewUser.route else Nav.Main.route,
                     enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) { it / 2 } + fadeIn(spring()) },
