@@ -4,6 +4,9 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import ro.bankar.banking.Currency
+import ro.bankar.banking.checkIBAN
+
+const val maxNoteLength = 200
 
 @Serializable
 enum class SDirection { Sent, Received }
@@ -88,13 +91,40 @@ data class SSendRequestMoney(
 
     val note: String
 ) {
-    companion object {
-        const val maxNoteLength = 200
-    }
-
     fun validate() = when {
         amount <= 0 -> "amount"
         note.length > maxNoteLength -> "note"
+        else -> null
+    }
+}
+
+@Serializable
+data class SOwnTransfer(
+    val sourceAccountID: Int,
+    val targetAccountID: Int,
+    val amount: Double,
+    // For verification
+    val exchanging: Boolean,
+    val note: String,
+) {
+    fun validate() = when {
+        amount <= 0 -> "amount"
+        note.length > maxNoteLength -> "note"
+        else -> null
+    }
+}
+
+@Serializable
+data class SExternalTransfer(
+    val sourceAccountID: Int,
+    val targetIBAN: String,
+    val amount: Double,
+    val note: String,
+) {
+    fun validate() = when {
+        amount <= 0 -> "amount"
+        note.length > maxNoteLength -> "note"
+        !checkIBAN(targetIBAN) -> "iban"
         else -> null
     }
 }

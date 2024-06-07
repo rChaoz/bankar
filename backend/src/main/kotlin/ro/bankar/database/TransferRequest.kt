@@ -4,13 +4,9 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.model.SDirection
 import ro.bankar.model.STransferRequest
@@ -51,12 +47,12 @@ class TransferRequest(id: EntityID<Int>) : IntEntity(id) {
     /**
      * Accepts this transfer request, transferring the amount into/from the given account
      */
-    fun accept(account: BankAccount) = BankTransfer.transfer(this, account).also { if (it) delete() }
+    fun accept(account: BankAccount) = BankTransfer.transfer(this, account)
 
     /**
      * Accepts this transfer request, transferring the amount from source account, exchanging, and into target account
      */
-    fun acceptExchanging(account: BankAccount) = BankTransfer.transferExchanging(this, account).also { if (it) delete() }
+    fun acceptExchanging(account: BankAccount) = BankTransfer.transferExchanging(this, account)
 
     /**
      * Declines this transfer request, releasing the locked funds if any

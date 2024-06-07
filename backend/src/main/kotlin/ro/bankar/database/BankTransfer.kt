@@ -5,13 +5,9 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
-import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.exchange
 import ro.bankar.banking.reverseExchange
@@ -41,12 +37,16 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
             }.orderBy(timestamp to SortOrder.DESC)
         }
 
-        fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String): Boolean {
+        fun transfer(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String,
+                     partyMember: PartyMember? = null, removeFunds: Boolean = true): Boolean {
             if (sourceAccount.currency != targetAccount.currency) throw RuntimeException("transfer: accounts have different currencies")
-            if (sourceAccount.spendable < amount) return false
-            sourceAccount.balance -= amount
+            if (amount <= BigDecimal.ZERO) throw RuntimeException("transfer: invalid amount: $amount")
+
+            if (removeFunds && sourceAccount.spendable < amount) return false
+            if (removeFunds) sourceAccount.balance -= amount
             targetAccount.balance += amount
-            new {
+
+            val transfer = new {
                 sender = sourceAccount
                 senderName = sourceAccount.user.fullName
                 senderIban = sourceAccount.iban
@@ -56,62 +56,66 @@ class BankTransfer(id: EntityID<Int>) : IntEntity(id) {
                 this.amount = amount
                 currency = sourceAccount.currency
                 this.note = note.trim()
+                this.party = partyMember?.party
             }
+            partyMember?.transfer = transfer
             return true
         }
 
-        fun transfer(request: TransferRequest, otherAccount: BankAccount): Boolean {
-            if (request.sourceAccount.currency != otherAccount.currency) throw RuntimeException("transfer: accounts have different currencies")
-            return transferExchanging(request, otherAccount)
+        fun transfer(request: TransferRequest, targetAccount: BankAccount): Boolean {
+            if (request.amount > BigDecimal.ZERO) {
+                // Funds are already locked (removed from sourceAccounts), no need to check balance
+                transfer(request.sourceAccount, targetAccount, request.amount, request.note,
+                    partyMember = request.partyMember, removeFunds = false)
+            } else {
+                // Funds are not already locked
+                if (!transfer(targetAccount, request.sourceAccount, -request.amount, request.note,
+                        partyMember = request.partyMember, removeFunds = true)) return false
+            }
+            request.delete()
+            return true
         }
 
-        fun transferExchanging(request: TransferRequest, otherAccount: BankAccount): Boolean {
-            fun saveTransfer(senderAcc: BankAccount, recipientAcc: BankAccount, amount: BigDecimal, exchanged: BigDecimal?) {
-                val transfer = new {
-                    sender = senderAcc
-                    senderName = senderAcc.user.fullName
-                    senderIban = senderAcc.iban
-                    recipient = recipientAcc
-                    recipientName = recipientAcc.user.fullName
-                    recipientIban = recipientAcc.iban
-                    this.amount = amount
-                    exchangedAmount = exchanged
-                    currency = senderAcc.currency
-                    note = request.note
-                    party = request.partyMember?.party
-                }
-                request.partyMember?.transfer = transfer
-            }
+        fun transferExchanging(sourceAccount: BankAccount, targetAccount: BankAccount, amount: BigDecimal, note: String,
+                               originalAmount: BigDecimal? = null, partyMember: PartyMember? = null, removeFunds: Boolean = true): Boolean {
+            if (sourceAccount.currency == targetAccount.currency) throw RuntimeException("transfer: accounts have same currency")
+            if (amount <= BigDecimal.ZERO) throw RuntimeException("transfer: invalid amount: $amount")
 
-            // Normal transfer (request.sourceAccount -> otherAccount)
+            val exchanged = originalAmount ?: EXCHANGE_DATA.exchange(sourceAccount.currency, targetAccount.currency, amount) ?: return false
+            if (removeFunds && sourceAccount.spendable < amount) return false
+            if (removeFunds) sourceAccount.balance -= amount
+            targetAccount.balance += exchanged
+
+            val transfer = new {
+                sender = sourceAccount
+                senderName = sourceAccount.user.fullName
+                senderIban = sourceAccount.iban
+                recipient = targetAccount
+                recipientName = targetAccount.user.fullName
+                recipientIban = targetAccount.iban
+                this.amount = amount
+                exchangedAmount = exchanged
+                currency = sourceAccount.currency
+                this.note = note.trim()
+                party = partyMember?.party
+            }
+            partyMember?.transfer = transfer
+            return true
+        }
+
+        fun transferExchanging(request: TransferRequest, targetAccount: BankAccount): Boolean {
             if (request.amount > BigDecimal.ZERO) {
-                // Funds are already locked (removed from request.sourceAccount), no need to do that again
-                if (request.sourceAccount.currency == otherAccount.currency) {
-                    otherAccount.balance += request.amount
-                    saveTransfer(request.sourceAccount, otherAccount, request.amount, null)
-                } else {
-                    val exchanged = EXCHANGE_DATA.exchange(request.sourceAccount.currency, otherAccount.currency, request.amount) ?: return false
-                    otherAccount.balance += exchanged
-                    saveTransfer(request.sourceAccount, otherAccount, request.amount, exchanged)
-                }
-
-                // Reverse transfer (otherAccount -> request.sourceAccount)
+                // Funds are already locked (removed from sourceAccounts), no need to check balance
+                transferExchanging(request.sourceAccount, targetAccount, request.amount, request.note,
+                    partyMember = request.partyMember, removeFunds = false)
             } else {
-                if (request.sourceAccount.currency == otherAccount.currency) {
-                    val amount = -request.amount
-                    if (otherAccount.spendable < amount) return false
-                    otherAccount.balance -= amount
-                    request.sourceAccount.balance += amount
-                    saveTransfer(otherAccount, request.sourceAccount, amount, null)
-                } else {
-                    // Calculate amount that is needed to be exchanged in order to obtain requested amount
-                    val exchanged = EXCHANGE_DATA.reverseExchange(otherAccount.currency, request.sourceAccount.currency, -request.amount) ?: return false
-                    if (otherAccount.spendable < exchanged) return false
-                    otherAccount.balance -= exchanged
-                    request.sourceAccount.balance += -request.amount
-                    saveTransfer(otherAccount, request.sourceAccount, exchanged, -request.amount)
-                }
+                // Funds are not already locked
+                val amount = -request.amount
+                val exchanged = EXCHANGE_DATA.reverseExchange(targetAccount.currency, request.sourceAccount.currency, amount) ?: return false
+                if (!transferExchanging(targetAccount, request.sourceAccount, exchanged, request.note,
+                        originalAmount = amount, partyMember = request.partyMember, removeFunds = true)) return false
             }
+            request.delete()
             return true
         }
     }

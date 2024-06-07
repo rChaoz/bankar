@@ -4,7 +4,6 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
@@ -36,7 +35,7 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
             }
         }
 
-        fun byUser(user: User) = find { Parties.hostAccount inList user.bankAccountIds }
+        fun byUserPending(user: User) = find { (Parties.hostAccount inList user.bankAccountIds) and (Parties.completed eq false) }
 
         fun byUserCompleted(user: User) = find { (Parties.hostAccount inList user.bankAccountIds) and (Parties.completed eq true) }
     }
@@ -83,7 +82,7 @@ class Party(id: EntityID<Int>) : IntEntity(id) {
     )
 }
 
-fun SizedIterable<Party>.previewSerializable() = map(Party::previewSerializable)
+fun Iterable<Party>.previewSerializable() = map(Party::previewSerializable)
 
 internal object Parties : IntIdTable() {
     val hostAccount = reference("host", BankAccounts)

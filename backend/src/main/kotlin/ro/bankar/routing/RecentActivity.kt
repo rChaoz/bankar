@@ -1,17 +1,10 @@
 package ro.bankar.routing
 
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
-import io.ktor.server.routing.route
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import ro.bankar.database.BankTransfer
-import ro.bankar.database.CardTransaction
-import ro.bankar.database.Party
-import ro.bankar.database.TransferRequest
-import ro.bankar.database.previewSerializable
-import ro.bankar.database.serializable
+import ro.bankar.database.*
 import ro.bankar.model.SRecentActivity
 import ro.bankar.plugins.UserPrincipal
 import ro.bankar.respondValue
@@ -24,7 +17,7 @@ fun Route.configureRecentActivity() {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             call.respondValue(newSuspendedTransaction {
                 // Check if user has any created parties
-                val parties = Party.byUser(user)
+                val parties = Party.byUserPending(user) + Party.byUserCompleted(user).limit(3)
                 // Get the 3 most recent transfers of these accounts
                 val recentTransfers = BankTransfer.findRecent(user, 3)
                 // As well as the most recent transactions

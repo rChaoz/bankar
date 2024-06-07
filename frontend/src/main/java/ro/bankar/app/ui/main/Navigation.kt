@@ -2,12 +2,8 @@ package ro.bankar.app.ui.main
 
 import android.net.Uri
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.navigation.*
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.navigation.navigation
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ro.bankar.app.Nav
@@ -91,7 +87,7 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
     navigation(startDestination = MainNav.tabsRoute, route = MainNav.route) {
         // Main tabs
         composable(MainNav.tabsRoute, arguments = MainNav.tabArguments) { navEntry ->
-            MainScreen(MainTabs.first { it.name == navEntry.arguments!!.getString("tab") }, controller)
+            MainScreen(MainTabs.find { it.name == navEntry.arguments!!.getString("tab") } ?: HomeTab, controller)
         }
         // Profile & bank accounts
         composable(MainNav.Profile.route) {

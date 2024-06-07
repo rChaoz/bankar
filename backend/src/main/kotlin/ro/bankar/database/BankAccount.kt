@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.SCreditData
+import ro.bankar.banking.calcIBANCheckDigits
 import ro.bankar.currency
 import ro.bankar.generateNumeric
 import ro.bankar.model.SBankAccount
@@ -76,7 +77,7 @@ internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
         val accountNumber = generateNumeric(16)
         val bankCode = "RBNK"
         val countryCode = "RO"
-        val checkDigits = 98 - ("${bankCode.toInt(36)}$accountNumber${countryCode.toInt(36)}00".toBigInteger() % 97.toBigInteger()).toInt()
+        val checkDigits = calcIBANCheckDigits(countryCode, bankCode, accountNumber)
         "$countryCode$checkDigits$bankCode$accountNumber"
     }
     val userID = reference("user_id", Users)

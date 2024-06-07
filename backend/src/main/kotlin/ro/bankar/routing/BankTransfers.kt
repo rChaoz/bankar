@@ -1,29 +1,19 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.server.auth.authentication
-import io.ktor.server.request.receive
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
-import io.ktor.util.pipeline.PipelineContext
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.routing.*
+import io.ktor.util.pipeline.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import ro.bankar.database.BankAccount
-import ro.bankar.database.BankTransfer
-import ro.bankar.database.TransferRequest
-import ro.bankar.database.User
-import ro.bankar.database.serializable
+import ro.bankar.*
+import ro.bankar.database.*
+import ro.bankar.model.SExternalTransfer
+import ro.bankar.model.SOwnTransfer
 import ro.bankar.model.SSendRequestMoney
 import ro.bankar.model.SSocketNotification
 import ro.bankar.plugins.UserPrincipal
-import ro.bankar.respondError
-import ro.bankar.respondInvalidParam
-import ro.bankar.respondNotFound
-import ro.bankar.respondSuccess
-import ro.bankar.respondValue
 
 fun Route.configureBankTransfers() {
     route("transfer") {
@@ -89,6 +79,55 @@ fun Route.configureBankTransfers() {
                 TransferRequest.create(sourceAccount, targetUser, (-data.amount).toBigDecimal(), data.note)
                 sendNotificationToUser(targetUser.id, SSocketNotification.STransferNotification)
                 call.respondValue("sent_request")
+            }
+        }
+
+        post("own") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val data = call.receive<SOwnTransfer>()
+
+            newSuspendedTransaction {
+                val sourceAccount = user.bankAccounts.find { it.id.value == data.sourceAccountID }
+                val targetAccount = user.bankAccounts.find { it.id.value == data.sourceAccountID }
+                if (sourceAccount == null || targetAccount == null) {
+                    call.respondNotFound("bank_account"); return@newSuspendedTransaction
+                }
+                if (data.exchanging && (sourceAccount.currency == targetAccount.currency)) {
+                    call.respondError("incorrect_exchanging"); return@newSuspendedTransaction
+                } else if (!data.exchanging && (targetAccount.currency != sourceAccount.currency)) {
+                    call.respondError("incorrect_exchanging"); return@newSuspendedTransaction
+                }
+                if (data.exchanging) {
+                    if (!BankTransfer.transferExchanging(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
+                        call.respondError("balance_low", HttpStatusCode.Conflict)
+                    else call.respondValue("done")
+                } else {
+                    if (!BankTransfer.transfer(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
+                        call.respondError("balance_low", HttpStatusCode.Conflict)
+                    else call.respondValue("done")
+                }
+            }
+        }
+
+        post("external") {
+            val user = call.authentication.principal<UserPrincipal>()!!.user
+            val data = call.receive<SExternalTransfer>()
+
+            newSuspendedTransaction {
+                val sourceAccount = user.bankAccounts.find { it.id.value == data.sourceAccountID }
+                val targetAccount = BankAccount.find { BankAccounts.iban eq data.targetIBAN }.firstOrNull()
+                if (sourceAccount == null || targetAccount == null) {
+                    call.respondNotFound("bank_account"); return@newSuspendedTransaction
+                }
+                if (sourceAccount.currency != targetAccount.currency) {
+                    if (!BankTransfer.transferExchanging(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
+                        call.respondError("balance_low", HttpStatusCode.Conflict)
+                    else call.respondValue("done")
+                } else {
+                    if (!BankTransfer.transfer(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
+                        call.respondError("balance_low", HttpStatusCode.Conflict)
+                    else call.respondValue("done")
+                }
             }
         }
 
