@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.plugin.serialization)
 
     // For Firebase
-    id("com.google.gms.google-services") version "4.3.15"
+    id("com.google.gms.google-services") version "4.4.2"
 }
 
 android {
@@ -16,8 +16,8 @@ android {
         applicationId = "ro.bankar.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -33,7 +33,13 @@ android {
             manifestPlaceholders["useCleartextTraffic"] = false
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs["debug"]
+        }
+    }
+    applicationVariants.all {
+        val variant = this
+        variant.outputs.map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }.forEach { output ->
+            output.outputFileName = "BanKAR-${variant.versionName}-${variant.name}.apk"
         }
     }
     compileOptions {
@@ -68,6 +74,7 @@ dependencies {
     implementation(libs.maxkeppeler.compose.calendar)
     implementation(libs.maxkeppeler.compose.state)
     implementation(libs.maxkeppeler.compose.info)
+    implementation(libs.maxkeppeler.compose.input)
     implementation(libs.io.coil)
     implementation(libs.image.cropper)
     implementation(libs.shimmer.compose)
