@@ -81,9 +81,9 @@ import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.model.MAX_NOTE_LENGTH
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SFriend
-import ro.bankar.model.SSendRequestMoney
 import kotlin.math.min
 
 enum class CreatePartyStep {
@@ -99,7 +99,7 @@ class CreatePartyScreenModel : ViewModel() {
     val note = verifiableStateOf("") {
         when {
             it.isBlank() -> getString(R.string.note_cannot_be_empty)
-            it.trim().length > SSendRequestMoney.maxNoteLength -> getString(R.string.note_too_long)
+            it.trim().length > MAX_NOTE_LENGTH -> getString(R.string.note_too_long)
             else -> null
         }
     }

@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.SCreditData
@@ -51,7 +52,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var interest by BankAccounts.interest
 
     val cards by BankCard referrersOn BankCards.bankAccount
-    val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or (BankTransfers.recipient eq id) }
+    val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or ((BankTransfers.recipient eq id)) and (BankTransfers.party eq null) }
     val parties by Party referrersOn Parties.hostAccount
 
     /**
@@ -61,14 +62,14 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
         cards.map(BankCard::serializable),
         transfers.orderBy(BankTransfers.timestamp to SortOrder.DESC).serializable(user),
         cards.flatMap { it.transactions.serializable() },
-        parties.orderBy(Parties.timestamp to SortOrder.DESC).previewSerializable(),
+        parties.orderBy(Parties.timestamp to SortOrder.DESC).filter { it.completed }.previewSerializable(),
     )
 }
 
 /**
  * Converts a list of BankAccounts to a list of serializable objects
  */
-fun SizedIterable<BankAccount>.serializable() = map {
+fun SizedIterable<BankAccount>.serializable() = orderBy(BankAccounts.id to SortOrder.ASC).map {
     SBankAccount(it.id.value, it.iban, it.type, it.balance.toDouble(), it.limit.toDouble(), it.currency, it.name, it.color, it.interest)
 }
 

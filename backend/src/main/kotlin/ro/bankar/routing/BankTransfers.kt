@@ -1,19 +1,32 @@
 package ro.bankar.routing
 
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.request.*
-import io.ktor.server.routing.*
-import io.ktor.util.pipeline.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.auth.authentication
+import io.ktor.server.request.receive
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
+import io.ktor.util.pipeline.PipelineContext
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import ro.bankar.*
-import ro.bankar.database.*
+import ro.bankar.database.BankAccount
+import ro.bankar.database.BankAccounts
+import ro.bankar.database.BankTransfer
+import ro.bankar.database.TransferRequest
+import ro.bankar.database.User
+import ro.bankar.database.serializable
 import ro.bankar.model.SExternalTransfer
 import ro.bankar.model.SOwnTransfer
 import ro.bankar.model.SSendRequestMoney
 import ro.bankar.model.SSocketNotification
 import ro.bankar.plugins.UserPrincipal
+import ro.bankar.respondError
+import ro.bankar.respondInvalidParam
+import ro.bankar.respondNotFound
+import ro.bankar.respondSuccess
+import ro.bankar.respondValue
 
 fun Route.configureBankTransfers() {
     route("transfer") {
@@ -85,10 +98,13 @@ fun Route.configureBankTransfers() {
         post("own") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             val data = call.receive<SOwnTransfer>()
+            data.validate()?.let {
+                call.respondInvalidParam(it); return@post
+            }
 
             newSuspendedTransaction {
                 val sourceAccount = user.bankAccounts.find { it.id.value == data.sourceAccountID }
-                val targetAccount = user.bankAccounts.find { it.id.value == data.sourceAccountID }
+                val targetAccount = user.bankAccounts.find { it.id.value == data.targetAccountID }
                 if (sourceAccount == null || targetAccount == null) {
                     call.respondNotFound("bank_account"); return@newSuspendedTransaction
                 }
@@ -100,11 +116,11 @@ fun Route.configureBankTransfers() {
                 if (data.exchanging) {
                     if (!BankTransfer.transferExchanging(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
                         call.respondError("balance_low", HttpStatusCode.Conflict)
-                    else call.respondValue("done")
+                    else call.respondSuccess()
                 } else {
                     if (!BankTransfer.transfer(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
                         call.respondError("balance_low", HttpStatusCode.Conflict)
-                    else call.respondValue("done")
+                    else call.respondSuccess()
                 }
             }
         }
@@ -112,6 +128,9 @@ fun Route.configureBankTransfers() {
         post("external") {
             val user = call.authentication.principal<UserPrincipal>()!!.user
             val data = call.receive<SExternalTransfer>()
+            data.validate()?.let {
+                call.respondInvalidParam(it); return@post
+            }
 
             newSuspendedTransaction {
                 val sourceAccount = user.bankAccounts.find { it.id.value == data.sourceAccountID }
@@ -122,11 +141,17 @@ fun Route.configureBankTransfers() {
                 if (sourceAccount.currency != targetAccount.currency) {
                     if (!BankTransfer.transferExchanging(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
                         call.respondError("balance_low", HttpStatusCode.Conflict)
-                    else call.respondValue("done")
+                    else {
+                        sendNotificationToUser(targetAccount.user.id, SSocketNotification.STransferNotification)
+                        call.respondSuccess()
+                    }
                 } else {
                     if (!BankTransfer.transfer(sourceAccount, targetAccount, data.amount.toBigDecimal(), data.note))
                         call.respondError("balance_low", HttpStatusCode.Conflict)
-                    else call.respondValue("done")
+                    else {
+                        sendNotificationToUser(targetAccount.user.id, SSocketNotification.STransferNotification)
+                        call.respondSuccess()
+                    }
                 }
             }
         }

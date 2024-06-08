@@ -57,11 +57,13 @@ import ro.bankar.model.SConversation
 import ro.bankar.model.SCreateParty
 import ro.bankar.model.SCustomiseBankAccount
 import ro.bankar.model.SDefaultBankAccount
+import ro.bankar.model.SExternalTransfer
 import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SMessagingToken
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SNewUser
+import ro.bankar.model.SOwnTransfer
 import ro.bankar.model.SPartyInformation
 import ro.bankar.model.SPasswordData
 import ro.bankar.model.SRecentActivity
@@ -215,6 +217,8 @@ abstract class Repository {
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): ResponseRequestResult<Unit>
     abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): ResponseRequestResult<Unit>
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<String>
+    abstract suspend fun sendOwnTransfer(sourceAccount: SBankAccount, targetAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<Unit>
+    abstract suspend fun sendExternalTransfer(sourceAccount: SBankAccount, targetIBAN: String, amount: Double, note: String): ResponseRequestResult<Unit>
     abstract suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<String>
     abstract suspend fun sendCancelTransferRequest(id: Int): ResponseRequestResult<Unit>
     abstract suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?): ResponseRequestResult<Unit>
@@ -430,6 +434,20 @@ private class RepositoryImpl(
     override suspend fun sendTransferRequest(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<String> {
         post("transfer/request") {
             setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
+            configureTimeout()
+        }
+    }
+
+    override suspend fun sendOwnTransfer(sourceAccount: SBankAccount, targetAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<Unit> {
+        post("transfer/own") {
+            setBody(SOwnTransfer(sourceAccount.id, targetAccount.id, amount, sourceAccount.currency != targetAccount.currency, note))
+            configureTimeout()
+        }
+    }
+
+    override suspend fun sendExternalTransfer(sourceAccount: SBankAccount, targetIBAN: String, amount: Double, note: String) = client.safeRequest<Unit> {
+        post("transfer/external") {
+            setBody(SExternalTransfer(sourceAccount.id, targetIBAN, amount, note))
             configureTimeout()
         }
     }

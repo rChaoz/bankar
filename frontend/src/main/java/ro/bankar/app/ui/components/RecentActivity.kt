@@ -483,7 +483,7 @@ inline fun SortedActivityItems(
     parties: List<SPartyPreview>,
     navigation: NavHostController
 ) {
-    for (item in (transfers + transactions + parties).sortedDescending()) TimestampedItem(item, navigation)
+    for (item in (transfers + transactions + parties).sortedDescending().take(3)) TimestampedItem(item, navigation)
 }
 
 

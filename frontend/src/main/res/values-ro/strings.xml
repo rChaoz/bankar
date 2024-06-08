@@ -298,4 +298,14 @@
     <string name="unfriend">Scoate din lista de prieteni</string>
     <string name="unfriend_confirm">Sigur vrei să îl scoți pe \'%s\' din lista ta de prieteni?</string>
     <string name="completed_party">Echipă încheiată</string>
+    <string name="send_to_friend">Trimite unui prieten</string>
+    <string name="own_transfer">Transfer propriu</string>
+    <string name="manual_transfer">Transfer manual</string>
+    <string name="send_money_to_friend">Trimite bani unui prieten din lista ta</string>
+    <string name="transfer_by_iban">Transferă bani specificând un IBAN</string>
+    <string name="transfer_between_own_accounts">Transferă bani între conturi proprii</string>
+    <string name="invalid_iban">IBAN invalid</string>
+    <string name="enter_recipient_details">Introdu datele destinatarului:</string>
+    <string name="full_name">Numele complet</string>
+    <string name="transfer_sent">Transfer efectuat cu succes!</string>
 </resources>

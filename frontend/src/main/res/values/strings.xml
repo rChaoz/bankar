@@ -301,4 +301,14 @@
     <string name="unfriend">Unfriend</string>
     <string name="unfriend_confirm">Are you sure you want to remove \'%s\' from your friend list?</string>
     <string name="completed_party">Completed party</string>
+    <string name="send_to_friend">Send to friend</string>
+    <string name="own_transfer">Own transfer</string>
+    <string name="manual_transfer">Manual transfer</string>
+    <string name="send_money_to_friend">Send money to a friend from your list</string>
+    <string name="transfer_by_iban">Transfer by specifying an IBAN</string>
+    <string name="transfer_between_own_accounts">Transfer money between own accounts</string>
+    <string name="invalid_iban">Invalid IBAN</string>
+    <string name="enter_recipient_details">Enter recipient details:</string>
+    <string name="full_name">Full name</string>
+    <string name="transfer_sent">Transfer sent successfully!</string>
 </resources>

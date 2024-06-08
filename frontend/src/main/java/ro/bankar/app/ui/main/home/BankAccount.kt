@@ -3,12 +3,42 @@ package ro.bankar.app.ui.main.home
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +54,7 @@ import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.handleSuccess
+import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
@@ -41,12 +72,50 @@ import ro.bankar.util.formatIBAN
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 // Use box to prevent parent Column from adding another spacer for the bottom sheet(s)
-fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> Unit) = Box {
+fun BankAccount(data: SBankAccount, otherAccounts: List<SBankAccount>,
+                onNavigate: () -> Unit, onStatements: () -> Unit, onFriends: () -> Unit, onTransfer: (SBankAccount?) -> Unit) = Box {
     val context = LocalContext.current
-    var showCustomiseSheet by remember { mutableStateOf(false) }
-    // Menu sheet
+
     val scope = rememberCoroutineScope()
     var showMenuSheet by remember { mutableStateOf(false) }
+    var showCustomiseSheet by remember { mutableStateOf(false) }
+    var showPaymentSheet by remember { mutableStateOf(false) }
+
+    // New payment dialog
+    val paymentSheetState = rememberModalBottomSheetState(true)
+    if (showPaymentSheet) ModalBottomSheet(sheetState = paymentSheetState, onDismissRequest = { showPaymentSheet = false }) {
+        Column(
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .padding(WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues())
+        ) {
+            ListItem(
+                modifier = Modifier.clickable { scope.launch { paymentSheetState.hide() }; onFriends() },
+                leadingContent = { Icon(imageVector = Icons.Default.Person, contentDescription = null) },
+                headlineContent = { Text(text = stringResource(R.string.send_to_friend)) },
+                supportingContent = { Text(text = stringResource(R.string.send_money_to_friend)) },
+            )
+            ListItem(
+                modifier = Modifier.clickable { onTransfer(null) },
+                leadingContent = { Icon(painter = painterResource(R.drawable.transfer), contentDescription = null) },
+                headlineContent = { Text(text = stringResource(R.string.manual_transfer)) },
+                supportingContent = { Text(text = stringResource(R.string.transfer_by_iban)) },
+            )
+
+            val selectedAccount = remember { mutableStateOf<SBankAccount?>(null) }
+            AccountsComboBox(
+                selectedAccount,
+                otherAccounts,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
+                pickText = R.string.own_transfer,
+                onPickAccount = { account ->
+                    scope.launch { paymentSheetState.hide(); showPaymentSheet = false }
+                    onTransfer(account)
+                })
+        }
+    }
+
+    // Options menu sheet
     val menuSheetState = rememberModalBottomSheetState(true)
     if (showMenuSheet) ModalBottomSheet(sheetState = menuSheetState, onDismissRequest = { showMenuSheet = false }) {
         Column(
@@ -62,63 +131,34 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
                 type = "text/plain"
             }, stringResource(R.string.share_iban))
 
-            Surface(onClick = {
-                scope.launch { menuSheetState.hide(); showMenuSheet = false }
-                context.startActivity(shareIntent)
-            }) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(12.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Share, contentDescription = null)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.share_iban))
-                        Text(text = iban, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-                    }
-                }
-            }
+            ListItem(
+                modifier = Modifier.clickable {
+                    scope.launch { menuSheetState.hide(); showMenuSheet = false }
+                    context.startActivity(shareIntent)
+                },
+                leadingContent = { Icon(imageVector = Icons.Default.Share, contentDescription = null) },
+                headlineContent = { Text(text = stringResource(R.string.share_iban)) },
+                supportingContent = { Text(text = iban, style = MaterialTheme.typography.labelMedium) },
+            )
 
             // Print statements
-            Surface(onClick = { scope.launch { menuSheetState.hide() }; onStatements() }) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(12.dp)
-                ) {
-                    Icon(painter = painterResource(R.drawable.baseline_file_24), contentDescription = null)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.statements))
-                        Text(
-                            text = stringResource(R.string.download_pdf),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-            }
+            ListItem(
+                modifier = Modifier.clickable { scope.launch { menuSheetState.hide() }; onStatements() },
+                leadingContent = { Icon(painter = painterResource(R.drawable.baseline_file_24), contentDescription = null) },
+                headlineContent = { Text(text = stringResource(R.string.statements)) },
+                supportingContent = { Text(text = stringResource(R.string.download_pdf), style = MaterialTheme.typography.labelMedium) },
+            )
 
             // Customise
-            Surface(onClick = {
-                scope.launch { menuSheetState.hide(); showMenuSheet = false }
-                showCustomiseSheet = true
-            }) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.padding(12.dp)
-                ) {
-                    Icon(painter = painterResource(R.drawable.baseline_palette_24), contentDescription = null)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.customize))
-                        Text(
-                            text = stringResource(R.string.change_name_and_color),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-            }
+            ListItem(
+                modifier = Modifier.clickable {
+                    scope.launch { menuSheetState.hide(); showMenuSheet = false }
+                    showCustomiseSheet = true
+                },
+                leadingContent = { Icon(painter = painterResource(R.drawable.baseline_palette_24), contentDescription = null) },
+                headlineContent = { Text(text = stringResource(R.string.customize)) },
+                supportingContent = { Text(text = stringResource(R.string.change_name_and_color), style = MaterialTheme.typography.labelMedium) },
+            )
         }
     }
 
@@ -210,7 +250,7 @@ fun BankAccount(data: SBankAccount, onNavigate: () -> Unit, onStatements: () -> 
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = { /*TODO*/ }) {
+            TextButton(onClick = { showPaymentSheet = true }) {
                 Text(text = stringResource(R.string.new_payment))
             }
             IconButton(onClick = { showMenuSheet = true }) {
@@ -260,7 +300,7 @@ private val sampleAccount = SBankAccount(
 @Composable
 private fun BankAccountPreview() {
     AppTheme {
-        BankAccount(sampleAccount, onNavigate = {}, onStatements = {})
+        BankAccount(sampleAccount, emptyList(), onNavigate = {}, onStatements = {}, onFriends = {}, onTransfer = {})
     }
 }
 
@@ -268,7 +308,7 @@ private fun BankAccountPreview() {
 @Composable
 private fun BankAccountPreviewDark() {
     AppTheme {
-        BankAccount(sampleAccount, onNavigate = {}, onStatements = {})
+        BankAccount(sampleAccount, emptyList(), onNavigate = {}, onStatements = {}, onFriends = {}, onTransfer = {})
     }
 }
 

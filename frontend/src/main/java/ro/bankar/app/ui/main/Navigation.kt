@@ -2,8 +2,12 @@ package ro.bankar.app.ui.main
 
 import android.net.Uri
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.navigation.*
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import ro.bankar.app.Nav
@@ -29,6 +33,7 @@ private const val requestMoneyRoutePrefix = "requestMoneyFrom"
 private const val transactionRoutePrefix = "transaction"
 private const val transferRoutePrefix = "transfer"
 private const val selfTransferRoutePrefix = "selfTransfer"
+private const val newTransferRoutePrefix = "newTransfer"
 
 private const val bankAccountRoutePrefix = "bankAccount"
 private const val createPartyRoutePrefix = "createParty"
@@ -44,9 +49,10 @@ enum class MainNav(val route: String) {
     Profile("profile"),
     NewBankAccount("createAccount"),
     Statements("statements"),
-    // Details screens
+    // Details & transfer screens
     Transaction("$transactionRoutePrefix/{transaction}"),
     Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
+    NewTransfer("$newTransferRoutePrefix/{from}?to={to}"),
     // Accounts & recent activity
     RecentActivity("recentActivity"), BankAccount("$bankAccountRoutePrefix/{account}"),
     // Friends
@@ -59,14 +65,18 @@ enum class MainNav(val route: String) {
         const val route = "main"
         const val tabsRoute = "$mainTabRoutePrefix/{tab}"
         val tabArguments = listOf(
-            navArgument("tab") { defaultValue = HomeTab.name }
+            navArgument("tab") { defaultValue = HomeTab.name },
         )
         val createPartyArguments = listOf(
             navArgument("amount") { defaultValue = 0f; type = NavType.FloatType },
-            navArgument("account") { defaultValue = -1; type = NavType.IntType }
+            navArgument("account") { defaultValue = -1; type = NavType.IntType },
         )
         val viewPartyArguments = listOf(
-            navArgument("id") { type = NavType.IntType }
+            navArgument("id") { type = NavType.IntType },
+        )
+        val newTransferArguments = listOf(
+            navArgument("from") { type = NavType.IntType },
+            navArgument("to") { defaultValue = -1; type = NavType.IntType }
         )
 
         fun Friend(user: SPublicUserBase) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
@@ -75,6 +85,7 @@ enum class MainNav(val route: String) {
         fun RequestMoney(user: SPublicUserBase) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun Transaction(data: SCardTransaction) = "$transactionRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun Transfer(data: SBankTransfer) = "$transferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
+        fun NewTransfer(from: SBankAccount, to: SBankAccount?) = "$newTransferRoutePrefix/${from.id}${if (to != null) "?to=${to.id}" else ""}"
         fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun BankAccount(data: SBankAccount) = "$bankAccountRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun CreateParty(amount: Double, account: Int) = "$createPartyRoutePrefix?amount=$amount&account=$account"
@@ -126,6 +137,14 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
                 onDismiss = controller::popBackStack,
                 data = Json.decodeFromString(entry.arguments!!.getString("transfer")!!),
                 onNavigateToAccount = { controller.navigate(MainNav.BankAccount(it)) }
+            )
+        }
+        composable(MainNav.NewTransfer.route, arguments = MainNav.newTransferArguments) { entry ->
+            TransferScreen(
+                onDismiss = controller::popBackStack,
+                sourceAccountID = entry.arguments!!.getInt("from"),
+                targetAccountID = entry.arguments!!.getInt("to").let { if (it == -1) null else it },
+                onNavigateToAccount = { account -> controller.navigate(MainNav.BankAccount(account)) }
             )
         }
         // Accounts & recent activity

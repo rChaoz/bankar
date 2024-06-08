@@ -100,8 +100,15 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
                 } else {
                     for (account in model.accounts!!) BankAccount(
                         data = account,
+                        otherAccounts = model.accounts!!.filter { it != account },
                         onNavigate = { navigation.navigate(MainNav.BankAccount(account)) },
-                        onStatements = { navigation.navigate(MainNav.Statements.route) }
+                        onStatements = { navigation.navigate(MainNav.Statements.route) },
+                        onFriends = {
+                            navigation.navigate(MainNav.Friends.route) {
+                                popUpTo(MainNav.Home.route) { inclusive = true }
+                            }
+                        },
+                        onTransfer = { toAccount -> navigation.navigate(MainNav.NewTransfer(account, toAccount)) }
                     )
                     if (model.accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {
                         navigation.navigate(MainNav.NewBankAccount.route)

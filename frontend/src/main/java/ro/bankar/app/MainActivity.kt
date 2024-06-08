@@ -114,7 +114,6 @@ enum class Nav(val route: String) {
     NewUser(NewUserNav.route), Main(MainNav.route), Verification("verification");
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun Main(dataStore: DataStore<Preferences>, cache: DataStore<Cache>, lifecycleScope: CoroutineScope) {
     val scope = rememberCoroutineScope()

@@ -12,7 +12,7 @@ data class SCreateParty(
 ) {
     fun validate() = when {
         amounts.any { it.second <= 0.0 } -> "amounts"
-        note.isBlank() || note.length > SSendRequestMoney.maxNoteLength -> "note"
+        note.isBlank() || note.length > MAX_NOTE_LENGTH -> "note"
         else -> null
     }
 }

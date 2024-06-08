@@ -10,15 +10,23 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
+import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.NavScreen
@@ -35,14 +43,31 @@ import java.text.DateFormatSymbols
 
 @Composable
 fun RecentActivityScreen(onDismiss: () -> Unit, navigation: NavHostController) {
-    val activity by LocalRepository.current.allRecentActivity.also { it.requestEmit() }.collectAsState(null)
+    val flow = LocalRepository.current.allRecentActivity
+    val activity by flow.collectAsState(null)
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(true) {
+        isRefreshing = true
+        flow.emitNow()
+        isRefreshing = false
+    }
 
     NavScreen(onDismiss, title = R.string.recent_activity) {
-        LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
-            if (activity == null) RecentActivityShimmer()
-            else {
-                val (transfers, transactions, parties) = activity!!
-                RecentActivityContent(transfers, transactions, parties, navigation)
+        @Suppress("DEPRECATION")
+        SwipeRefresh(rememberSwipeRefreshState(isRefreshing), onRefresh = {
+            scope.launch {
+                isRefreshing = true
+                flow.emitNow()
+                isRefreshing = false
+            }
+        }) {
+            LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
+                if (activity == null) RecentActivityShimmer()
+                else {
+                    val (transfers, transactions, parties) = activity!!
+                    RecentActivityContent(transfers, transactions, parties, navigation)
+                }
             }
         }
     }

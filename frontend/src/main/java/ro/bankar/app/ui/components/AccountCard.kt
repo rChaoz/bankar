@@ -79,6 +79,6 @@ private fun startBorderShape(thickness: Float) = GenericShape { size, layoutDire
     close()
 }
 
-private fun Modifier.startBorder(thickness: Dp, color: Color) = composed {
+private fun Modifier.startBorder(thickness: Dp, color: Color) = this.composed {
     background(color, startBorderShape(with(LocalDensity.current) { thickness.toPx() }))
 }

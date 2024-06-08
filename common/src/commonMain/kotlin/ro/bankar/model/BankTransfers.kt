@@ -6,7 +6,7 @@ import kotlinx.serialization.Transient
 import ro.bankar.banking.Currency
 import ro.bankar.banking.checkIBAN
 
-const val maxNoteLength = 200
+const val MAX_NOTE_LENGTH = 200
 
 @Serializable
 enum class SDirection { Sent, Received }
@@ -93,7 +93,7 @@ data class SSendRequestMoney(
 ) {
     fun validate() = when {
         amount <= 0 -> "amount"
-        note.length > maxNoteLength -> "note"
+        note.length > MAX_NOTE_LENGTH -> "note"
         else -> null
     }
 }
@@ -109,7 +109,7 @@ data class SOwnTransfer(
 ) {
     fun validate() = when {
         amount <= 0 -> "amount"
-        note.length > maxNoteLength -> "note"
+        note.length > MAX_NOTE_LENGTH -> "note"
         else -> null
     }
 }
@@ -123,7 +123,7 @@ data class SExternalTransfer(
 ) {
     fun validate() = when {
         amount <= 0 -> "amount"
-        note.length > maxNoteLength -> "note"
+        note.length > MAX_NOTE_LENGTH -> "note"
         !checkIBAN(targetIBAN) -> "iban"
         else -> null
     }

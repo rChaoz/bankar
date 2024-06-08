@@ -10,6 +10,6 @@ enum class Currency(val code: String) {
     @SerialName("RON") ROMANIAN_LEU("RON");
 
     companion object {
-        fun from(code: String) = values().first { it.code == code }
+        fun from(code: String) = entries.first { it.code == code }
     }
 }

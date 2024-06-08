@@ -35,14 +35,15 @@ private val noneOptionAccount = SBankAccount(
 fun AccountsComboBox(
     selectedAccount: MutableState<SBankAccount?>,
     accounts: List<SBankAccount>?,
+    modifier: Modifier = Modifier,
     pickText: Int? = null,
     showBalance: Boolean = false,
     noneOptionText: Int? = null,
-    onPickAccount: (SBankAccount?) -> Unit = {}
+    onPickAccount: (SBankAccount?) -> Unit = {},
 ) {
     val shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val textMod = if (accounts == null) Modifier.shimmer(shimmer) else Modifier
         if (pickText != null) Text(text = stringResource(pickText), modifier = textMod)
 
@@ -58,7 +59,8 @@ fun AccountsComboBox(
             ),
             onSelectItem = { item -> item.takeIf { it !== noneOptionAccount }.let { selectedAccount.value = it; onPickAccount(it) } },
             items = if (noneOptionText == null) accounts else listOf(noneOptionAccount) + accounts,
-            fillWidth = true
+            fillWidth = true,
+            enabled = accounts.isNotEmpty(),
         ) { item, onClick ->
             DropdownMenuItem(text = {
                 if (item === noneOptionAccount) Text(text = stringResource(noneOptionText!!))
