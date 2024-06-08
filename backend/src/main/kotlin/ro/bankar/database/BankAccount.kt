@@ -7,6 +7,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.SCreditData
@@ -43,8 +44,9 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
 
     var balance by BankAccounts.balance
     val spendable get() = limit + balance
-    var currency by BankAccounts.currency
     var limit by BankAccounts.limit
+    var currency by BankAccounts.currency
+    var closed by BankAccounts.closed
 
     var name by BankAccounts.name
     var color by BankAccounts.color
@@ -69,7 +71,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
 /**
  * Converts a list of BankAccounts to a list of serializable objects
  */
-fun SizedIterable<BankAccount>.serializable() = orderBy(BankAccounts.id to SortOrder.ASC).map {
+fun SizedIterable<BankAccount>.serializable() = orderBy(BankAccounts.id to SortOrder.ASC).filter { !it.closed }.map {
     SBankAccount(it.id.value, it.iban, it.type, it.balance.toDouble(), it.limit.toDouble(), it.currency, it.name, it.color, it.interest)
 }
 
@@ -86,8 +88,13 @@ internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     val balance = amount("balance").default(BigDecimal.ZERO)
     val limit = amount("limit").default(BigDecimal.ZERO)
     val currency = currency("currency")
+    val closed = bool("closed").default(false)
 
     val name = varchar("name", 30)
     val color = integer("color")
     val interest = double("interest").default(0.0)
+
+    init {
+        check("closed_must_be_empty") { not(closed) or (balance eq BigDecimal.ZERO) }
+    }
 }

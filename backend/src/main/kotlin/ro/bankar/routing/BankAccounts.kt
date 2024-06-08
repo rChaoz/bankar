@@ -5,18 +5,26 @@ import io.ktor.server.application.call
 import io.ktor.server.auth.authentication
 import io.ktor.server.request.receive
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.not
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.database.BankAccount
 import ro.bankar.database.BankCard
 import ro.bankar.database.CREDIT_DATA
+import ro.bankar.database.Parties
+import ro.bankar.database.Party
+import ro.bankar.database.TransferRequest
+import ro.bankar.database.TransferRequests
 import ro.bankar.database.serializable
 import ro.bankar.model.SCustomiseBankAccount
 import ro.bankar.model.SNewBankAccount
 import ro.bankar.model.SNewBankCard
 import ro.bankar.plugins.UserPrincipal
+import ro.bankar.respondError
 import ro.bankar.respondInvalidParam
 import ro.bankar.respondNotFound
 import ro.bankar.respondSuccess
@@ -52,7 +60,7 @@ fun Route.configureBankAccounts() {
                 }
                 val accountData = newSuspendedTransaction t@{
                     val account = BankAccount.findById(accountID) ?: return@t null
-                    if (account.user.id != user.id) return@t null
+                    if (account.user.id != user.id || account.closed) return@t null
                     account.serializable(user)
                 }
                 if (accountData == null) call.respondNotFound("bank_account")
@@ -67,7 +75,7 @@ fun Route.configureBankAccounts() {
                     call.respondInvalidParam(it); return@post
                 }
                 newSuspendedTransaction {
-                    val account = user.bankAccounts.find { it.id.value == accountID }
+                    val account = user.bankAccounts.find { !it.closed && it.id.value == accountID }
                     if (account == null) call.respondNotFound("bank_account")
                     else {
                         account.name = data.name
@@ -88,9 +96,9 @@ fun Route.configureBankAccounts() {
 
                 // Create new card
                 newSuspendedTransaction t@{
-                    val account = call.parameters["id"]?.toIntOrNull()?.let { BankAccount.findById(it) }?.takeIf { it.user.id == user.id } ?: run {
-                        call.respondNotFound("bank_account"); return@t
-                    }
+                    val account =
+                        call.parameters["id"]?.toIntOrNull()?.let { BankAccount.findById(it) }?.takeIf { it.user.id == user.id && !it.closed }
+                            ?: run { call.respondNotFound("bank_account"); return@t }
                     BankCard.create(newCardData, account)
                 }
                 call.respondSuccess(HttpStatusCode.Created)
@@ -112,6 +120,29 @@ fun Route.configureBankAccounts() {
                     call.respondNotFound("card"); return@get
                 }
                 call.respondValue(card)
+            }
+            // Close bank account
+            delete {
+                val user = call.authentication.principal<UserPrincipal>()!!.user
+
+                val accountID = call.parameters["id"]?.toIntOrNull() ?: run {
+                    call.respondInvalidParam("account_id"); return@delete
+                }
+                newSuspendedTransaction {
+                    val account = BankAccount.findById(accountID)
+                    if (account == null || account.user.id != user.id || account.closed)
+                        call.respondNotFound("account")
+                    else if (!account.cards.empty())
+                        call.respondError("account_has_cards")
+                    else if (!TransferRequest.find { TransferRequests.sourceAccount eq account.id }.empty())
+                        call.respondError("pending_transfer_requests")
+                    else if (!Party.find { not(Parties.completed) and (Parties.hostAccount eq account.id) }.empty())
+                        call.respondError("pending_parties")
+                    else {
+                        account.closed = true
+                        call.respondSuccess()
+                    }
+                }
             }
         }
     }
