@@ -311,4 +311,10 @@
     <string name="enter_recipient_details">Enter recipient details:</string>
     <string name="full_name">Full name</string>
     <string name="transfer_sent">Transfer sent successfully!</string>
+    <string name="close_account">Close account</string>
+    <string name="account_must_be_empty">Account must have 0 balance for this action</string>
+    <string name="are_you_sure_close_account">Close this account? This action is irreversible.</string>
+    <string name="error_account_has_cards">Error: Account has open cards, please cancel them first</string>
+    <string name="error_account_has_pending_requests">Error: There are transfer requests pending to/from this account</string>
+    <string name="error_account_has_pending_parties">Error: There are open parties on this account</string>
 </resources>

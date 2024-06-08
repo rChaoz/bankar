@@ -218,7 +218,7 @@ fun TransferScreen(onDismiss: () -> Unit, sourceAccountID: Int, targetAccountID:
                 KeyboardType.Text,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(12.dp),
                 leadingIcon = { Icon(painter = painterResource(R.drawable.baseline_note_24), contentDescription = null) }
             )
         }

@@ -18,15 +18,18 @@ import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -41,6 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,8 +57,10 @@ import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.handle
 import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.AccountsComboBox
+import ro.bankar.app.ui.components.BottomDialog
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.format
@@ -64,20 +70,26 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.color
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
+import ro.bankar.model.ErrorResponse
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SuccessResponse
 import ro.bankar.util.formatIBAN
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 // Use box to prevent parent Column from adding another spacer for the bottom sheet(s)
-fun BankAccount(data: SBankAccount, otherAccounts: List<SBankAccount>,
-                onNavigate: () -> Unit, onStatements: () -> Unit, onFriends: () -> Unit, onTransfer: (SBankAccount?) -> Unit) = Box {
+fun BankAccount(
+    data: SBankAccount, otherAccounts: List<SBankAccount>,
+    onNavigate: () -> Unit, onStatements: () -> Unit, onFriends: () -> Unit, onTransfer: (SBankAccount?) -> Unit
+) = Box {
     val context = LocalContext.current
+    val repository = LocalRepository.current
 
     val scope = rememberCoroutineScope()
     var showMenuSheet by remember { mutableStateOf(false) }
+    var showCloseAccountDialog by remember { mutableStateOf(false) }
     var showCustomiseSheet by remember { mutableStateOf(false) }
     var showPaymentSheet by remember { mutableStateOf(false) }
 
@@ -159,6 +171,71 @@ fun BankAccount(data: SBankAccount, otherAccounts: List<SBankAccount>,
                 headlineContent = { Text(text = stringResource(R.string.customize)) },
                 supportingContent = { Text(text = stringResource(R.string.change_name_and_color), style = MaterialTheme.typography.labelMedium) },
             )
+
+            // Close account
+            ListItem(
+                modifier = if (data.balance == 0.0) Modifier.clickable {
+                    scope.launch { menuSheetState.hide(); showMenuSheet = false }
+                    showCloseAccountDialog = true
+                } else Modifier.alpha(.7f),
+                leadingContent = { Icon(imageVector = Icons.Default.Close, contentDescription = null) },
+                headlineContent = { Text(text = stringResource(R.string.close_account)) },
+                supportingContent = { Text(text = stringResource(R.string.account_must_be_empty), style = MaterialTheme.typography.labelMedium) },
+                colors = ListItemDefaults.colors(
+                    headlineColor = MaterialTheme.colorScheme.error,
+                    supportingColor = MaterialTheme.colorScheme.error.copy(alpha = .8f),
+                    leadingIconColor = MaterialTheme.colorScheme.error,
+                )
+            )
+        }
+    }
+
+    // Close account dialog
+    var closeAccountDialogLoading by remember { mutableStateOf(false) }
+    BottomDialog(showCloseAccountDialog, onDismissRequest = { showCloseAccountDialog = false }, buttonBar = {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            TextButton(onClick = { showCloseAccountDialog = false }, modifier = Modifier.weight(1f), enabled = !closeAccountDialogLoading) {
+                Text(text = stringResource(android.R.string.cancel))
+            }
+            Button(
+                onClick = {
+                    closeAccountDialogLoading = true
+                    scope.launch {
+                        repository.sendCloseAccount(data).handle(context) {
+                            when (it) {
+                                SuccessResponse -> {
+                                    showCloseAccountDialog = false
+                                    repository.accounts.emitNow()
+                                    null
+                                }
+                                is ErrorResponse -> when (it.message) {
+                                    "account_has_cards" -> context.getString(R.string.error_account_has_cards)
+                                    "pending_transfer_requests" -> context.getString(R.string.error_account_has_pending_requests)
+                                    "pending_parties" -> context.getString(R.string.error_account_has_pending_parties)
+                                    else -> context.getString(R.string.unknown_error)
+                                }
+                                else -> context.getString(R.string.unknown_error)
+                            }
+                        }
+                        closeAccountDialogLoading = false
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.onError),
+                enabled = !closeAccountDialogLoading,
+            ) {
+                Text(text = stringResource(R.string.close_account))
+            }
+        }
+    }) {
+        LoadingOverlay(closeAccountDialogLoading) {
+            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(text = stringResource(R.string.are_you_sure), style = MaterialTheme.typography.titleLarge)
+                Text(text = stringResource(R.string.are_you_sure_close_account))
+            }
         }
     }
 
@@ -199,7 +276,6 @@ fun BankAccount(data: SBankAccount, otherAccounts: List<SBankAccount>,
                     }) {
                         Text(text = stringResource(android.R.string.cancel))
                     }
-                    val repository = LocalRepository.current
                     Button(modifier = Modifier.weight(1f), onClick = {
                         isCustomiseLoading = true
                         scope.launch {

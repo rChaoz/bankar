@@ -308,4 +308,10 @@
     <string name="enter_recipient_details">Introdu datele destinatarului:</string>
     <string name="full_name">Numele complet</string>
     <string name="transfer_sent">Transfer efectuat cu succes!</string>
+    <string name="close_account">Închide contul</string>
+    <string name="account_must_be_empty">Contul trebui să aibă balanță 0 pentru această acțiune</string>
+    <string name="are_you_sure_close_account">Închizi acest cont? Această acțiune este ireversibilă.</string>
+    <string name="error_account_has_cards">Eroare: Contul are carduri deschide, te rog anulează-le mai întai</string>
+    <string name="error_account_has_pending_requests">Eroare: Există cereri de transfer înspre/dinspre acest cont</string>
+    <string name="error_account_has_pending_parties">Eroare: Există echipe deschise pe acest cont</string>
 </resources>

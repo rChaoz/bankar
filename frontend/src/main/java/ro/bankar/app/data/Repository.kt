@@ -19,6 +19,7 @@ import io.ktor.client.plugins.websocket.receiveDeserialized
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -215,6 +216,7 @@ abstract class Repository {
     abstract val accounts: RequestFlow<List<SBankAccount>>
     abstract fun account(id: Int): RequestFlow<SBankAccountData>
     abstract suspend fun sendCreateAccount(account: SNewBankAccount): ResponseRequestResult<Unit>
+    abstract suspend fun sendCloseAccount(account: SBankAccount): ResponseRequestResult<Unit>
     abstract suspend fun sendCustomiseAccount(id: Int, name: String, color: Int): ResponseRequestResult<Unit>
     abstract suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<String>
     abstract suspend fun sendOwnTransfer(sourceAccount: SBankAccount, targetAccount: SBankAccount, amount: Double, note: String): ResponseRequestResult<Unit>
@@ -415,6 +417,10 @@ private class RepositoryImpl(
             setBody(account)
             configureTimeout()
         }
+    }
+
+    override suspend fun sendCloseAccount(account: SBankAccount) = client.safeRequest<Unit> {
+        delete("accounts/${account.id}") { configureTimeout() }
     }
 
     override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = client.safeRequest<Unit> {

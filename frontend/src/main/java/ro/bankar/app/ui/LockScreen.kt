@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,6 +60,13 @@ fun LockScreen(onUnlock: () -> Unit) {
     val activity = context.findActivity()
     BackHandler { activity?.moveTaskToBack(true) }
 
+    // Hide keyboard first, before unlocking, to avoid auto-focusing on the "Search everything" text field from home page
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val unlock = {
+        keyboardController?.hide()
+        onUnlock()
+    }
+
     val repository = LocalRepository.current
     val scope = rememberCoroutineScope()
     val datastore = LocalDataStore.current
@@ -87,7 +95,7 @@ fun LockScreen(onUnlock: () -> Unit) {
         if (activity != null) BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                onUnlock()
+                unlock()
             }
         })
         else null
@@ -135,11 +143,11 @@ fun LockScreen(onUnlock: () -> Unit) {
                 val onDone: () -> Unit = {
                     if (usingPin) {
                         pin.check(context)
-                        if (pin.verified) onUnlock()
+                        if (pin.verified) unlock()
                     } else scope.launch {
                         isLoading = true
                         password.checkSuspending(context)
-                        if (password.verified) onUnlock()
+                        if (password.verified) unlock()
                         isLoading = false
                     }
                 }
