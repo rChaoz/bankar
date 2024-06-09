@@ -3,21 +3,7 @@ package ro.bankar.app.ui.main.friends
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,33 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,18 +41,9 @@ import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
-import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.Repository
-import ro.bankar.app.data.fold
-import ro.bankar.app.data.handle
-import ro.bankar.app.data.handleSuccess
+import ro.bankar.app.data.*
 import ro.bankar.app.ui.HideFABOnScroll
-import ro.bankar.app.ui.components.AcceptDeclineButtons
-import ro.bankar.app.ui.components.Avatar
-import ro.bankar.app.ui.components.BottomDialog
-import ro.bankar.app.ui.components.LoadingOverlay
-import ro.bankar.app.ui.components.PagerTabs
-import ro.bankar.app.ui.components.SurfaceList
+import ro.bankar.app.ui.components.*
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
@@ -102,13 +55,7 @@ import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.SCountries
-import ro.bankar.model.ErrorResponse
-import ro.bankar.model.NotFoundResponse
-import ro.bankar.model.SDirection
-import ro.bankar.model.SFriend
-import ro.bankar.model.SFriendRequest
-import ro.bankar.model.SPublicUserBase
-import ro.bankar.model.SuccessResponse
+import ro.bankar.model.*
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
@@ -187,8 +134,8 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         /**
          * Used to cancel an outgoing friend request
          */
-        fun onCancelRequest(context: Context, tag: String, repository: Repository) = viewModelScope.launch {
-            repository.sendCancelFriendRequest(tag).handle(this, snackbar, context) {
+        suspend fun onCancelRequest(context: Context, tag: String, repository: Repository) {
+            repository.sendCancelFriendRequest(tag).handle(viewModelScope, snackbar, context) {
                 when {
                     it == SuccessResponse -> repository.friendRequests.requestEmit()
                     it is ErrorResponse && it.message == "request_not_found" -> repository.friendRequests.requestEmit()
@@ -201,8 +148,8 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         /**
          * Used to accept/decline an incoming friend request
          */
-        fun onRespondToRequest(context: Context, fromTag: String, accepted: Boolean, repository: Repository) = viewModelScope.launch {
-            repository.sendFriendRequestResponse(fromTag, accepted).handleSuccess(this, snackbar, context) {
+        suspend fun onRespondToRequest(context: Context, fromTag: String, accepted: Boolean, repository: Repository) {
+            repository.sendFriendRequestResponse(fromTag, accepted).handleSuccess(viewModelScope, snackbar, context) {
                 coroutineScope {
                     launch { repository.friends.emitNow() }
                     launch { repository.friendRequests.emitNow() }
@@ -504,7 +451,9 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
         }
 
         @Composable
-        fun SentRequests(requests: List<SFriendRequest>, setRequestInfo: (SFriendRequest) -> Unit, onCancelRequest: (String) -> Unit) {
+        fun SentRequests(requests: List<SFriendRequest>, setRequestInfo: (SFriendRequest) -> Unit, onCancelRequest: suspend (String) -> Unit) {
+            val scope = rememberCoroutineScope()
+
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.sent_requests),
@@ -517,28 +466,33 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                         .fillMaxSize()
                         .clip(RoundedCornerShape(16.dp))
                 ) {
-                    for (req in requests) Surface(onClick = { setRequestInfo(req) }, tonalElevation = 1.dp) {
-                        Row(
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Avatar(image = req.avatar, size = 48.dp)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = req.fullName,
-                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
-                                )
-                                Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
-                            }
-                            OutlinedButton(
-                                onClick = { onCancelRequest(req.tag) },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
-                            ) {
-                                Text(text = stringResource(android.R.string.cancel))
+                    for (req in requests) {
+                        var isLoading by remember { mutableStateOf(false) }
+                        LoadingOverlay(isLoading) {
+                            Surface(onClick = { setRequestInfo(req) }, tonalElevation = 1.dp) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Avatar(image = req.avatar, size = 48.dp)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = req.fullName,
+                                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
+                                        )
+                                        Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
+                                    }
+                                    OutlinedButton(
+                                        onClick = { isLoading = true; scope.launch { onCancelRequest(req.tag); isLoading = false } },
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.error)
+                                    ) {
+                                        Text(text = stringResource(android.R.string.cancel))
+                                    }
+                                }
                             }
                         }
                     }
@@ -548,7 +502,11 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
         }
 
         @Composable
-        private fun ReceivedRequests(requests: List<SFriendRequest>, setRequestInfo: (SFriendRequest) -> Unit, onRespondToRequest: (String, Boolean) -> Unit) {
+        private fun ReceivedRequests(
+            requests: List<SFriendRequest>, setRequestInfo: (SFriendRequest) -> Unit, onRespondToRequest: suspend (String, Boolean) -> Unit
+        ) {
+            val scope = rememberCoroutineScope()
+
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.received_requests),
@@ -561,26 +519,31 @@ private sealed class FriendsTabs(val index: Int, val title: Int, val fabText: In
                         .fillMaxSize()
                         .clip(RoundedCornerShape(16.dp))
                 ) {
-                    for (req in requests) Surface(onClick = { setRequestInfo(req) }, tonalElevation = 1.dp) {
-                        Row(
-                            modifier = Modifier
-                                .padding(12.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Avatar(image = req.avatar, size = 48.dp)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = req.fullName,
-                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
-                                )
-                                Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
+                    for (req in requests) {
+                        var isLoading by remember { mutableStateOf(false) }
+                        LoadingOverlay(isLoading) {
+                            Surface(onClick = { setRequestInfo(req) }, tonalElevation = 1.dp) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Avatar(image = req.avatar, size = 48.dp)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = req.fullName,
+                                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium
+                                        )
+                                        Text(text = "@${req.tag}", style = MaterialTheme.typography.titleSmall)
+                                    }
+                                    AcceptDeclineButtons(
+                                        onAccept = { isLoading = true; scope.launch { onRespondToRequest(req.tag, true); isLoading = false } },
+                                        onDecline = { isLoading = true; scope.launch { onRespondToRequest(req.tag, false); isLoading = false } }
+                                    )
+                                }
                             }
-                            AcceptDeclineButtons(
-                                onAccept = { onRespondToRequest(req.tag, true) },
-                                onDecline = { onRespondToRequest(req.tag, false) }
-                            )
                         }
                     }
                 }

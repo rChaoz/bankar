@@ -2,23 +2,8 @@ package ro.bankar.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +15,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,12 +24,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
-import ro.bankar.app.data.KeyAuthenticationPin
-import ro.bankar.app.data.KeyFingerprintEnabled
-import ro.bankar.app.data.LocalDataStore
-import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.collectPreferenceAsState
-import ro.bankar.app.data.fold
+import ro.bankar.app.data.*
 import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.components.VerifiableField
 import ro.bankar.app.ui.components.verifiableStateOf
@@ -59,13 +38,6 @@ fun LockScreen(onUnlock: () -> Unit) {
     val context = LocalContext.current
     val activity = context.findActivity()
     BackHandler { activity?.moveTaskToBack(true) }
-
-    // Hide keyboard first, before unlocking, to avoid auto-focusing on the "Search everything" text field from home page
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val unlock = {
-        keyboardController?.hide()
-        onUnlock()
-    }
 
     val repository = LocalRepository.current
     val scope = rememberCoroutineScope()
@@ -95,7 +67,7 @@ fun LockScreen(onUnlock: () -> Unit) {
         if (activity != null) BiometricPrompt(activity, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                unlock()
+                onUnlock()
             }
         })
         else null
@@ -143,11 +115,11 @@ fun LockScreen(onUnlock: () -> Unit) {
                 val onDone: () -> Unit = {
                     if (usingPin) {
                         pin.check(context)
-                        if (pin.verified) unlock()
+                        if (pin.verified) onUnlock()
                     } else scope.launch {
                         isLoading = true
                         password.checkSuspending(context)
-                        if (password.verified) unlock()
+                        if (password.verified) onUnlock()
                         isLoading = false
                     }
                 }
