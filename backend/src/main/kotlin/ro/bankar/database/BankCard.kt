@@ -26,6 +26,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         }
     }
 
+    var bankAccountId by BankAccounts.id
     var bankAccount by BankAccount referencedOn BankCards.bankAccount
 
     var name by BankCards.name
@@ -53,6 +54,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         cvv.toString(),
         limit.toDouble(),
         limitCurrent.toDouble(),
+        bankAccount.currency,
         transactions.serializable(),
     ) else SBankCard(
         id.value,
@@ -65,6 +67,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         null,
         limit.toDouble(),
         limitCurrent.toDouble(),
+        bankAccount.currency,
         transactions.serializable(),
     )
 }

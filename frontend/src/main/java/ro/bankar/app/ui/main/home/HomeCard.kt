@@ -103,7 +103,7 @@ private fun HomeCardContent(
     }
 }
 
-fun Modifier.topBorder(thickness: Dp, color: Color) = composed {
+fun Modifier.topBorder(thickness: Dp, color: Color) = this.composed {
     with(LocalDensity.current) {
         val t = thickness.toPx()
         border(thickness, color, GenericShape { (width, _), _ ->

@@ -52,7 +52,7 @@ val testAccount = SBankAccount(1, "RO873240982734893", SBankAccountType.Debit, 1
 private fun AccountCardPreview() {
     AppTheme {
         Surface(shape = MaterialTheme.shapes.small) {
-            AccountCard(testAccount, modifier = Modifier)
+            AccountCard(testAccount, modifier = Modifier.padding(12.dp))
         }
     }
 }

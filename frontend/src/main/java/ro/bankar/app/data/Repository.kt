@@ -53,6 +53,7 @@ import ro.bankar.banking.SExchangeData
 import ro.bankar.model.Response
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountData
+import ro.bankar.model.SBankCard
 import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SConversation
 import ro.bankar.model.SCreateParty
@@ -63,6 +64,7 @@ import ro.bankar.model.SFriend
 import ro.bankar.model.SFriendRequest
 import ro.bankar.model.SMessagingToken
 import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SNewBankCard
 import ro.bankar.model.SNewUser
 import ro.bankar.model.SOwnTransfer
 import ro.bankar.model.SPartyInformation
@@ -228,27 +230,13 @@ abstract class Repository {
     abstract suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate): ResponseRequestResult<SStatement>
     abstract fun createDownloadStatementRequest(statement: SStatement): DownloadManager.Request
 
+    // Cards
+    abstract suspend fun sendCreateCard(accountID: Int, name: String): ResponseRequestResult<Int>
+    abstract suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double): ResponseRequestResult<Unit>
+    abstract fun card(accountID: Int, cardID: Int): RequestFlow<SBankCard>
+
     abstract fun logout()
     abstract fun initNotifications()
-
-    // Load data on Repository creation to avoid having to wait when going to each screen
-    protected fun init() {
-        countryData.requestEmit()
-        exchangeData.requestEmit()
-        creditData.requestEmit()
-        defaultAccount.requestEmit()
-        // Home page (and profile)
-        profile.requestEmit()
-        accounts.requestEmit()
-        recentActivity.requestEmit()
-        // Friends page
-        friends.requestEmit()
-        friendRequests.requestEmit()
-        // Account statements
-        statements.requestEmit()
-        // Initialize push notifications
-        initNotifications()
-    }
 }
 
 private class RepositoryImpl(
@@ -321,8 +309,10 @@ private class RepositoryImpl(
     override val exchangeData = createFlow<SExchangeData>("data/exchange.json", raw = true)
     override val creditData = createFlow<List<SCreditData>>("data/credit.json", raw = true)
     override suspend fun sendCheckPassword(password: String) = client.safeRequest<Unit> {
-        post("verifyPassword") { setBody(SPasswordData(password))
-            configureTimeout() }
+        post("verifyPassword") {
+            setBody(SPasswordData(password))
+            configureTimeout()
+        }
     }
 
     // User profile & friends
@@ -471,13 +461,12 @@ private class RepositoryImpl(
     }
 
     override val statements = createFlow<List<SStatement>>("statements")
-    override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) =
-        client.safeRequest<SStatement> {
-            post("statements/request") {
-                setBody(SStatementRequest(name, accountID, from, to, TimeZone.currentSystemDefault()))
-                configureTimeout()
-            }
+    override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) = client.safeRequest<SStatement> {
+        post("statements/request") {
+            setBody(SStatementRequest(name, accountID, from, to, TimeZone.currentSystemDefault()))
+            configureTimeout()
         }
+    }
 
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(statement.downloadURI).apply {
         val name = "Statement-${statement.timestamp.here().dashFormat()}.pdf"
@@ -485,6 +474,23 @@ private class RepositoryImpl(
         setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
         addRequestHeader(HttpHeaders.Authorization, "Bearer $sessionToken")
     }
+
+    // Cards
+    override suspend fun sendCreateCard(accountID: Int, name: String) = client.safeRequest<Int> {
+        post("accounts/$accountID/new") {
+            setBody(SNewBankCard(name, 0.0))
+            configureTimeout()
+        }
+    }
+
+    override suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double) = client.safeRequest<Unit> {
+        post("accounts/$accountID/$cardID") {
+            setBody(SNewBankCard(name, limit))
+            configureTimeout()
+        }
+    }
+
+    override fun card(accountID: Int, cardID: Int): RequestFlow<SBankCard> = createFlow("accounts/$accountID/$cardID")
 
     // Request utility
     private fun HttpRequestBuilder.configureTimeout() {
@@ -519,7 +525,7 @@ private class RepositoryImpl(
 
     private inline fun <reified T> createFlow(url: String, raw: Boolean = false) = object : AbstractRequestFlow<T>(scope) {
         override suspend fun emit(): T? = getRequest(url, raw)
-    }
+    }.also { it.requestEmit() }
 
     private inline fun <reified T> createCachedFlow(
         url: String,
@@ -533,7 +539,7 @@ private class RepositoryImpl(
     private inline fun <reified T> createUpdateFlow(url: String, noinline mapFunc: (Cache) -> T?, noinline updateFunc: Cache.(T) -> Cache) =
         object : UpdateRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
             override suspend fun emit(): T? = getRequest(url, false)
-        }
+        }.also { it.requestEmit() }
 
 
     override fun logout() {
@@ -541,6 +547,9 @@ private class RepositoryImpl(
         onLogout()
     }
 
+    /**
+     * Initialize push notifications
+     */
     override fun initNotifications() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener {
             scope.launch { client.safeRequest<Unit> { post("messaging/register") { setBody(SMessagingToken(it)) } } }
@@ -548,6 +557,6 @@ private class RepositoryImpl(
     }
 
     init {
-        init()
+        initNotifications()
     }
 }

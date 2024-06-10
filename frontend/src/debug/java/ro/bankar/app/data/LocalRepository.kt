@@ -6,7 +6,6 @@ import androidx.compose.runtime.compositionLocalOf
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.datetime.Clock
@@ -51,7 +50,6 @@ import ro.bankar.model.SUserMessage
 import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.util.todayHere
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 val LocalRepository = compositionLocalOf<Repository> { MockRepository }
 
@@ -62,11 +60,8 @@ val EmptyRepository: Repository = MockRepository
 private object MockRepository : Repository() {
     @OptIn(DelicateCoroutinesApi::class)
     private fun <T> mockFlow(value: T) = object : AbstractRequestFlow<T>(GlobalScope) {
-        override suspend fun emit(): T {
-            delay(3.seconds)
-            return value
-        }
-    }
+        override suspend fun emit() = value
+    }.also { it.requestEmit() }
 
     private fun <T> mockResponse(): RequestResult<Response<T>> = RequestFail(R.string.connection_error)
 
@@ -232,11 +227,11 @@ private object MockRepository : Repository() {
             ),
             listOf(
                 SCardTransaction(
-                    1L, 2, 1, "1373",
+                    1L, 2, 1,
                     23.2354, Currency.ROMANIAN_LEU, now, "Sushi Terra", "nimic bun"
                 ),
                 SCardTransaction(
-                    2L, 3, 1, "6969",
+                    2L, 3, 1,
                     0.01, Currency.EURO, earlier, "200 houses", "yea.."
                 )
             ),
@@ -282,26 +277,28 @@ private object MockRepository : Repository() {
         )
     )
 
+    private val card = SBankCard(
+        1, "Physical Card", "1234567813571234", "1234", "9876", Month.JUNE, 2069,
+        "420", 0.0, 0.0, Currency.ROMANIAN_LEU,
+        listOf(
+            SCardTransaction(
+                127836L, 1, 1, 25.55, Currency.ROMANIAN_LEU,
+                Clock.System.now(), "Taco Bell", "details"
+            ),
+            SCardTransaction(
+                7439287432897L, 1, 1, 13.12, Currency.ROMANIAN_LEU,
+                Clock.System.now(), "Nimic bun", "detailssssss"
+            ),
+        )
+    )
+
     override fun account(id: Int) = mockFlow(
         SBankAccountData(
             listOf(
-                SBankCard(
-                    1, "Physical Card", null, "1234", null, null, null,
-                    null, 0.0, 0.0,
-                    listOf(
-                        SCardTransaction(
-                            127836L, 1, 1, "1234", 25.55, Currency.ROMANIAN_LEU,
-                            Clock.System.now(), "Taco Bell", "details"
-                        ),
-                        SCardTransaction(
-                            7439287432897L, 1, 1, "1234", 13.12, Currency.ROMANIAN_LEU,
-                            Clock.System.now(), "Nimic bun", "detailssssss"
-                        ),
-                    )
-                ),
+                card,
                 SBankCard(
                     2, "Virtual Card", "1111222233334444", "4444", "1234", Month.JANUARY, 2025,
-                    "123", 100.0, 34.45, emptyList()
+                    "123", 100.0, 34.45, Currency.EURO, emptyList()
                 ),
             ),
             emptyList(),
@@ -325,13 +322,13 @@ private object MockRepository : Repository() {
         )
     )
 
+    override suspend fun sendCreateCard(accountID: Int, name: String) = mockResponse<Int>()
+    override suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double) = mockResponse<Unit>()
+    override fun card(accountID: Int, cardID: Int)= mockFlow(card)
+
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) = mockResponse<SStatement>()
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(Uri.parse("http://example.com"))
 
     override fun logout() {}
     override fun initNotifications() {}
-
-    init {
-        init()
-    }
 }

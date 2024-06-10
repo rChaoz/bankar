@@ -2,7 +2,14 @@ package ro.bankar.app.ui.main.friend
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.GenericShape
@@ -10,8 +17,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,7 +54,12 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
+import kotlinx.datetime.minus
+import kotlinx.datetime.toJavaLocalDate
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
@@ -45,7 +68,13 @@ import ro.bankar.app.data.RequestSuccess
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.model.*
+import ro.bankar.model.SConversation
+import ro.bankar.model.SDirection
+import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
+import ro.bankar.model.SSendMessage
+import ro.bankar.model.SSocketNotification
+import ro.bankar.model.SuccessResponse
 import ro.bankar.util.format
 import ro.bankar.util.here
 import ro.bankar.util.todayHere
@@ -96,7 +125,6 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
         launch {
             repository.conversation(user.tag).also {
                 model.conversationFlow = it
-                it.requestEmit()
             }.collect {
                 // See below
                 model.repository.friends.requestEmit()

@@ -7,9 +7,8 @@ import ro.bankar.banking.Currency
 @Serializable
 data class SCardTransaction(
     val reference: Long,
-    val cardID: Int,
     val accountID: Int,
-    val cardLastFour: String,
+    val cardID: Int,
 
     val amount: Double,
     val currency: Currency,

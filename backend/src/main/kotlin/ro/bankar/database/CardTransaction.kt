@@ -36,7 +36,7 @@ class CardTransaction(id: EntityID<Int>) : IntEntity(id) {
     var title by CardTransactions.title
 
     fun serializable() = SCardTransaction(
-        reference, card.id.value, card.bankAccount.id.value, card.cardNumber.toString().takeLast(4), amount.toDouble(), currency, timestamp, details, title
+        reference, card.bankAccountId.value, card.id.value, amount.toDouble(), currency, timestamp, details, title
     )
 }
 

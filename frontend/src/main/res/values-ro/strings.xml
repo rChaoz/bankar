@@ -314,4 +314,26 @@
     <string name="error_account_has_cards">Eroare: Contul are carduri deschide, te rog anulează-le mai întai</string>
     <string name="error_account_has_pending_requests">Eroare: Există cereri de transfer înspre/dinspre acest cont</string>
     <string name="error_account_has_pending_parties">Eroare: Există echipe deschise pe acest cont</string>
+    <string name="cards">Carduri</string>
+    <string name="new_card">Card nou</string>
+    <string name="virtual_card">Card virtual</string>
+    <string name="physical_card">Card fizic</string>
+    <string name="no_cards">Nu ai niciun card. Apasă butonul \'+\' de mai jos pentru a obține un card.</string>
+    <string name="too_short">Prea scurt</string>
+    <string name="create_card">Creează card</string>
+    <string name="create_virtual_card">Crează un card virtual</string>
+    <string name="card_name">Numele cardului</string>
+    <string name="my_card">Cardul meu</string>
+    <string name="spending">Cheltuieli</string>
+    <string name="spent_this_month">Cheltuit luna asta</string>
+    <string name="limit">Limită</string>
+    <string name="no_limit">Fără limită</string>
+    <string name="show_details">Arată detaliile</string>
+    <string name="rename">Redenumește</string>
+    <string name="hide_details">Ascunde detaliile</string>
+    <string name="are_you_sure_show_card_details">Ești sigur că vrei să-ți faci datele cardului vizibile?</string>
+    <string name="rename_card">Redenumește cardul</string>
+    <string name="change_limit">Schimbă limita</string>
+    <string name="clear_limit">Șterge limita</string>
+    <string name="no_recent_card_activity">Nu ai tranzacții efectuate cu acest card.</string>
 </resources>

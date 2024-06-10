@@ -1,17 +1,27 @@
 package ro.bankar.app.ui.main.friend
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +39,7 @@ import kotlinx.datetime.Clock
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.components.Avatar
+import ro.bankar.app.ui.components.LabeledIconButton
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.RecentActivityShimmerRow
 import ro.bankar.app.ui.components.Transfer
@@ -41,12 +52,11 @@ import ro.bankar.model.SPublicUserBase
 import ro.bankar.util.format
 import ro.bankar.util.todayHere
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
-    val recentActivity by repository.recentActivityWith(profile.tag).also { it.requestEmit() }.collectAsState(null)
+    val recentActivity by remember { repository.recentActivityWith(profile.tag) }.collectAsState(null)
 
     NavScreen(onDismiss = { navigation.popBackStack() }, title = R.string.friend_profile) {
         Column(
@@ -75,17 +85,15 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                         color = MaterialTheme.colorScheme.outline
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(.8f)) {
-                            ProfileButton(onClick = { navigation.navigate(MainNav.Conversation(profile)) }, text = R.string.send_message) {
-                                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(28.dp))
-                            }
-                            ProfileButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {
-                                Icon(painter = painterResource(R.drawable.transfer), contentDescription = null, modifier = Modifier.size(28.dp))
-                            }
-                            ProfileButton(onClick = { navigation.navigate(MainNav.RequestMoney(profile)) }, text = R.string.request_money) {
-                                Icon(painter = painterResource(R.drawable.transfer_request), contentDescription = null, modifier = Modifier.size(28.dp))
-                            }
+                    Row(modifier = Modifier.fillMaxWidth(.8f)) {
+                        LabeledIconButton(onClick = { navigation.navigate(MainNav.Conversation(profile)) }, text = R.string.send_message) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(28.dp))
+                        }
+                        LabeledIconButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {
+                            Icon(painter = painterResource(R.drawable.transfer), contentDescription = null, modifier = Modifier.size(28.dp))
+                        }
+                        LabeledIconButton(onClick = { navigation.navigate(MainNav.RequestMoney(profile)) }, text = R.string.request_money) {
+                            Icon(painter = painterResource(R.drawable.transfer_request), contentDescription = null, modifier = Modifier.size(28.dp))
                         }
                     }
                 }
@@ -145,29 +153,6 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.ProfileButton(onClick: () -> Unit, text: Int, icon: @Composable () -> Unit) {
-    Surface(
-        onClick,
-        shape = RoundedCornerShape(6.dp),
-        modifier = Modifier.weight(1f),
-        contentColor = MaterialTheme.colorScheme.primary
-    ) {
-        Column(
-            modifier = Modifier.padding(6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            icon()
-            Text(
-                text = stringResource(text),
-                style = MaterialTheme.typography.labelMedium,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }

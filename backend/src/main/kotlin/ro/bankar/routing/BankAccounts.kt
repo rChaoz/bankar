@@ -99,27 +99,54 @@ fun Route.configureBankAccounts() {
                     val account =
                         call.parameters["id"]?.toIntOrNull()?.let { BankAccount.findById(it) }?.takeIf { it.user.id == user.id && !it.closed }
                             ?: run { call.respondNotFound("bank_account"); return@t }
-                    BankCard.create(newCardData, account)
+                    val newCard = BankCard.create(newCardData, account)
+                    call.respondValue(newCard.id.value)
                 }
-                call.respondSuccess(HttpStatusCode.Created)
             }
-            // Get bank card data
-            get("{cardID}") {
-                val user = call.authentication.principal<UserPrincipal>()!!.user
+            // Card by ID
+            route("{cardID}") {
+                get {
+                    val user = call.authentication.principal<UserPrincipal>()!!.user
 
-                val accountID = call.parameters["id"]?.toIntOrNull() ?: run {
-                    call.respondInvalidParam("account_id"); return@get
+                    val accountID = call.parameters["id"]?.toIntOrNull() ?: run {
+                        call.respondInvalidParam("account_id"); return@get
+                    }
+                    val cardID = call.parameters["cardID"]?.toIntOrNull() ?: run {
+                        call.respondInvalidParam("card_id"); return@get
+                    }
+                    val card = newSuspendedTransaction {
+                        BankCard.find(cardID, accountID)?.takeIf { it.bankAccount.user.id == user.id }?.serializable(true)
+                    } ?: run {
+                        call.respondNotFound("card"); return@get
+                    }
+                    call.respondValue(card)
                 }
-                val cardID = call.parameters["cardID"]?.toIntOrNull() ?: run {
-                    call.respondInvalidParam("card_id"); return@get
+
+                post {
+                    val user = call.authentication.principal<UserPrincipal>()!!.user
+
+                    val accountID = call.parameters["id"]?.toIntOrNull() ?: run {
+                        call.respondInvalidParam("account_id"); return@post
+                    }
+                    val cardID = call.parameters["cardID"]?.toIntOrNull() ?: run {
+                        call.respondInvalidParam("card_id"); return@post
+                    }
+
+                    // Get updated card data
+                    val newCardData = call.receive<SNewBankCard>()
+                    newCardData.validate(updating = true)?.let {
+                        call.respondInvalidParam(it); return@post
+                    }
+
+                    newSuspendedTransaction {
+                        val card = BankCard.find(cardID, accountID)?.takeIf { it.bankAccount.user.id == user.id } ?: run {
+                            call.respondNotFound("card"); return@newSuspendedTransaction
+                        }
+                        if (newCardData.name.isNotEmpty()) card.name = newCardData.name.trim()
+                        if (newCardData.limit != -1.0) card.limit = newCardData.limit.toBigDecimal()
+                        call.respondSuccess()
+                    }
                 }
-                val sensitive = call.request.queryParameters["sensitive"].toBoolean()
-                val card = newSuspendedTransaction {
-                    BankCard.find(cardID, accountID)?.takeIf { it.bankAccount.user.id == user.id }?.serializable(sensitive)
-                } ?: run {
-                    call.respondNotFound("card"); return@get
-                }
-                call.respondValue(card)
             }
             // Close bank account
             delete {

@@ -41,6 +41,7 @@ fun VerifiableField(
     onDone: (KeyboardActionScope.() -> Unit)? = null,
     capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     multiLine: Boolean = false,
+    placeholder: Int? = null,
 ) {
     val context = LocalContext.current
     var mod = modifier.onFocusChanged {
@@ -66,6 +67,7 @@ fun VerifiableField(
         ),
         keyboardActions = KeyboardActions(onDone = onDone),
         isError = verifiableState.hasError,
+        placeholder = placeholder?.let { { Text(text = stringResource(it)) } },
         supportingText = { Text(text = verifiableState.error ?: "") }
     )
 }

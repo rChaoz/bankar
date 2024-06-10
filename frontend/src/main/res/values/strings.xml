@@ -317,4 +317,26 @@
     <string name="error_account_has_cards">Error: Account has open cards, please cancel them first</string>
     <string name="error_account_has_pending_requests">Error: There are transfer requests pending to/from this account</string>
     <string name="error_account_has_pending_parties">Error: There are open parties on this account</string>
+    <string name="cards">Cards</string>
+    <string name="new_card">New card</string>
+    <string name="virtual_card">Virtual card</string>
+    <string name="physical_card">Physical card</string>
+    <string name="no_cards">You don\'t have any cards. Use the \'+\' button below to get a card.</string>
+    <string name="too_short">Too short</string>
+    <string name="create_card">Create card</string>
+    <string name="create_virtual_card">Create virtual card</string>
+    <string name="card_name">Card name</string>
+    <string name="my_card">My card</string>
+    <string name="spending">Spending</string>
+    <string name="spent_this_month">Spent this month</string>
+    <string name="limit">Limit</string>
+    <string name="no_limit">No limit</string>
+    <string name="show_details">Show details</string>
+    <string name="rename">Rename</string>
+    <string name="hide_details">Hide details</string>
+    <string name="are_you_sure_show_card_details">Are you sure you want to make your card details visible?</string>
+    <string name="rename_card">Rename card</string>
+    <string name="change_limit">Change limit</string>
+    <string name="clear_limit">Clear limit</string>
+    <string name="no_recent_card_activity">You don\'t have any transactions with this card.</string>
 </resources>

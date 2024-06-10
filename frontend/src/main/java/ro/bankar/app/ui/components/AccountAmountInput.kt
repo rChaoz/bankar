@@ -34,6 +34,7 @@ import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.processNumberValue
 import ro.bankar.app.ui.theme.customColors
+import ro.bankar.banking.Currency
 import ro.bankar.model.SBankAccount
 import ro.bankar.model.SBankAccountType
 
@@ -43,10 +44,11 @@ fun AccountAmountInput(
     account: SBankAccount?,
     amount: MutableState<String>,
     showRemainingBalance: Boolean,
-    shimmer: Shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window)
+    shimmer: Shimmer = rememberShimmer(shimmerBounds = ShimmerBounds.Window),
+    currency: Currency? = account?.currency,
 ) {
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        if (account != null) {
+        if (currency != null) {
             // Centered text field
             BasicTextField(
                 value = amount.value,
@@ -78,7 +80,7 @@ fun AccountAmountInput(
             }
             Spacer(modifier = Modifier.height(6.dp))
             Surface(shape = RoundedCornerShape(8.dp), tonalElevation = 1.dp, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text(text = account.currency.code, modifier = Modifier.padding(6.dp), style = MaterialTheme.typography.headlineSmall)
+                Text(text = currency.code, modifier = Modifier.padding(6.dp), style = MaterialTheme.typography.headlineSmall)
             }
         } else {
             Box(

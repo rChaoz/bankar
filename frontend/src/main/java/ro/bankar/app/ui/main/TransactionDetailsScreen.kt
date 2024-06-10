@@ -17,6 +17,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -24,20 +26,30 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Clock
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import ro.bankar.app.R
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.ui.components.CardCard
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.theme.AppTheme
-import ro.bankar.banking.Currency
 import ro.bankar.model.SCardTransaction
 import ro.bankar.util.format
 import ro.bankar.util.here
 
 @Composable
 fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCreateParty: (Double, Int) -> Unit) {
+    val repository = LocalRepository.current
+    val card = remember {
+        repository.account(data.accountID).map { acc -> acc.cards.first { it.id == data.cardID } }
+    }.collectAsState(null).value
+
     NavScreen(onDismiss, title = R.string.transaction) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 12.dp)) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Amount(amount = data.amount, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.headlineMedium)
@@ -65,25 +77,7 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCr
                         .fillMaxWidth()
                 ) {
                     Text(text = stringResource(R.string.paid_with), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Surface(
-                        onClick = {},
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = MaterialTheme.shapes.extraSmall
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(18.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_card_24),
-                                contentDescription = stringResource(R.string.card),
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Text(text = stringResource(R.string.card_last_4_template, data.cardLastFour), fontWeight = FontWeight.Bold)
-                        }
-                    }
+                    CardCard(card, onClick = { /* TODO */ }, modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
             }
             Surface(modifier = Modifier.padding(horizontal = 12.dp), tonalElevation = 1.dp, shape = MaterialTheme.shapes.small) {
@@ -114,11 +108,10 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCr
 @Composable
 private fun TransactionDetailsScreenPreview() {
     AppTheme {
+        val repository = LocalRepository.current
+        val data = remember { runBlocking { repository.account(1).first().cards[0].transactions[0] } }
         TransactionDetailsScreen(
-            onDismiss = {}, data = SCardTransaction(
-                21837129371927L, 1, 1, "4838", 25.67,
-                Currency.ROMANIAN_LEU, Clock.System.now(), "TacoBell", "taco bell lore"
-            ), onCreateParty = { _, _ -> }
+            onDismiss = {}, data = data, onCreateParty = { _, _ -> }
         )
     }
 }

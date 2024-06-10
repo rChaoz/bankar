@@ -74,7 +74,7 @@ import ro.bankar.model.SPublicUserBase
 fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit, onNavigateToTransfer: (SBankTransfer) -> Unit) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
-    val flow = remember { repository.partyData(partyID).also { it.requestEmit() } }
+    val flow = remember { repository.partyData(partyID) }
     val partyState = flow.collectAsState(null)
     val party = partyState.value // extract to variable to allow null checks
 

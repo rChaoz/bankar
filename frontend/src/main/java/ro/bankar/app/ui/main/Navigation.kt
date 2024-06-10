@@ -36,6 +36,7 @@ private const val selfTransferRoutePrefix = "selfTransfer"
 private const val newTransferRoutePrefix = "newTransfer"
 
 private const val bankAccountRoutePrefix = "bankAccount"
+private const val bankCardRoutePrefix = "bankCard"
 private const val createPartyRoutePrefix = "createParty"
 private const val viewPartyRoutePrefix = "viewParty"
 
@@ -54,7 +55,9 @@ enum class MainNav(val route: String) {
     Transfer("$transferRoutePrefix/{transfer}"), SelfTransfer("$selfTransferRoutePrefix/{transfer}"),
     NewTransfer("$newTransferRoutePrefix/{from}?to={to}"),
     // Accounts & recent activity
-    RecentActivity("recentActivity"), BankAccount("$bankAccountRoutePrefix/{account}"),
+    RecentActivity("recentActivity"),
+    BankAccount("$bankAccountRoutePrefix/{account}"),
+    BankCard("$bankCardRoutePrefix?account={account}&card={card}"),
     // Friends
     Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}"),
@@ -78,6 +81,10 @@ enum class MainNav(val route: String) {
             navArgument("from") { type = NavType.IntType },
             navArgument("to") { defaultValue = -1; type = NavType.IntType }
         )
+        val bankCardArguments = listOf(
+            navArgument("account") { type = NavType.IntType },
+            navArgument("card") { type = NavType.IntType },
+        )
 
         fun Friend(user: SPublicUserBase) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun Conversation(user: SPublicUserBase) = "$conversationRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
@@ -88,6 +95,7 @@ enum class MainNav(val route: String) {
         fun NewTransfer(from: SBankAccount, to: SBankAccount?) = "$newTransferRoutePrefix/${from.id}${if (to != null) "?to=${to.id}" else ""}"
         fun SelfTransfer(data: SBankTransfer) = "$selfTransferRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
         fun BankAccount(data: SBankAccount) = "$bankAccountRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
+        fun BankCard(account: Int, card: Int) = "$bankCardRoutePrefix?account=$account&card=$card"
         fun CreateParty(amount: Double, account: Int) = "$createPartyRoutePrefix?amount=$amount&account=$account"
         fun ViewParty(id: Int) = "$viewPartyRoutePrefix/$id"
     }
@@ -152,10 +160,20 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
             RecentActivityScreen(onDismiss = controller::popBackStack, navigation = controller)
         }
         composable(MainNav.BankAccount.route) {
+            val account = Json.decodeFromString<SBankAccount>(it.arguments!!.getString("account")!!)
             BankAccountScreen(
                 onDismiss = controller::popBackStack,
-                data = Json.decodeFromString(it.arguments!!.getString("account")!!),
-                navigation = controller
+                data = account,
+                navigation = controller,
+                onNavigateToCard = { cardID -> controller.navigate(MainNav.BankCard(account.id, cardID)) }
+            )
+        }
+        composable(MainNav.BankCard.route, arguments = MainNav.bankCardArguments) { entry ->
+            BankCardScreen(
+                onDismiss = controller::popBackStack,
+                navigation = controller,
+                accountID = entry.arguments!!.getInt("account"),
+                cardID = entry.arguments!!.getInt("card"),
             )
         }
         // Friends
