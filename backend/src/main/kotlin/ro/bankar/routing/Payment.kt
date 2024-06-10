@@ -1,21 +1,20 @@
 package ro.bankar.routing
 
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.encodeURLParameter
-import io.ktor.server.application.call
-import io.ktor.server.http.content.staticResources
-import io.ktor.server.request.receiveParameters
-import io.ktor.server.response.respond
-import io.ktor.server.response.respondRedirect
-import io.ktor.server.routing.Routing
-import io.ktor.server.routing.post
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.http.content.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import ro.bankar.banking.Currency
 import ro.bankar.database.BankCard
 import kotlin.random.Random
 
 fun Routing.configurePayment() {
-    staticResources("payment", "/payment")
+    staticResources("download", null, "BanKAR.apk") {
+        modify { _, call -> call.response.header(HttpHeaders.ContentDisposition, "attachment; filename=\"BanKAR.apk\"") }
+    }
     post("payment") {
         val data = call.receiveParameters()
         val cardNumber = data["cardNumber"]
