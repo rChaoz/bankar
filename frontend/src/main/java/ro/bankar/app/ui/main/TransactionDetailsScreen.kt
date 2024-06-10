@@ -40,7 +40,7 @@ import ro.bankar.util.format
 import ro.bankar.util.here
 
 @Composable
-fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCreateParty: (Double, Int) -> Unit) {
+fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCreateParty: (Double, Int) -> Unit, onNavigateToCard: (Int, Int) -> Unit) {
     val repository = LocalRepository.current
     val card = remember {
         repository.account(data.accountID).map { acc -> acc.cards.first { it.id == data.cardID } }
@@ -52,7 +52,7 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCr
             .padding(vertical = 12.dp)) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Amount(amount = data.amount, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.headlineMedium)
+                    Amount(amount = -data.amount, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.headlineMedium)
                     Text(
                         text = data.timestamp.here().format(true),
                         style = MaterialTheme.typography.titleSmall,
@@ -77,7 +77,7 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCr
                         .fillMaxWidth()
                 ) {
                     Text(text = stringResource(R.string.paid_with), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    CardCard(card, onClick = { /* TODO */ }, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    CardCard(card, onClick = { onNavigateToCard(data.accountID, data.cardID) }, modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
             }
             Surface(modifier = Modifier.padding(horizontal = 12.dp), tonalElevation = 1.dp, shape = MaterialTheme.shapes.small) {
@@ -111,7 +111,7 @@ private fun TransactionDetailsScreenPreview() {
         val repository = LocalRepository.current
         val data = remember { runBlocking { repository.account(1).first().cards[0].transactions[0] } }
         TransactionDetailsScreen(
-            onDismiss = {}, data = data, onCreateParty = { _, _ -> }
+            onDismiss = {}, data = data, onNavigateToCard = { _, _ -> }, onCreateParty = { _, _ -> }
         )
     }
 }

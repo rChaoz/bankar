@@ -5,13 +5,13 @@ import ro.bankar.banking.Currency
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-private val random = SecureRandom()
+val secureRandom = SecureRandom()
 private val chars = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
 /**
  * Generates 32 bytes (256 bits) of salt
  */
-fun generateSalt() = ByteArray(32).also { random.nextBytes(it) }
+fun generateSalt() = ByteArray(32).also { secureRandom.nextBytes(it) }
 
 /**
  * Calculates the SHA-256 of the String, using the given salt
@@ -24,9 +24,9 @@ fun String.sha256(salt: ByteArray): ByteArray = MessageDigest.getInstance("SHA-2
 /**
  * Generates a 32-character long alphanumeric secure random token
  */
-fun generateToken() = buildString(32) { repeat(32) { append(chars[random.nextInt(chars.size)]) } }
+fun generateToken() = buildString(32) { repeat(32) { append(chars[secureRandom.nextInt(chars.size)]) } }
 
-fun generateNumeric(numDigits: Int) = buildString(numDigits) { repeat(numDigits) { append(random.nextInt(10)) } }
+fun generateNumeric(numDigits: Int) = buildString(numDigits) { repeat(numDigits) { append(secureRandom.nextInt(10)) } }
 
 /**
  * Column to store currency amount. Equivalent to `decimal(name, 20, 2)`.

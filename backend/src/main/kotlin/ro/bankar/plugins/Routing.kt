@@ -25,5 +25,6 @@ fun Application.configureRouting() {
             }
             staticResources("data", "data")
         }
+        configurePayment()
     }
 }

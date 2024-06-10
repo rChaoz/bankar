@@ -127,7 +127,8 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
             TransactionDetailsScreen(
                 onDismiss = controller::popBackStack,
                 data = Json.decodeFromString(it.arguments!!.getString("transaction")!!),
-                onCreateParty = { amount, account -> controller.navigate(MainNav.CreateParty(amount, account)) }
+                onCreateParty = { amount, account -> controller.navigate(MainNav.CreateParty(amount, account)) },
+                onNavigateToCard = { accountID, cardID -> controller.navigate(MainNav.BankCard(accountID, cardID)) }
             )
         }
         composable(MainNav.Transfer.route) { entry ->

@@ -32,7 +32,7 @@ fun Application.module() {
     configureSockets()
     install(AutoHeadResponse)
     install(FreeMarker) {
-        templateLoader = ClassTemplateLoader(this::class.java.classLoader, "templates")
+        templateLoader = ClassTemplateLoader(this::class.java.classLoader, "payment")
     }
     if (!DEV_MODE) install(HSTS)
     configureRouting()
