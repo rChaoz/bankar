@@ -336,4 +336,5 @@
     <string name="change_limit">Schimbă limita</string>
     <string name="clear_limit">Șterge limita</string>
     <string name="no_recent_card_activity">Nu ai tranzacții efectuate cu acest card.</string>
+    <string name="reset_limit">Resetează limita</string>
 </resources>

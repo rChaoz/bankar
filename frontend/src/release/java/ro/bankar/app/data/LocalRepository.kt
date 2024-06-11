@@ -76,6 +76,7 @@ object EmptyRepository : Repository() {
     // Cards
     override suspend fun sendCreateCard(accountID: Int, name: String) = throw RuntimeException("EmptyRepository cannot be accessed")
     override suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double) = throw RuntimeException("EmptyRepository cannot be accessed")
+    override suspend fun sendResetCardLimit(accountID: Int, cardID: Int) = throw RuntimeException("EmptyRepository cannot be accessed")
     override fun card(accountID: Int, cardID: Int) = throw RuntimeException("EmptyRepository cannot be accessed")
 
     override fun logout() {}

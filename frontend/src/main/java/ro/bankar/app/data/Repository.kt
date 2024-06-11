@@ -233,6 +233,7 @@ abstract class Repository {
     // Cards
     abstract suspend fun sendCreateCard(accountID: Int, name: String): ResponseRequestResult<Int>
     abstract suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double): ResponseRequestResult<Unit>
+    abstract suspend fun sendResetCardLimit(accountID: Int, cardID: Int): ResponseRequestResult<Unit>
     abstract fun card(accountID: Int, cardID: Int): RequestFlow<SBankCard>
 
     abstract fun logout()
@@ -488,6 +489,10 @@ private class RepositoryImpl(
             setBody(SNewBankCard(name, limit))
             configureTimeout()
         }
+    }
+
+    override suspend fun sendResetCardLimit(accountID: Int, cardID: Int) = client.safeRequest<Unit> {
+        post("accounts/$accountID/$cardID/reset_limit") { configureTimeout() }
     }
 
     override fun card(accountID: Int, cardID: Int): RequestFlow<SBankCard> = createFlow("accounts/$accountID/$cardID")

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,33 +88,44 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
     val newLimit = mutableStateOf("")
     var showChangeLimitDialog by mutableStateOf(false)
 
-    var isLoading by mutableStateOf(false)
+    var isLoadingChangeLimit by mutableStateOf(false)
+    var isLoadingResetLimit by mutableStateOf(false)
 
     val snackbar = SnackbarHostState()
 
     fun onRename(context: Context) {
         newCardName.check(context)
         if (!newCardName.verified) return
-        isLoading = true
+        isLoadingChangeLimit = true
         viewModelScope.launch {
             repository.sendUpdateCard(accountID, cardID, newCardName.value, -1.0).handleSuccess(context) {
                 cardData.emitNow()
                 repository.account(accountID).requestEmit()
                 showRenameDialog = false
             }
-            isLoading = false
+            isLoadingChangeLimit = false
         }
     }
 
     fun onChangeLimit(context: Context, clear: Boolean) {
-        isLoading = true
+        isLoadingChangeLimit = true
         viewModelScope.launch {
             repository.sendUpdateCard(accountID, cardID, "", if (clear) 0.0 else newLimit.value.toDouble()).handleSuccess(context) {
                 cardData.emitNow()
                 repository.account(accountID).requestEmit()
                 showChangeLimitDialog = false
             }
-            isLoading = false
+            isLoadingChangeLimit = false
+        }
+    }
+
+    fun onResetLimit(context: Context) {
+        isLoadingResetLimit = true
+        viewModelScope.launch {
+            repository.sendResetCardLimit(accountID, cardID).handleSuccess(viewModelScope, snackbar, context) {
+                cardData.emitNow()
+            }
+            isLoadingResetLimit = false
         }
     }
 }
@@ -144,7 +156,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
         confirmButtonEnabled = model.newCardName.value.isNotEmpty(),
         confirmButtonText = R.string.rename,
         onConfirmButtonClick = { model.onRename(context) }) {
-        LoadingOverlay(model.isLoading) {
+        LoadingOverlay(model.isLoadingChangeLimit) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text = stringResource(R.string.rename_card), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 12.dp))
                 VerifiableField(
@@ -190,7 +202,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
             }
         }
     ) {
-        LoadingOverlay(model.isLoading) {
+        LoadingOverlay(model.isLoadingChangeLimit) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     text = stringResource(R.string.change_limit),
@@ -366,6 +378,13 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                                     Icon(imageVector = Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                                 }
                             }
+                        }
+                        FilledTonalButton(
+                            onClick = { model.onResetLimit(context) },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            enabled = !model.isLoadingResetLimit && data.limitCurrent != 0.0
+                        ) {
+                            Text(text = stringResource(R.string.reset_limit))
                         }
                     }
                 }

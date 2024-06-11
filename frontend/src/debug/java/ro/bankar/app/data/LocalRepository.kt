@@ -3,17 +3,51 @@ package ro.bankar.app.data
 import android.app.DownloadManager
 import android.net.Uri
 import androidx.compose.runtime.compositionLocalOf
-import io.ktor.client.plugins.websocket.*
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Month
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.minus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.todayIn
 import ro.bankar.app.R
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCountries
 import ro.bankar.banking.SCreditData
-import ro.bankar.model.*
+import ro.bankar.model.Response
+import ro.bankar.model.SBankAccount
+import ro.bankar.model.SBankAccountData
+import ro.bankar.model.SBankAccountType
+import ro.bankar.model.SBankCard
+import ro.bankar.model.SBankTransfer
+import ro.bankar.model.SCardTransaction
+import ro.bankar.model.SConversation
+import ro.bankar.model.SDefaultBankAccount
+import ro.bankar.model.SDirection
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
+import ro.bankar.model.SNewBankAccount
+import ro.bankar.model.SNewUser
+import ro.bankar.model.SPartyInformation
+import ro.bankar.model.SPartyMember
+import ro.bankar.model.SPartyPreview
+import ro.bankar.model.SPublicUser
+import ro.bankar.model.SPublicUserBase
+import ro.bankar.model.SRecentActivity
+import ro.bankar.model.SSocketNotification
+import ro.bankar.model.SStatement
+import ro.bankar.model.STransferRequest
+import ro.bankar.model.SUser
+import ro.bankar.model.SUserMessage
+import ro.bankar.model.SUserProfileUpdate
 import ro.bankar.util.todayHere
 import kotlin.time.Duration.Companion.minutes
 
@@ -290,6 +324,7 @@ private object MockRepository : Repository() {
 
     override suspend fun sendCreateCard(accountID: Int, name: String) = mockResponse<Int>()
     override suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double) = mockResponse<Unit>()
+    override suspend fun sendResetCardLimit(accountID: Int, cardID: Int) = mockResponse<Unit>()
     override fun card(accountID: Int, cardID: Int)= mockFlow(card)
 
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) = mockResponse<SStatement>()

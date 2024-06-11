@@ -1,8 +1,14 @@
 package ro.bankar.database
 
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -85,7 +91,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         // Check balance
         if (realAmount > bankAccount.spendable) return false
         // Check limit
-        if (limit != BigDecimal.ZERO && realAmount > remainingLimit) return false
+        if (limit.compareTo(BigDecimal.ZERO) != 0 && realAmount > remainingLimit) return false
         bankAccount.balance -= realAmount
         limitCurrent += realAmount
         CardTransaction.new {
