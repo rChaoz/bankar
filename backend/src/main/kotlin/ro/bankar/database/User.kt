@@ -314,8 +314,8 @@ internal object Users : IntIdTable(columnName = "user_id") {
     val alwaysUseDefaultAccount = bool("always_use_default_account").default(false)
     val notificationToken = varchar("notification_token", 200).nullable()
 
-    val passwordHash = binary("password_hash", 256)
-    val passwordSalt = binary("password_salt", 256)
+    val passwordHash = binary("password_hash", 32)
+    val passwordSalt = binary("password_salt", 32)
     val sessionToken = varchar("session_token", 32).nullable()
     val sessionTokenExpiration = datetime("session_token_exp").clientDefault { Clock.System.nowUTC() }
 

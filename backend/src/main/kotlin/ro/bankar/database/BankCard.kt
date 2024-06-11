@@ -68,6 +68,11 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     var limit by BankCards.limit
     var limitCurrent by BankCards.limitCurrent
 
+    /**
+     * Only makes sense if [limit] is non-zero.
+     */
+    val remainingLimit get() = limit - limitCurrent
+
     val transactions by CardTransaction referrersOn CardTransactions.card
 
     /**
@@ -77,8 +82,12 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
         val realAmount =
             if (currency != bankAccount.currency) EXCHANGE_DATA.reverseExchange(bankAccount.currency, currency, amount) ?: return false
             else amount
+        // Check balance
         if (realAmount > bankAccount.spendable) return false
+        // Check limit
+        if (limit != BigDecimal.ZERO && realAmount > remainingLimit) return false
         bankAccount.balance -= realAmount
+        limitCurrent += realAmount
         CardTransaction.new {
             reference = secureRandom.nextLong().let { if (it < 0L) -(it + 1) else it }
             card = this@BankCard
