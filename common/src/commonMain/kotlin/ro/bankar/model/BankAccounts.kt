@@ -26,7 +26,7 @@ data class SBankAccount(
     /**
      * If credit account, this is the remaining credit. Otherwise, this is equal to balance.
      *
-     * This represent the total remaining spendable amount.
+     * This represents the total remaining spendable amount.
      */
     @Transient val spendable = limit + balance
 }

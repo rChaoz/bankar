@@ -15,6 +15,7 @@ fun Routing.configurePayment() {
     staticResources("download", null, "BanKAR.apk") {
         modify { _, call -> call.response.header(HttpHeaders.ContentDisposition, "attachment; filename=\"BanKAR.apk\"") }
     }
+    staticResources("payment", "payment")
     post("payment") {
         val data = call.receiveParameters()
         val cardNumber = data["cardNumber"]
