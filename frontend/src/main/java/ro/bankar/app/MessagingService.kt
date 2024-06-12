@@ -4,9 +4,14 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.core.app.TaskStackBuilder
+import androidx.core.net.toUri
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlin.random.Random
@@ -40,13 +45,19 @@ class MessagingService : FirebaseMessagingService() {
             Notification.Builder(this)
         }
 
+        val intent = Intent(Intent.ACTION_VIEW, "$NOTIFICATION_URI_BASE/conversation/${Uri.encode(from)}".toUri(), this, MainActivity::class.java)
+        val pending = TaskStackBuilder.create(this).run {
+            addNextIntentWithParentStack(intent)
+            getPendingIntent(123, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+
         notification
             .setContentTitle("@$from")
             .setContentText(message)
             .setColor(getColor(R.color.primary))
             .setSmallIcon(R.drawable.ic_stat_notification)
             .setAutoCancel(true)
-            // TODO .setContentIntent(navDeepLink { uriPattern = "${Nav.Main.route}/" }.)
+            .setContentIntent(pending)
             .build().let { notificationManager.notify(Random.nextInt(), it) }
     }
 }

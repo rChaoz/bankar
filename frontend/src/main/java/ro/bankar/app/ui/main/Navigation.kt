@@ -1,15 +1,16 @@
 package ro.bankar.app.ui.main
 
 import android.net.Uri
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ro.bankar.app.NOTIFICATION_URI_BASE
 import ro.bankar.app.Nav
 import ro.bankar.app.ui.main.friend.ConversationScreen
 import ro.bankar.app.ui.main.friend.FriendProfileScreen
@@ -41,7 +42,7 @@ private const val createPartyRoutePrefix = "createParty"
 private const val viewPartyRoutePrefix = "viewParty"
 
 @Suppress("FunctionName")
-enum class MainNav(val route: String) {
+enum class MainNav(val route: String, val deepLinkUri: String = "") {
     // Home
     Friends("$mainTabRoutePrefix/${FriendsTab.name}"),
     Home("$mainTabRoutePrefix/${HomeTab.name}"),
@@ -59,7 +60,7 @@ enum class MainNav(val route: String) {
     BankAccount("$bankAccountRoutePrefix/{account}"),
     BankCard("$bankCardRoutePrefix?account={account}&card={card}"),
     // Friends
-    Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}"),
+    Friend("$friendRoutePrefix/{friend}"), Conversation("$conversationRoutePrefix/{friend}", "$NOTIFICATION_URI_BASE/conversation/{friend}"),
     SendMoney("$sendMoneyRoutePrefix/{friend}"), RequestMoney("$requestMoneyRoutePrefix/{friend}"),
     // Parties
     CreateParty("$createPartyRoutePrefix?amount={amount}&account={account}"), ViewParty("$viewPartyRoutePrefix/{id}");
@@ -87,7 +88,7 @@ enum class MainNav(val route: String) {
         )
 
         fun Friend(user: SPublicUserBase) = "$friendRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
-        fun Conversation(user: SPublicUserBase) = "$conversationRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
+        fun Conversation(tag: String) = "$conversationRoutePrefix/${Uri.encode(tag)}"
         fun SendMoney(user: SPublicUserBase) = "$sendMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun RequestMoney(user: SPublicUserBase) = "$requestMoneyRoutePrefix/${Uri.encode(Json.encodeToString(user))}"
         fun Transaction(data: SCardTransaction) = "$transactionRoutePrefix/${Uri.encode(Json.encodeToString(data))}"
@@ -101,7 +102,6 @@ enum class MainNav(val route: String) {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
     navigation(startDestination = MainNav.tabsRoute, route = MainNav.route) {
         // Main tabs
@@ -181,8 +181,8 @@ fun NavGraphBuilder.mainNavigation(controller: NavHostController) {
         composable(MainNav.Friend.route) {
             FriendProfileScreen(profile = Json.decodeFromString(it.arguments!!.getString("friend")!!), navigation = controller)
         }
-        composable(MainNav.Conversation.route) {
-            ConversationScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), navigation = controller)
+        composable(MainNav.Conversation.route, deepLinks = listOf(navDeepLink { uriPattern = MainNav.Conversation.deepLinkUri })) {
+            ConversationScreen(tag = it.arguments!!.getString("friend")!!, navigation = controller)
         }
         composable(MainNav.SendMoney.route) {
             SendMoneyScreen(user = Json.decodeFromString(it.arguments!!.getString("friend")!!), onDismiss = controller::popBackStack)

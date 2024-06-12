@@ -337,4 +337,7 @@
     <string name="clear_limit">Șterge limita</string>
     <string name="no_recent_card_activity">Nu ai tranzacții efectuate cu acest card.</string>
     <string name="reset_limit">Resetează limita</string>
+    <string name="notifications">Notificări</string>
+    <string name="notifications_rationale">Notificările push sunt folosite doar folosite pentru a te notifica de plăți sau de mesaje/cereri de prietenie nou.\nPoți oricand să alegi ce notificări vrei să primești din setări.</string>
+    <string name="allow">Permite</string>
 </resources>

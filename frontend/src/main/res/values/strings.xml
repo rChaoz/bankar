@@ -340,4 +340,7 @@
     <string name="clear_limit">Clear limit</string>
     <string name="no_recent_card_activity">You don\'t have any transactions with this card.</string>
     <string name="reset_limit">Reset limit</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_rationale">"Push notifications are only used to notify you of payments, or when you receive a message or friend request.\nYou can always customize which notifications you'd like to receive in settings. "</string>
+    <string name="allow">Allow</string>
 </resources>

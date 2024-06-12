@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -77,6 +76,8 @@ const val TAG = "BanKAR"
 data class ThemeMode(val isDarkMode: Boolean, val toggleThemeMode: () -> Unit)
 
 val LocalThemeMode = compositionLocalOf { ThemeMode(false) {} }
+
+const val NOTIFICATION_URI_BASE = "bankar://notification"
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -221,7 +222,6 @@ private fun Main(dataStore: DataStore<Preferences>, cache: DataStore<Cache>, lif
 }
 
 
-@OptIn(ExperimentalAnimationApi::class)
 private fun NavGraphBuilder.navigation(controller: NavHostController) {
     composable(Nav.Lock.route) {
         LockScreen(onUnlock = { controller.popBackStack() })

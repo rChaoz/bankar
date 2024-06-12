@@ -27,8 +27,10 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +55,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
@@ -65,13 +68,12 @@ import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
 import ro.bankar.app.data.RequestFlow
 import ro.bankar.app.data.RequestSuccess
+import ro.bankar.app.ui.components.LoadingOverlay
 import ro.bankar.app.ui.main.MainNav
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.model.SConversation
 import ro.bankar.model.SDirection
-import ro.bankar.model.SPublicUser
-import ro.bankar.model.SPublicUserBase
 import ro.bankar.model.SSendMessage
 import ro.bankar.model.SSocketNotification
 import ro.bankar.model.SuccessResponse
@@ -109,14 +111,15 @@ private val weekdayFormatter = DateTimeFormatter.ofPattern("EEEE")
 private val sameYearFormatter = DateTimeFormatter.ofPattern("dd MMM")
 
 @Composable
-fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
+fun ConversationScreen(tag: String, navigation: NavHostController) {
     val model = viewModel<ConversationScreenModel>()
     val repository = LocalRepository.current
     model.repository = repository
+    val user = remember { repository.friends.map { it.find { friend -> friend.tag == tag } } }.collectAsState(null).value
     LaunchedEffect(true) {
         // Get messages
         launch {
-            repository.conversation(user.tag).also {
+            repository.conversation(tag).also {
                 it.requestEmit()
                 model.conversationFlow = it
             }.collect {
@@ -133,12 +136,19 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
         }
         // When a new message is received, re-get messages
         launch {
-            repository.socketFlow.filter { it is SSocketNotification.SMessageNotification && it.fromTag == user.tag }.collect {
+            repository.socketFlow.filter { it is SSocketNotification.SMessageNotification && it.fromTag == tag }.collect {
                 model.conversationFlow.requestEmit()
             }
         }
         // Update unseen messages count on opening/closing any conversation
         model.repository.friends.requestEmit()
+    }
+
+    if (user == null) {
+        LoadingOverlay(true) {
+            Box(Modifier.fillMaxSize())
+        }
+        return
     }
 
     FriendScreen(onDismiss = { navigation.popBackStack() }, user, dropdownMenu = { expanded, onDismiss ->
@@ -311,12 +321,10 @@ private fun Path.rightMarkerMessageShape(size: Size, cornerSize: Float) {
 @Preview
 @Composable
 private fun ConversationScreenPreview() {
-    AppTheme(useDarkTheme = false) {
+    AppTheme {
         ConversationScreen(
-            user = SPublicUser(
-                "koleci", "Alexandru", "Paul", "Koleci",
-                "RO", Clock.System.todayHere(), "", null, true
-            ), navigation = rememberMockNavController()
+            tag = "koleci.alexandru",
+            navigation = rememberMockNavController()
         )
     }
 }

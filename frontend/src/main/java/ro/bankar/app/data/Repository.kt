@@ -601,6 +601,7 @@ private class RepositoryImpl(
      */
     override fun initNotifications() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener {
+            Log.d("BanKAR", "Sending firebase token to server: $it")
             scope.launch { client.safeRequest<Unit> { post("messaging/register") { setBody(SMessagingToken(it)) } } }
         }
     }

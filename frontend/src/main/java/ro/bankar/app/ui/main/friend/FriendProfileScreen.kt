@@ -86,7 +86,7 @@ fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth(.8f)) {
-                        LabeledIconButton(onClick = { navigation.navigate(MainNav.Conversation(profile)) }, text = R.string.send_message) {
+                        LabeledIconButton(onClick = { navigation.navigate(MainNav.Conversation(profile.tag)) }, text = R.string.send_message) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(28.dp))
                         }
                         LabeledIconButton(onClick = { navigation.navigate(MainNav.SendMoney(profile)) }, text = R.string.send_money) {

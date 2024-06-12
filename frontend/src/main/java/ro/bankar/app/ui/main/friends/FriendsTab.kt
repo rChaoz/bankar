@@ -1,7 +1,9 @@
 package ro.bankar.app.ui.main.friends
 
+import android.Manifest
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -72,8 +74,17 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.maxkeppeker.sheets.core.models.base.Header
+import com.maxkeppeker.sheets.core.models.base.SelectionButton
+import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
+import com.maxkeppeler.sheets.info.InfoDialog
+import com.maxkeppeler.sheets.info.models.InfoBody
+import com.maxkeppeler.sheets.info.models.InfoSelection
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.coroutineScope
@@ -143,6 +154,9 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         var isRefreshing by mutableStateOf(false)
             private set
 
+        // Whether it has asked for notifications permission already
+        var hasAskedNotificationsPermission by mutableStateOf(false)
+
         fun refresh() = viewModelScope.launch {
             isRefreshing = true
             coroutineScope {
@@ -208,19 +222,48 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     @Composable
     override fun viewModel() = viewModel<Model>()
 
+    @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
     @Composable
     override fun Content(model: Model, navigation: NavHostController) {
-        model.snackbar = LocalSnackbar.current
-        // Load data
         val repository = LocalRepository.current
         model.repository = repository
+        model.snackbar = LocalSnackbar.current
+
+        // Ask for notifications permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val notificationPermission =  rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+
+            val permissionsRationaleDialog = rememberUseCaseState()
+            InfoDialog(
+                permissionsRationaleDialog,
+                header = Header.Default(stringResource(R.string.notifications)),
+                body = InfoBody.Default(stringResource(R.string.notifications_rationale)),
+                selection = InfoSelection(
+                    positiveButton = SelectionButton(R.string.allow),
+                    onPositiveClick = { notificationPermission.launchPermissionRequest() }
+                )
+            )
+
+            if (!model.hasAskedNotificationsPermission) LaunchedEffect(true) {
+                model.hasAskedNotificationsPermission = true
+                when (val status = notificationPermission.status) {
+                    is PermissionStatus.Denied -> {
+                        if (status.shouldShowRationale) permissionsRationaleDialog.show()
+                        else notificationPermission.launchPermissionRequest()
+                    }
+                    PermissionStatus.Granted -> {}
+                }
+            }
+        }
+
+        // Load data
         LaunchedEffect(true) {
             launch { repository.friends.collect { model.friends = it } }
             launch { repository.friendRequests.collect { model.friendRequests = it } }
             launch { repository.countryData.collect { model.countryData = it } }
         }
 
-        model.onNavigateToConversation = { friend -> navigation.navigate(MainNav.Conversation(friend)) }
+        model.onNavigateToConversation = { friend -> navigation.navigate(MainNav.Conversation(friend.tag)) }
         model.onNavigateToFriend = { friend -> navigation.navigate(MainNav.Friend(friend)) }
         model.onCreateParty = { navigation.navigate(MainNav.CreateParty.route) }
 

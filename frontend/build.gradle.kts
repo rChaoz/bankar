@@ -93,6 +93,7 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.accompanist.swipe.refresh)
+    implementation(libs.accompanist.permissions)
     implementation(libs.io.ktor.client)
     implementation(libs.io.ktor.client.okhttp)
     implementation(libs.io.ktor.content.negotiation)

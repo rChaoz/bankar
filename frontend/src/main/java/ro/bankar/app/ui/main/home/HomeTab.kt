@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,6 +77,7 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
             launch { repository.accounts.collect { model.accounts = it } }
             launch { repository.recentActivity.collect { model.recentActivity = it } }
         }
+        val exchangeData = repository.exchangeData.collectAsState(null).value
 
         // Hide FAB when scrolling down
         val scrollState = rememberScrollState()
@@ -113,7 +115,8 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
                     if (model.accounts!!.isEmpty()) InfoCard(text = R.string.no_bank_accounts, onClick = {
                         navigation.navigate(MainNav.NewBankAccount.route)
                     })
-                    Assets(model.accounts!!)
+                    if (exchangeData == null) AssetsShimmer(shimmer)
+                    else Assets(model.accounts!!, exchangeData)
                 }
             }
         }
