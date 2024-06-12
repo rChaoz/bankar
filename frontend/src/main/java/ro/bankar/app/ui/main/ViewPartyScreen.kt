@@ -47,7 +47,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -74,7 +73,7 @@ import ro.bankar.model.SPublicUserBase
 fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SPublicUserBase) -> Unit, onNavigateToTransfer: (SBankTransfer) -> Unit) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
-    val flow = remember { repository.partyData(partyID) }
+    val flow = remember { repository.partyData(partyID).also { it.requestEmit() } }
     val partyState = flow.collectAsState(null)
     val party = partyState.value // extract to variable to allow null checks
 
@@ -87,7 +86,7 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
 
     // Update party screen when recent activity changes
     LaunchedEffect(true) {
-        repository.recentActivity.collect { flow.emitNow() }
+        repository.recentActivity.collect { flow.requestEmitNow() }
     }
 
     // Accept invite dialog
@@ -125,7 +124,6 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                             scope.launch {
                                 isLoading = true
                                 repository.sendCancelParty(partyID).handleSuccess(this, snackbar, context) {
-                                    repository.recentActivity.emitNow()
                                     onDismiss()
                                 }
                                 isLoading = false
@@ -141,10 +139,7 @@ fun ViewPartyScreen(onDismiss: () -> Unit, partyID: Int, onNavigateToFriend: (SP
                             scope.launch {
                                 repository.sendRespondToTransferRequest(party.requestID!!, false, null)
                                     .handleSuccess(this, snackbar, context) {
-                                        coroutineScope {
-                                            launch { flow.emitNow() }
-                                            launch { repository.recentActivity.emitNow() }
-                                        }
+                                        flow.requestEmitNow()
                                     }
                                 isLoading = false
                             }

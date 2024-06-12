@@ -99,8 +99,6 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
         isLoadingChangeLimit = true
         viewModelScope.launch {
             repository.sendUpdateCard(accountID, cardID, newCardName.value, -1.0).handleSuccess(context) {
-                cardData.emitNow()
-                repository.account(accountID).requestEmit()
                 showRenameDialog = false
             }
             isLoadingChangeLimit = false
@@ -111,8 +109,6 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
         isLoadingChangeLimit = true
         viewModelScope.launch {
             repository.sendUpdateCard(accountID, cardID, "", if (clear) 0.0 else newLimit.value.toDouble()).handleSuccess(context) {
-                cardData.emitNow()
-                repository.account(accountID).requestEmit()
                 showChangeLimitDialog = false
             }
             isLoadingChangeLimit = false
@@ -122,9 +118,7 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
     fun onResetLimit(context: Context) {
         isLoadingResetLimit = true
         viewModelScope.launch {
-            repository.sendResetCardLimit(accountID, cardID).handleSuccess(viewModelScope, snackbar, context) {
-                cardData.emitNow()
-            }
+            repository.sendResetCardLimit(accountID, cardID).handleSuccess(viewModelScope, snackbar, context) {}
             isLoadingResetLimit = false
         }
     }

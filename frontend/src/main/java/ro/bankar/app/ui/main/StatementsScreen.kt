@@ -75,7 +75,7 @@ import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
-import ro.bankar.app.data.handle
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.HideFABOnScroll
 import ro.bankar.app.ui.components.AccountsComboBox
 import ro.bankar.app.ui.components.BottomDialog
@@ -132,10 +132,8 @@ fun StatementsScreen(onDismiss: () -> Unit) {
             if (!name.verified) return@BottomDialog
             isLoading = true
             scope.launch {
-                repository.sendStatementRequest(name.value.trim().ifEmpty { null }, account.value!!.id, startDate, endDate).handle(context) {
-                    repository.statements.emitNow()
+                repository.sendStatementRequest(name.value.trim().ifEmpty { null }, account.value!!.id, startDate, endDate).handleSuccess(context) {
                     showCreateDialog = false
-                    null
                 }
                 isLoading = false
             }
@@ -206,8 +204,8 @@ fun StatementsScreen(onDismiss: () -> Unit) {
             isRefreshing = true
             scope.launch {
                 coroutineScope {
-                    launch { repository.statements.emitNow() }
-                    launch { repository.accounts.emitNow() }
+                    launch { repository.statements.requestEmitNow() }
+                    launch { repository.accounts.requestEmitNow() }
                 }
                 isRefreshing = false
             }

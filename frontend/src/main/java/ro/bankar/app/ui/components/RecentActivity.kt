@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.valentinilk.shimmer.Shimmer
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -269,10 +268,7 @@ fun ReceivedTransferRequestDialog(
                             isLoading = true
                             // Use toasts instead of snackbar because snackbar isn't visible over dialog
                             repository.sendRespondToTransferRequest(requestID, false, null).handleSuccess(context) {
-                                coroutineScope {
-                                    launch { repository.recentActivity.emitNow() }
-                                    if (refreshOnAccept != null) launch { refreshOnAccept.emitNow() }
-                                }
+                                refreshOnAccept?.requestEmitNow()
                                 onDismiss()
                             }
                             isLoading = false
@@ -290,11 +286,7 @@ fun ReceivedTransferRequestDialog(
                             isLoading = true
                             // Use toasts instead of snackbar because snackbar isn't visible over dialog
                             repository.sendRespondToTransferRequest(requestID, true, account.id).handleSuccess(context) {
-                                coroutineScope {
-                                    launch { repository.accounts.emitNow() }
-                                    launch { repository.recentActivity.emitNow() }
-                                    if (refreshOnAccept != null) launch { refreshOnAccept.emitNow() }
-                                }
+                                refreshOnAccept?.requestEmitNow()
                                 onDismiss()
                             }
                             isLoading = false

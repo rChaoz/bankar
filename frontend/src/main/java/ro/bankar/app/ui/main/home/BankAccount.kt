@@ -208,7 +208,6 @@ fun BankAccount(
                             when (it) {
                                 SuccessResponse -> {
                                     showCloseAccountDialog = false
-                                    repository.accounts.emitNow()
                                     null
                                 }
                                 is ErrorResponse -> when (it.message) {
@@ -280,7 +279,6 @@ fun BankAccount(
                         isCustomiseLoading = true
                         scope.launch {
                             repository.sendCustomiseAccount(data.id, name.value.trim(), color.intValue).handleSuccess(context) {
-                                repository.accounts.emitNow()
                                 showCustomiseSheet = false
                             }
                             isCustomiseLoading = false

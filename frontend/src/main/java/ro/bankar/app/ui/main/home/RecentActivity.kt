@@ -50,7 +50,6 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
@@ -214,12 +213,7 @@ private fun SentTransferRequest(id: Int, fromName: String, amount: Double, curre
                     onClick = {
                         isLoading = true
                         scope.launch {
-                            repository.sendCancelTransferRequest(id).handleSuccess(this, snackbar, context) {
-                                coroutineScope {
-                                    repository.accounts.requestEmit()
-                                    repository.recentActivity.emitNow()
-                                }
-                            }
+                            repository.sendCancelTransferRequest(id).handleSuccess(this, snackbar, context) {}
                             isLoading = false
                         }
                     },
@@ -293,9 +287,7 @@ private fun ReceivedTransferRequest(
         else AcceptDeclineButtons(onAccept = { if (model.accounts.value.isEmpty()) model.noAccountsDialogState.show() else dialogVisible = true }, onDecline = {
             scope.launch {
                 isDeclining = true
-                model.repository.sendRespondToTransferRequest(request.id, false, null).handleSuccess(this, snackbar, context) {
-                    model.repository.recentActivity.emitNow()
-                }
+                model.repository.sendRespondToTransferRequest(request.id, false, null).handleSuccess(this, snackbar, context) {}
                 isDeclining = false
             }
         })

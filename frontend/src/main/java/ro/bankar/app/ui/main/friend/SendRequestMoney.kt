@@ -85,8 +85,6 @@ class SendRequestMoneyModel : ViewModel() {
                     else if (!requesting) R.string.money_sent_request
                     else R.string.request_sent
                 resultState.show()
-                repository.accounts.requestEmit()
-                repository.recentActivity.requestEmit()
             }
             isLoading = false
         }

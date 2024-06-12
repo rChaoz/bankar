@@ -563,9 +563,7 @@ private fun DefaultBankAccountScreen() = Surface {
                     noneOptionText = R.string.do_not_use_default_account, onPickAccount = {
                         isLoading = true
                         scope.launch {
-                            repository.sendDefaultAccount(it?.id, state!!.alwaysUse).handleSuccess(this, snackbar, context) {
-                                repository.defaultAccount.emitNow()
-                            }
+                            repository.sendDefaultAccount(it?.id, state!!.alwaysUse).handleSuccess(this, snackbar, context) {}
                             isLoading = false
                         }
                     })
@@ -579,9 +577,7 @@ private fun DefaultBankAccountScreen() = Surface {
                 onCheckedChange = {
                     isLoading = true
                     scope.launch {
-                        repository.sendDefaultAccount(state!!.id, it).handleSuccess(this, snackbar, context) {
-                            repository.defaultAccount.emitNow()
-                        }
+                        repository.sendDefaultAccount(state!!.id, it).handleSuccess(this, snackbar, context) {}
                         isLoading = false
                     }
                 }

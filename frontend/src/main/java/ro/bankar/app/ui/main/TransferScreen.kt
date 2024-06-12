@@ -103,8 +103,6 @@ class TransferViewModel(private val onDismiss: () -> Unit, private val targetAcc
                     response == SuccessResponse -> {
                         result = true
                         resultState.show()
-                        repository.accounts.requestEmit()
-                        repository.recentActivity.requestEmit()
                         null
                     }
                     response is NotFoundResponse && targetAccountID == null -> {

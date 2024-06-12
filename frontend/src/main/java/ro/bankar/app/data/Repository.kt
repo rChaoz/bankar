@@ -34,7 +34,10 @@ import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -87,43 +90,61 @@ import kotlin.time.Duration.Companion.seconds
  * A Shared flow with the option to request emitting
  */
 interface RequestFlow<T> : SharedFlow<T> {
+    /**
+     * Request for a new value to be emitted, without waiting for it.
+     */
     fun requestEmit()
 
-    suspend fun emitNow(): T
-}
-
-
-abstract class AbstractRequestFlow<T> protected constructor(
-    private val scope: CoroutineScope,
-    private val flow: MutableSharedFlow<T> = MutableSharedFlow(replay = 1)
-) : RequestFlow<T>, SharedFlow<T> by flow.asSharedFlow() {
-    override fun requestEmit() {
-        scope.launch { emitNow() }
-    }
-
-    override suspend fun emitNow(): T {
-        var timer = 1
-        var result = emit()
-        while (result == null) {
-            if (timer < 10) ++timer
-            delay(timer.seconds)
-            result = emit()
-        }
-        flow.emit(result)
-        return result
-    }
-
-    protected abstract suspend fun emit(): T?
+    /**
+     * Request and wait for a new value to be emitted.
+     * Cancellation of the caller will not cancel the emission of the new value.
+     */
+    suspend fun requestEmitNow(): T
 }
 
 /**
- * A request flow cached locally
+ * Implementation of [RequestFlow] using a coroutine scope to asynchronously.
  */
-abstract class CachedRequestFlow<T> protected constructor(
+abstract class SharedRequestFlow<T> protected constructor(
+    private val scope: CoroutineScope,
+    private val flow: MutableSharedFlow<T> = MutableSharedFlow(replay = 1)
+) : RequestFlow<T>, SharedFlow<T> by flow {
+
+    override fun requestEmit() {
+        @Suppress("DeferredResultUnused")
+        doEmit()
+    }
+
+    override suspend fun requestEmitNow() = doEmit().await()
+
+    private fun doEmit(): Deferred<T> = scope.async {
+        var timer = 1
+        var result = produceValue()
+        while (result == null) {
+            if (timer < 10) ++timer
+            delay(timer.seconds)
+            result = produceValue()
+        }
+        flow.emit(result)
+        result
+    }
+
+    /**
+     * Function that produces values.
+     * Returning null means a value cannot be produced right now, causing a retry attempt later.
+     */
+    protected abstract suspend fun produceValue(): T?
+}
+
+/**
+ * A request flow cached locally using a [DataStore].
+ */
+@Suppress("MemberVisibilityCanBePrivate")
+abstract class CachedRequestFlow<T, C> protected constructor(
     protected val scope: CoroutineScope,
-    protected val cache: DataStore<Cache>,
-    protected val mapFunc: (Cache) -> T?,
-    protected val updateFunc: Cache.(T) -> Cache
+    protected val cache: DataStore<C>,
+    protected val mapFunc: (C) -> T?,
+    protected val updateFunc: C.(T) -> C
 ) : RequestFlow<T>, SharedFlow<T> by (MutableSharedFlow<T>(replay = 1).apply {
     scope.launch(Dispatchers.IO) {
         cache.data.map(mapFunc).collect {
@@ -133,44 +154,27 @@ abstract class CachedRequestFlow<T> protected constructor(
     }
 }).asSharedFlow() {
     override fun requestEmit() {
-        scope.launch { emitNow() }
+        @Suppress("DeferredResultUnused")
+        doEmit()
     }
 
-    override suspend fun emitNow(): T {
+    override suspend fun requestEmitNow() = doEmit().await()
+
+    private fun doEmit(): Deferred<T> = scope.async {
         var timer = 1
-        var result = emit()
+        var result = produceValue()
         while (result == null) {
             if (timer < 10) ++timer
             delay(timer.seconds)
-            result = emit()
+            result = produceValue()
         }
         withContext(Dispatchers.IO) {
             cache.updateData { it.updateFunc(result) }
         }
-        return result
+        result
     }
 
-    protected abstract suspend fun emit(): T?
-}
-
-abstract class UpdateRequestFlow<T> protected constructor(
-    scope: CoroutineScope,
-    cache: DataStore<Cache>,
-    mapFunc: (Cache) -> T?,
-    updateFunc: Cache.(T) -> Cache
-) : CachedRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
-    fun sendUpdate(update: suspend T?.() -> T) = scope.launch { updateNow(update) }
-    suspend fun updateNow(update: suspend T.() -> T) = withContext(Dispatchers.IO) {
-        var shouldEmit = false
-        cache.updateData {
-            val old = mapFunc(it)
-            if (old == null) {
-                shouldEmit = true
-                it
-            } else it.updateFunc(update(old))
-        }
-        if (shouldEmit) emitNow()
-    }
+    protected abstract suspend fun produceValue(): T?
 }
 
 // LocalRepository defined in debug/release source sets
@@ -192,7 +196,7 @@ abstract class Repository {
     // User profile & friends
     abstract val profile: RequestFlow<SUser>
     abstract suspend fun sendAboutOrPicture(data: SUserProfileUpdate): ResponseRequestResult<Unit>
-    abstract suspend fun sendUpdate(data: SNewUser): ResponseRequestResult<Unit>
+    abstract suspend fun sendProfileUpdate(data: SNewUser): ResponseRequestResult<Unit>
     abstract suspend fun sendAddFriend(id: String): ResponseRequestResult<Unit>
     abstract suspend fun sendRemoveFriend(tag: String): ResponseRequestResult<Unit>
     abstract val friends: RequestFlow<List<SFriend>>
@@ -289,7 +293,7 @@ private class RepositoryImpl(
                                 friends.requestEmit()
                                 friendRequests.requestEmit()
                             }
-                            SSocketNotification.SRecentActivityNotification -> recentActivity.emitNow()
+                            SSocketNotification.SRecentActivityNotification -> recentActivity.requestEmitNow()
                             is SSocketNotification.SMessageNotification -> {
                                 friends.requestEmit()
                                 socketMutableFlow.emit(data)
@@ -305,6 +309,8 @@ private class RepositoryImpl(
         }
     }
 
+    private val namedFlows = mutableMapOf<Pair<String, String>, RequestFlow<*>>()
+
     // Static data & password check
     override val countryData = createFlow<SCountries>("data/countries.json", raw = true)
     override val exchangeData = createFlow<SExchangeData>("data/exchange.json", raw = true)
@@ -317,62 +323,53 @@ private class RepositoryImpl(
     }
 
     // User profile & friends
-    override val profile = createUpdateFlow<SUser>("profile", { it.profile }, { copy(profile = it) })
+    override val profile = createCachedFlow<SUser>("profile", { it.profile }, { copy(profile = it) })
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = client.safeRequest<Unit> {
         put("profile/update") {
             setBody(data)
             configureTimeout()
         }
-    }.onSuccess { profile.updateNow { copy(about = data.about ?: about, avatar = data.avatar ?: avatar) } }
+    }.onSuccess { profile.requestEmitNow() }
 
-    override suspend fun sendUpdate(data: SNewUser) = client.safeRequest<Unit> {
+    override suspend fun sendProfileUpdate(data: SNewUser) = client.safeRequest<Unit> {
         put("updateAccount") {
             setBody(data)
             configureTimeout()
         }
-    }.onSuccess {
-        profile.updateNow {
-            copy(
-                data.email,
-                data.tag,
-                data.phone,
-                data.firstName,
-                data.middleName,
-                data.lastName,
-                data.dateOfBirth,
-                data.countryCode,
-                data.state,
-                data.city,
-                data.address
-            )
-        }
-    }
+    }.onSuccess { profile.requestEmitNow() }
 
     override suspend fun sendAddFriend(id: String) = client.safeRequest<Unit> {
         get("profile/friends/add/$id") { configureTimeout() }
-    }
+    }.onSuccess { friendRequests.requestEmitNow() }
 
     override suspend fun sendRemoveFriend(tag: String) = client.safeRequest<Unit> {
         get("profile/friends/remove/$tag") { configureTimeout() }
-    }
+    }.onSuccess { friends.requestEmitNow() }
 
-    override val friends = createFlow<List<SFriend>>("profile/friends")
+    override val friends = createCachedFlow<List<SFriend>>("profile/friends", { it.friends }, { copy(friends = it) })
     override val friendRequests = createFlow<List<SFriendRequest>>("profile/friend_requests")
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = client.safeRequest<Unit> {
         get("profile/friend_requests/${if (accept) "accept" else "decline"}/$tag") { configureTimeout() }
-    }
+    }.onSuccess { friendRequests.requestEmitNow(); if (accept) friends.requestEmitNow() }
 
     override suspend fun sendCancelFriendRequest(tag: String) = client.safeRequest<Unit> {
         get("profile/friend_requests/cancel/$tag") { configureTimeout() }
-    }
+    }.onSuccess { friendRequests.requestEmitNow() }
 
-    override fun conversation(tag: String) = createFlow<SConversation>("messaging/conversation/$tag")
+    override fun conversation(tag: String) = getNamedCachedFlow<SConversation>(
+        "conversation",
+        tag,
+        "messaging/conversation/$tag",
+        { it.conversations[tag] },
+        { copy(conversations = conversations + (tag to it)) }
+    )
+
     override suspend fun sendFriendMessage(recipientTag: String, message: String) = client.safeRequest<Unit> {
         post("messaging/send") {
             setBody(SSendMessage(message, recipientTag))
             configureTimeout()
         }
-    }
+    }.onSuccess { conversation(recipientTag).requestEmit() }
 
     // Parties
     override suspend fun sendCreateParty(account: Int, note: String, amounts: List<Pair<String, Double>>) = client.safeRequest<Unit> {
@@ -380,16 +377,18 @@ private class RepositoryImpl(
             setBody(SCreateParty(account, note, amounts))
             configureTimeout()
         }
-    }
+    }.onSuccess { recentActivity.requestEmitNow() }
 
-    override fun partyData(id: Int) = createFlow<SPartyInformation>("party/$id")
-    override suspend fun sendCancelParty(id: Int) = client.safeRequest<Unit> { get("party/cancel/$id") }
+    override fun partyData(id: Int) = getNamedFlow<SPartyInformation>("party", id.toString(), "party/$id")
+    override suspend fun sendCancelParty(id: Int) = client.safeRequest<Unit> {
+        get("party/cancel/$id")
+    }.onSuccess { recentActivity.requestEmitNow() }
 
 
     // Recent activity
     override val recentActivity = createFlow<SRecentActivity>("recentActivity/short")
     override val allRecentActivity = createFlow<SRecentActivity>("recentActivity/long")
-    override fun recentActivityWith(tag: String) = createFlow<List<SBankTransfer>>("transfer/list/$tag")
+    override fun recentActivityWith(tag: String) = getNamedFlow<List<SBankTransfer>>("recentActivity", tag, "transfer/list/$tag")
 
     // Bank accounts
     override val defaultAccount = createFlow<SDefaultBankAccount>("defaultAccount")
@@ -399,32 +398,37 @@ private class RepositoryImpl(
                 setBody(SDefaultBankAccount(id, alwaysUse))
                 configureTimeout()
             }
-        }
+        }.onSuccess { defaultAccount.requestEmitNow() }
 
     override val accounts = createFlow<List<SBankAccount>>("accounts")
-    override fun account(id: Int) = createFlow<SBankAccountData>("accounts/$id")
+    override fun account(id: Int) = getNamedFlow<SBankAccountData>("account", id.toString(), "accounts/$id")
     override suspend fun sendCreateAccount(account: SNewBankAccount) = client.safeRequest<Unit> {
         post("accounts/new") {
             setBody(account)
             configureTimeout()
         }
-    }
+    }.onSuccess { accounts.requestEmitNow() }
 
     override suspend fun sendCloseAccount(account: SBankAccount) = client.safeRequest<Unit> {
         delete("accounts/${account.id}") { configureTimeout() }
-    }
+    }.onSuccess { accounts.requestEmitNow() }
 
     override suspend fun sendCustomiseAccount(id: Int, name: String, color: Int) = client.safeRequest<Unit> {
         post("accounts/$id/customise") {
             setBody(SCustomiseBankAccount(name, color))
             configureTimeout()
         }
-    }
+    }.onSuccess { accounts.requestEmitNow() }
 
     override suspend fun sendTransfer(recipientTag: String, sourceAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<String> {
         post("transfer/send") {
             setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
             configureTimeout()
+        }
+    }.onSuccess {
+        coroutineScope {
+            launch { recentActivity.requestEmitNow() }
+            launch { accounts.requestEmitNow() }
         }
     }
 
@@ -433,12 +437,17 @@ private class RepositoryImpl(
             setBody(SSendRequestMoney(recipientTag, sourceAccount.id, amount, sourceAccount.currency, note))
             configureTimeout()
         }
-    }
+    }.onSuccess { recentActivity.requestEmitNow() }
 
     override suspend fun sendOwnTransfer(sourceAccount: SBankAccount, targetAccount: SBankAccount, amount: Double, note: String) = client.safeRequest<Unit> {
         post("transfer/own") {
             setBody(SOwnTransfer(sourceAccount.id, targetAccount.id, amount, sourceAccount.currency != targetAccount.currency, note))
             configureTimeout()
+        }
+    }.onSuccess {
+        coroutineScope {
+            launch { recentActivity.requestEmit() }
+            launch { accounts.requestEmit() }
         }
     }
 
@@ -447,10 +456,20 @@ private class RepositoryImpl(
             setBody(SExternalTransfer(sourceAccount.id, targetIBAN, amount, note))
             configureTimeout()
         }
+    }.onSuccess {
+        coroutineScope {
+            launch { recentActivity.requestEmit() }
+            launch { accounts.requestEmit() }
+        }
     }
 
     override suspend fun sendCancelTransferRequest(id: Int) = client.safeRequest<Unit> {
         get("transfer/cancel/$id") { configureTimeout() }
+    }.onSuccess {
+        coroutineScope {
+            launch { recentActivity.requestEmitNow() }
+            launch { accounts.requestEmitNow() }
+        }
     }
 
     override suspend fun sendRespondToTransferRequest(id: Int, accept: Boolean, sourceAccountID: Int?) = client.safeRequest<Unit> {
@@ -458,6 +477,12 @@ private class RepositoryImpl(
             parameter("action", if (accept) "accept" else "decline")
             parameter("accountID", sourceAccountID)
             configureTimeout()
+        }
+    }.onSuccess {
+        coroutineScope {
+            launch { recentActivity.requestEmitNow() }
+            if (accept) launch { accounts.requestEmitNow() }
+            if (sourceAccountID != null) launch { account(sourceAccountID).requestEmitNow() }
         }
     }
 
@@ -467,7 +492,7 @@ private class RepositoryImpl(
             setBody(SStatementRequest(name, accountID, from, to, TimeZone.currentSystemDefault()))
             configureTimeout()
         }
-    }
+    }.onSuccess { statements.requestEmitNow() }
 
     override fun createDownloadStatementRequest(statement: SStatement) = DownloadManager.Request(statement.downloadURI).apply {
         val name = "Statement-${statement.timestamp.here().dashFormat()}.pdf"
@@ -482,20 +507,30 @@ private class RepositoryImpl(
             setBody(SNewBankCard(name, 0.0))
             configureTimeout()
         }
-    }
+    }.onSuccess { account(accountID).requestEmitNow() }
 
     override suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double) = client.safeRequest<Unit> {
         post("accounts/$accountID/$cardID") {
             setBody(SNewBankCard(name, limit))
             configureTimeout()
         }
+    }.onSuccess {
+        coroutineScope {
+            launch { account(accountID).requestEmitNow() }
+            launch { card(accountID, cardID).requestEmitNow() }
+        }
     }
 
     override suspend fun sendResetCardLimit(accountID: Int, cardID: Int) = client.safeRequest<Unit> {
         post("accounts/$accountID/$cardID/reset_limit") { configureTimeout() }
+    }.onSuccess {
+        coroutineScope {
+            launch { account(accountID).requestEmitNow() }
+            launch { card(accountID, cardID).requestEmitNow() }
+        }
     }
 
-    override fun card(accountID: Int, cardID: Int): RequestFlow<SBankCard> = createFlow("accounts/$accountID/$cardID")
+    override fun card(accountID: Int, cardID: Int) = getNamedFlow<SBankCard>("card", "$accountID:$cardID", "accounts/$accountID/$cardID")
 
     // Request utility
     private fun HttpRequestBuilder.configureTimeout() {
@@ -528,24 +563,33 @@ private class RepositoryImpl(
         null
     }
 
-    private inline fun <reified T> createFlow(url: String, raw: Boolean = false) = object : AbstractRequestFlow<T>(scope) {
-        override suspend fun emit(): T? = getRequest(url, raw)
+    private inline fun <reified T> createFlow(url: String, raw: Boolean = false) = object : SharedRequestFlow<T>(scope) {
+        override suspend fun produceValue(): T? = getRequest(url, raw)
     }.also { it.requestEmit() }
+
+    @Suppress("UNCHECKED_CAST")
+    private inline fun <reified T> getNamedFlow(type: String, name: String, url: String) = namedFlows.getOrPut(type to name) {
+        createFlow<T>(url)
+    } as RequestFlow<T>
 
     private inline fun <reified T> createCachedFlow(
         url: String,
         noinline mapFunc: (Cache) -> T?,
         noinline updateFunc: Cache.(T) -> Cache,
-        raw: Boolean = false
-    ) = object : CachedRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
-        override suspend fun emit(): T? = getRequest(url, raw)
-    }
+    ) = object : CachedRequestFlow<T, Cache>(scope, cache, mapFunc, updateFunc) {
+        override suspend fun produceValue(): T? = getRequest(url, false)
+    }.also { it.requestEmit() }
 
-    private inline fun <reified T> createUpdateFlow(url: String, noinline mapFunc: (Cache) -> T?, noinline updateFunc: Cache.(T) -> Cache) =
-        object : UpdateRequestFlow<T>(scope, cache, mapFunc, updateFunc) {
-            override suspend fun emit(): T? = getRequest(url, false)
-        }.also { it.requestEmit() }
-
+    @Suppress("UNCHECKED_CAST")
+    private inline fun <reified T> getNamedCachedFlow(
+        type: String,
+        name: String,
+        url: String,
+        noinline mapFunc: (Cache) -> T?,
+        noinline updateFunc: Cache.(T) -> Cache,
+    ) = namedFlows.getOrPut(type to name) {
+        createCachedFlow<T>(url, mapFunc, updateFunc)
+    } as RequestFlow<T>
 
     override fun logout() {
         scope.launch { client.safeRequest<Unit> { get("signOut") } }

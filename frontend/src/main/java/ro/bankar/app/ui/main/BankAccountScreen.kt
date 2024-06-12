@@ -89,8 +89,6 @@ class BankAccountScreenModel(private val repository: Repository, private val acc
         newCardLoading = true
         viewModelScope.launch {
             repository.sendCreateCard(accountID, newCardName.value).handleValue(this, snackbar, context) { cardID ->
-                accountData.emitNow()
-                repository.accounts.requestEmit()
                 showNewCardDialog = false
                 onNavigateToCard(cardID)
             }

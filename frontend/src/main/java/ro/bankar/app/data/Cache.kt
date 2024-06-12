@@ -16,8 +16,7 @@ import okio.BufferedSink
 import okio.BufferedSource
 import okio.FileSystem
 import okio.Path.Companion.toPath
-import ro.bankar.banking.SCountries
-import ro.bankar.model.SBankAccount
+import ro.bankar.model.SConversation
 import ro.bankar.model.SFriend
 import ro.bankar.model.SUser
 import java.io.File
@@ -31,11 +30,8 @@ val Context.cache: DataStore<Cache> by CacheDatastoreDelegate("cache.bin", OkioS
 @Serializable
 data class Cache(
     val profile: SUser? = null,
-    val accounts: List<SBankAccount> = emptyList(),
-
     val friends: List<SFriend> = emptyList(),
-
-    val countryData :SCountries = emptyList()
+    val conversations: Map<String, SConversation> = emptyMap(),
 )
 
 @Suppress("UnnecessaryOptInAnnotation")

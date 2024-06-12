@@ -49,7 +49,7 @@ fun RecentActivityScreen(onDismiss: () -> Unit, navigation: NavHostController) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(true) {
         isRefreshing = true
-        flow.emitNow()
+        flow.requestEmitNow()
         isRefreshing = false
     }
 
@@ -58,7 +58,7 @@ fun RecentActivityScreen(onDismiss: () -> Unit, navigation: NavHostController) {
         SwipeRefresh(rememberSwipeRefreshState(isRefreshing), onRefresh = {
             scope.launch {
                 isRefreshing = true
-                flow.emitNow()
+                flow.requestEmitNow()
                 isRefreshing = false
             }
         }) {

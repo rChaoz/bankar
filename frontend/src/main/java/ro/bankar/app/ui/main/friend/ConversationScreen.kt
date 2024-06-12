@@ -94,20 +94,13 @@ class ConversationScreenModel : ViewModel() {
         sentMessages = buildList(sentMessages.size + 1) { add(message); addAll(sentMessages) }
         this.message = ""
         viewModelScope.launch {
-            sendMessageImpl(message, recipientTag)
-        }
-    }
-
-    private suspend fun sendMessageImpl(message: String, recipientTag: String) {
-        var retryInterval = 2
-        while (true) {
-            val result = repository.sendFriendMessage(recipientTag, message)
-            if (result is RequestSuccess && result.response == SuccessResponse) {
-                conversationFlow.requestEmit()
-                break
+            var retryInterval = 2
+            while (true) {
+                val result = repository.sendFriendMessage(recipientTag, message)
+                if (result is RequestSuccess && result.response == SuccessResponse) break
+                delay(retryInterval.seconds)
+                if (retryInterval < 15) ++retryInterval
             }
-            delay(retryInterval.seconds)
-            if (retryInterval < 15) ++retryInterval
         }
     }
 }
@@ -120,13 +113,14 @@ fun ConversationScreen(user: SPublicUserBase, navigation: NavHostController) {
     val model = viewModel<ConversationScreenModel>()
     val repository = LocalRepository.current
     model.repository = repository
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(true) {
         // Get messages
         launch {
             repository.conversation(user.tag).also {
+                it.requestEmit()
                 model.conversationFlow = it
             }.collect {
-                // See below
+                // To update the "last message" text
                 model.repository.friends.requestEmit()
                 // Check what messages are new
                 val newMessages = it.take(it.size - (model.conversation?.size ?: 0))

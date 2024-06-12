@@ -3,7 +3,21 @@ package ro.bankar.app.ui.main.friends
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,9 +27,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,9 +79,18 @@ import com.valentinilk.shimmer.rememberShimmer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import ro.bankar.app.R
-import ro.bankar.app.data.*
+import ro.bankar.app.data.LocalRepository
+import ro.bankar.app.data.Repository
+import ro.bankar.app.data.fold
+import ro.bankar.app.data.handle
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.HideFABOnScroll
-import ro.bankar.app.ui.components.*
+import ro.bankar.app.ui.components.AcceptDeclineButtons
+import ro.bankar.app.ui.components.Avatar
+import ro.bankar.app.ui.components.BottomDialog
+import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.PagerTabs
+import ro.bankar.app.ui.components.SurfaceList
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.main.LocalSnackbar
 import ro.bankar.app.ui.main.MainNav
@@ -55,7 +102,13 @@ import ro.bankar.app.ui.nameFromCode
 import ro.bankar.app.ui.serializableSaver
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.banking.SCountries
-import ro.bankar.model.*
+import ro.bankar.model.ErrorResponse
+import ro.bankar.model.NotFoundResponse
+import ro.bankar.model.SDirection
+import ro.bankar.model.SFriend
+import ro.bankar.model.SFriendRequest
+import ro.bankar.model.SPublicUserBase
+import ro.bankar.model.SuccessResponse
 
 object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
     class Model : MainTabModel() {
@@ -93,8 +146,8 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         fun refresh() = viewModelScope.launch {
             isRefreshing = true
             coroutineScope {
-                launch { repository.friends.emitNow() }
-                launch { repository.friendRequests.emitNow() }
+                launch { repository.friends.requestEmitNow() }
+                launch { repository.friendRequests.requestEmitNow() }
             }
             isRefreshing = false
         }
@@ -112,7 +165,6 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
                 onSuccess = {
                     when (it) {
                         SuccessResponse -> {
-                            repository.friendRequests.emitNow()
                             // Close dialog, show confirm message
                             showAddFriendDialog = false
                             launch { snackbar.showSnackbar(c.getString(R.string.friend_request_sent), withDismissAction = true) }
@@ -137,7 +189,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
         suspend fun onCancelRequest(context: Context, tag: String, repository: Repository) {
             repository.sendCancelFriendRequest(tag).handle(viewModelScope, snackbar, context) {
                 when {
-                    it == SuccessResponse -> repository.friendRequests.requestEmit()
+                    it == SuccessResponse -> {}
                     it is ErrorResponse && it.message == "request_not_found" -> repository.friendRequests.requestEmit()
                     else -> return@handle context.getString(R.string.unknown_error)
                 }
@@ -149,12 +201,7 @@ object FriendsTab : MainTab<FriendsTab.Model>(0, "friends", R.string.friends) {
          * Used to accept/decline an incoming friend request
          */
         suspend fun onRespondToRequest(context: Context, fromTag: String, accepted: Boolean, repository: Repository) {
-            repository.sendFriendRequestResponse(fromTag, accepted).handleSuccess(viewModelScope, snackbar, context) {
-                coroutineScope {
-                    launch { repository.friends.emitNow() }
-                    launch { repository.friendRequests.emitNow() }
-                }
-            }
+            repository.sendFriendRequestResponse(fromTag, accepted).handleSuccess(viewModelScope, snackbar, context) {}
         }
     }
 

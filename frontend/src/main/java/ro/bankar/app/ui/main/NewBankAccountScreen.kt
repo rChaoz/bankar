@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
-import ro.bankar.app.data.handle
+import ro.bankar.app.data.handleSuccess
 import ro.bankar.app.ui.components.ButtonRow
 import ro.bankar.app.ui.components.ComboBox
 import ro.bankar.app.ui.components.NavScreen
@@ -56,10 +56,8 @@ import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.accountColors
 import ro.bankar.banking.Currency
 import ro.bankar.banking.SCreditData
-import ro.bankar.model.InvalidParamResponse
 import ro.bankar.model.SBankAccountType
 import ro.bankar.model.SNewBankAccount
-import ro.bankar.model.SuccessResponse
 import java.text.DecimalFormat
 
 class NewBankAccountModel : ViewModel() {
@@ -96,17 +94,7 @@ class NewBankAccountModel : ViewModel() {
             repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value.trim().ifEmpty { context.getString(R.string.s_account, context.getString(accountType.rString)) },
                     color.intValue, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
-            ).handle(this, snackBar, context) {
-                when (it) {
-                    SuccessResponse -> {
-                        repository.accounts.emitNow()
-                        onDismiss()
-                        null
-                    }
-                    is InvalidParamResponse -> context.getString(R.string.unable_new_bank_account, it.param)
-                    else -> context.getString(R.string.unknown_error)
-                }
-            }
+            ).handleSuccess(this, snackBar, context) {}
             isLoading = false
         }
     }

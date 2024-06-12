@@ -123,7 +123,6 @@ class CreatePartyScreenModel : ViewModel() {
             return@launch
         }) }
         repository.sendCreateParty(account.value!!.id, note.value, amounts).handleSuccess(this, snackbar, context) {
-            repository.recentActivity.emitNow()
             onDismiss()
         }
         isLoading = false

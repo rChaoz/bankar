@@ -3,7 +3,6 @@ package ro.bankar.app.ui.main
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -46,9 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -154,13 +151,6 @@ class ProfileScreenModel : ViewModel() {
     var editing by mutableStateOf(false)
         private set
     var isSaving by mutableStateOf(false)
-    val dirty by derivedStateOf {
-        val data = this.data ?: return@derivedStateOf true
-        val country = countryData?.find { it.code == data.countryCode } ?: return@derivedStateOf true
-        email.value != data.email || firstName.value != data.firstName || middleName.value != (data.middleName ?: "") || lastName.value != data.lastName
-                || dateOfBirth.value != data.dateOfBirth || this.country.value != country || state != data.state
-                || city.value != data.city || address.value != data.address
-    }
 
     // countryData and data are assumed to be non-null for this function
     fun onEdit() {
@@ -202,7 +192,7 @@ class ProfileScreenModel : ViewModel() {
             return@coroutineScope false
         }
         isSaving = true
-        repository.sendUpdate(
+        repository.sendProfileUpdate(
             SNewUser(
                 email.value, "", "", password.value, firstName.value.trim(), middleName.value.trim().ifEmpty { null }, lastName.value.trim(),
                 dateOfBirth.value, country.value.code, state, city.value, address.value
@@ -231,12 +221,13 @@ class ProfileScreenModel : ViewModel() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, InternalComposeApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
     val model = viewModel<ProfileScreenModel>()
     val repository = LocalRepository.current
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(true) {
         launch { repository.profile.collect { model.data = it } }
@@ -292,31 +283,12 @@ fun ProfileScreen(onDismiss: () -> Unit, onLogout: () -> Unit) {
         preBody = { Text(text = stringResource(R.string.logout), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 18.dp)) }
     ))
 
-    // Exit without saving dialog
-    val exitDialogState = remember { UseCaseState() }
-    val scope = rememberCoroutineScope()
-    InfoDialog(state = exitDialogState, selection = InfoSelection(
-        extraButton = SelectionButton(android.R.string.cancel),
-        negativeButton = SelectionButton(R.string.save),
-        positiveButton = SelectionButton(R.string.yes),
-        onNegativeClick = {
-            scope.launch { if (model.onSaveSuspending(context, repository, snackbar)) onDismiss() }
-        },
-        onPositiveClick = onDismiss
-    ), body = InfoBody.Default(
-        bodyText = stringResource(R.string.you_have_unsaved),
-        preBody = {
-            Text(text = stringResource(R.string.are_you_sure), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 18.dp))
-        }
-    ))
-    BackHandler(enabled = model.editing && model.dirty, onBack = exitDialogState::show)
-
     // Main view
     val scrollState = rememberScrollState()
     val (showFAB, setShowFAB) = remember { mutableStateOf(true) }
     HideFABOnScroll(state = scrollState, setShowFAB)
     NavScreen(
-        onDismiss = { if (model.editing) exitDialogState.show() else onDismiss() },
+        onDismiss,
         title = R.string.profile,
         buttonIcon =
         if (model.editing) null else {

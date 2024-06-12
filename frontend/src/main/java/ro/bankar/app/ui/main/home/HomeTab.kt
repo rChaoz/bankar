@@ -57,8 +57,8 @@ object HomeTab : MainTab<HomeTab.Model>(1, "home", R.string.home) {
         fun refresh(repository: Repository) = viewModelScope.launch {
             isRefreshing = true
             coroutineScope {
-                launch { repository.accounts.emitNow() }
-                launch { repository.recentActivity.emitNow() }
+                launch { repository.accounts.requestEmitNow() }
+                launch { repository.recentActivity.requestEmitNow() }
             }
             isRefreshing = false
         }

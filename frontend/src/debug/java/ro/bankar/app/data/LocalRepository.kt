@@ -59,8 +59,8 @@ val EmptyRepository: Repository = MockRepository
 @Suppress("SpellCheckingInspection")
 private object MockRepository : Repository() {
     @OptIn(DelicateCoroutinesApi::class)
-    private fun <T> mockFlow(value: T) = object : AbstractRequestFlow<T>(GlobalScope) {
-        override suspend fun emit() = value
+    private fun <T> mockFlow(value: T) = object : SharedRequestFlow<T>(GlobalScope) {
+        override suspend fun produceValue() = value
     }.also { it.requestEmit() }
 
     private fun <T> mockResponse(): RequestResult<Response<T>> = RequestFail(R.string.connection_error)
@@ -109,7 +109,7 @@ private object MockRepository : Repository() {
     )
 
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = mockResponse<Unit>()
-    override suspend fun sendUpdate(data: SNewUser) = mockResponse<Unit>()
+    override suspend fun sendProfileUpdate(data: SNewUser) = mockResponse<Unit>()
 
     private val bombasticus = SPublicUser(
         "bombasticus", "Bomba", "Maximus", "Extremus", "RO",
@@ -154,7 +154,7 @@ private object MockRepository : Repository() {
     )
 
     override suspend fun sendFriendRequestResponse(tag: String, accept: Boolean) = mockResponse<Unit>()
-    override fun conversation(tag: String): AbstractRequestFlow<SConversation> {
+    override fun conversation(tag: String): SharedRequestFlow<SConversation> {
         val today = Clock.System.todayHere()
         val yesterday = today - DatePeriod(days = 1)
 

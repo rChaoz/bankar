@@ -94,10 +94,7 @@ fun UserCard(
                         scope.launch {
                             val handle: suspend (Response<Unit>) -> String? = {
                                 when (it) {
-                                    SuccessResponse -> {
-                                        repository.friendRequests.emitNow()
-                                        null
-                                    }
+                                    SuccessResponse -> null
                                     is ErrorResponse -> context.getString(when (it.message) {
                                         "user_is_friend" -> R.string.user_already_friend
                                         "exists" -> R.string.friend_request_exists
