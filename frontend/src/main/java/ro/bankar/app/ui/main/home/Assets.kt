@@ -17,6 +17,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,20 +32,37 @@ import com.valentinilk.shimmer.Shimmer
 import com.valentinilk.shimmer.ShimmerBounds
 import com.valentinilk.shimmer.rememberShimmer
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.runBlocking
 import ro.bankar.app.R
+import ro.bankar.app.data.KeyPreferredCurrency
+import ro.bankar.app.data.LocalDataStore
+import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.ui.format
 import ro.bankar.app.ui.grayShimmer
 import ro.bankar.app.ui.theme.AppTheme
 import ro.bankar.app.ui.theme.customColors
 import ro.bankar.banking.Currency
+import ro.bankar.banking.SExchangeData
+import ro.bankar.banking.exchange
 import ro.bankar.model.SBankAccount
 
 @Composable
-fun Assets(accounts: List<SBankAccount>) {
-    val cash = accounts.sumOf { it.balance }
+fun Assets(accounts: List<SBankAccount>, exchangeData: SExchangeData) {
+    val data = LocalDataStore.current.data
+    val preferredCurrencyIndex by remember { data.mapNotNull { it[KeyPreferredCurrency] } }.collectAsState(0)
+    val preferredCurrency = Currency.entries.getOrElse(preferredCurrencyIndex) { Currency.EURO }
+
+    val totalCash = remember(preferredCurrency, accounts) {
+        accounts.sumOf { account ->
+            if (account.currency == preferredCurrency) account.balance
+            else exchangeData.exchange(account.currency, preferredCurrency, account.balance) ?: 0.0
+        }
+    }
 
     HomeCard(title = stringResource(R.string.assets), icon = {
-        Amount(amount = .215 + cash, currency = Currency.ROMANIAN_LEU, textStyle = MaterialTheme.typography.headlineSmall)
+        Amount(amount = .215 + totalCash, currency = preferredCurrency, textStyle = MaterialTheme.typography.headlineSmall)
     }) {
         Row(
             modifier = Modifier
@@ -52,7 +72,7 @@ fun Assets(accounts: List<SBankAccount>) {
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.cash), contentDescription = null, modifier = Modifier.size(32.dp))
-            }, title = R.string.cash, amount = cash, currency = Currency.EURO, onClick = {}, modifier = Modifier.weight(1f))
+            }, title = R.string.cash, amount = totalCash, currency = preferredCurrency, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.stocks), contentDescription = null, modifier = Modifier.size(32.dp))
@@ -60,7 +80,7 @@ fun Assets(accounts: List<SBankAccount>) {
             Spacer(modifier = Modifier.weight(.3f))
             AssetsColumn(icon = {
                 Icon(painter = painterResource(R.drawable.crypto), contentDescription = null, modifier = Modifier.size(32.dp))
-            }, title = R.string.crypto, amount = .215, currency = Currency.US_DOLLAR, onClick = {}, modifier = Modifier.weight(1f))
+            }, title = R.string.crypto, amount = .215, currency = preferredCurrency, onClick = {}, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.weight(.3f))
         }
     }
@@ -70,7 +90,8 @@ fun Assets(accounts: List<SBankAccount>) {
 @Composable
 private fun AssetsPreview() {
     AppTheme {
-        Assets(emptyList())
+        val repository = LocalRepository.current
+        Assets(runBlocking { repository.accounts.first() }, runBlocking { repository.exchangeData.first() })
     }
 }
 
@@ -78,7 +99,8 @@ private fun AssetsPreview() {
 @Composable
 private fun AssetsPreviewDark() {
     AppTheme {
-        Assets(emptyList())
+        val repository = LocalRepository.current
+        Assets(runBlocking { repository.accounts.first() }, runBlocking { repository.exchangeData.first() })
     }
 }
 
