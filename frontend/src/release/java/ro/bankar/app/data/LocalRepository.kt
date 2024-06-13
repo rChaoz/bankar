@@ -26,7 +26,7 @@ object EmptyRepository : Repository() {
     // User profile & friends
     override val profile get() = throw RuntimeException("EmptyRepository cannot be accessed")
     override suspend fun sendAboutOrPicture(data: SUserProfileUpdate) = throw RuntimeException("EmptyRepository cannot be accessed")
-    override suspend fun sendUpdate(data: SNewUser)= throw RuntimeException("EmptyRepository cannot be accessed")
+    override suspend fun sendProfileUpdate(data: SNewUser) = throw RuntimeException("EmptyRepository cannot be accessed")
     override suspend fun sendAddFriend(id: String) = throw RuntimeException("EmptyRepository cannot be accessed")
     override suspend fun sendRemoveFriend(tag: String) = throw RuntimeException("EmptyRepository cannot be accessed")
     override val friends get() = throw RuntimeException("EmptyRepository cannot be accessed")
