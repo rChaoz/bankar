@@ -1,14 +1,8 @@
 package ro.bankar.database
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format
+import kotlinx.datetime.*
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
-import kotlinx.datetime.plus
-import kotlinx.datetime.todayIn
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -84,7 +78,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     val transactions by CardTransaction referrersOn CardTransactions.card
 
     /**
-     * Tries to make a new payment, declining if not enough funds
+     * Tries to make a new payment, declining if not enough funds or exceeding limit
      */
     fun pay(amount: BigDecimal, currency: Currency, title: String): Boolean {
         val realAmount =

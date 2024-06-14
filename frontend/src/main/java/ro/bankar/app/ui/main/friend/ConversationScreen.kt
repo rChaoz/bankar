@@ -54,6 +54,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -115,7 +116,7 @@ fun ConversationScreen(tag: String, navigation: NavHostController) {
     val model = viewModel<ConversationScreenModel>()
     val repository = LocalRepository.current
     model.repository = repository
-    val user = remember { repository.friends.map { it.find { friend -> friend.tag == tag } } }.collectAsState(null).value
+    val user = remember { repository.friends.map { it.find { friend -> friend.tag == tag } }.distinctUntilChanged() }.collectAsState(null).value
     LaunchedEffect(true) {
         // Get messages
         launch {

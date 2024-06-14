@@ -2,31 +2,15 @@ package ro.bankar.app.ui.main
 
 import android.content.Context
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,15 +33,7 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
 import ro.bankar.app.data.handleValue
-import ro.bankar.app.ui.components.BottomDialog
-import ro.bankar.app.ui.components.CardCard
-import ro.bankar.app.ui.components.LoadingOverlay
-import ro.bankar.app.ui.components.MultiFab
-import ro.bankar.app.ui.components.MultiFabItem
-import ro.bankar.app.ui.components.NavScreen
-import ro.bankar.app.ui.components.PagerTabs
-import ro.bankar.app.ui.components.VerifiableField
-import ro.bankar.app.ui.components.verifiableStateOf
+import ro.bankar.app.ui.components.*
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.main.home.topBorder
@@ -135,7 +111,7 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
         }
     }
 
-    val pagerState = rememberPagerState { 3 }
+    val pagerState = rememberPagerState { 2 }
     NavScreen(
         onDismiss,
         title = R.string.bank_account,
@@ -175,7 +151,7 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
                     Icon(painter = painterResource(R.drawable.bank_account), contentDescription = null, modifier = Modifier.size(32.dp))
                 }
             }
-            PagerTabs(tabs = listOf(R.string.history, R.string.cards, R.string.actions), pagerState = pagerState) { tab ->
+            PagerTabs(tabs = listOf(R.string.history, R.string.cards), pagerState = pagerState) { tab ->
                 var isRefreshing by remember { mutableStateOf(false) }
                 @Suppress("DEPRECATION")
                 SwipeRefresh(rememberSwipeRefreshState(isRefreshing), onRefresh = {
@@ -207,9 +183,6 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
                                 if (activity.cards.isEmpty()) InfoCard(R.string.no_cards)
                                 else for (card in activity.cards) CardCard(card, onClick = { onNavigateToCard(card.id) }, modifier = Modifier.fillMaxWidth())
                             }
-                        }
-                        2 -> Box(modifier = Modifier.fillMaxSize()) {
-                            Text(text = "todo")
                         }
                     }
                 }

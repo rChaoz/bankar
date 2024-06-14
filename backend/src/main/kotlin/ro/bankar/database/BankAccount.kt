@@ -4,11 +4,7 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.SizedIterable
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.not
-import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.*
 import ro.bankar.amount
 import ro.bankar.banking.SCreditData
 import ro.bankar.banking.calcIBANCheckDigits
@@ -54,7 +50,7 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
     var interest by BankAccounts.interest
 
     val cards by BankCard referrersOn BankCards.bankAccount
-    val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or ((BankTransfers.recipient eq id)) and (BankTransfers.party eq null) }
+    val transfers get() = BankTransfer.find { (BankTransfers.sender eq id) or ((BankTransfers.recipient eq id) and (BankTransfers.party eq null)) }
     val parties by Party referrersOn Parties.hostAccount
 
     /**
