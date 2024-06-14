@@ -27,7 +27,8 @@ import java.math.BigDecimal
 
 class BankCard(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<BankCard>(BankCards) {
-        fun find(id: Int, accountID: Int) = find { (BankCards.id eq id) and (BankCards.bankAccount eq accountID) }.firstOrNull()
+        fun find(id: Int, accountID: Int) =
+            find { (BankCards.id eq id) and (BankCards.bankAccount eq accountID) and (BankCards.closed eq false) }.firstOrNull()
 
         fun create(data: SNewBankCard, account: BankAccount) = BankCard.new {
             name = data.name
@@ -41,7 +42,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
          * @param securityCode 3-4 digits
          */
         fun findByPaymentInfo(cardNumber: String, expirationDate: String, securityCode: String): BankCard? {
-            val card = find { BankCards.cardNumber eq cardNumber }.firstOrNull() ?: return null
+            val card = find { (BankCards.cardNumber eq cardNumber) and (BankCards.closed eq false) }.firstOrNull() ?: return null
             if (card.cvv != securityCode) return null
             var (month, year) = expirationDate.split('/')
             year = if (year.toInt() > 50) "19$year" else "20$year"
@@ -73,6 +74,7 @@ class BankCard(id: EntityID<Int>) : IntEntity(id) {
     var cvv by BankCards.cvv
     var limit by BankCards.limit
     var limitCurrent by BankCards.limitCurrent
+    var closed by BankCards.closed
 
     /**
      * Only makes sense if [limit] is non-zero.
@@ -147,4 +149,5 @@ internal object BankCards : IntIdTable(columnName = "card_id") {
     val cvv = varchar("cvv", 3).clientDefault { generateNumeric(3) }
     val limit = amount("limit").default(0.toBigDecimal())
     val limitCurrent = amount("limit_current").default(0.toBigDecimal())
+    val closed = bool("is_closed").default(false)
 }

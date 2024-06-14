@@ -148,6 +148,26 @@ fun Route.configureBankAccounts() {
                     }
                 }
 
+                delete {
+                    val user = call.authentication.principal<UserPrincipal>()!!.user
+
+                    val accountID = call.parameters["id"]?.toIntOrNull() ?: run {
+                        call.respondInvalidParam("account_id"); return@delete
+                    }
+                    val cardID = call.parameters["cardID"]?.toIntOrNull() ?: run {
+                        call.respondInvalidParam("card_id"); return@delete
+                    }
+
+                    newSuspendedTransaction {
+                        val card = BankCard.find(cardID, accountID)
+                        if (card == null || card.bankAccount.user.id != user.id) {
+                            call.respondNotFound("card"); return@newSuspendedTransaction
+                        }
+                        card.closed = true
+                        call.respondSuccess()
+                    }
+                }
+
                 post("reset_limit") {
                     val user = call.authentication.principal<UserPrincipal>()!!.user
 

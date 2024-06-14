@@ -325,6 +325,7 @@ private object MockRepository : Repository() {
     override suspend fun sendCreateCard(accountID: Int, name: String) = mockResponse<Int>()
     override suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double) = mockResponse<Unit>()
     override suspend fun sendResetCardLimit(accountID: Int, cardID: Int) = mockResponse<Unit>()
+    override suspend fun sendDeleteCard(accountID: Int, cardID: Int) = mockResponse<Unit>()
     override fun card(accountID: Int, cardID: Int)= mockFlow(card)
 
     override suspend fun sendStatementRequest(name: String?, accountID: Int, from: LocalDate, to: LocalDate) = mockResponse<SStatement>()

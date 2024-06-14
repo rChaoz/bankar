@@ -15,19 +15,26 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RowScope.LabeledIconButton(onClick: () -> Unit, text: Int, enabled: Boolean = true, icon: @Composable () -> Unit) {
+fun RowScope.LabeledIconButton(
+    onClick: () -> Unit,
+    text: Int,
+    enabled: Boolean = true,
+    contentColor: Color = MaterialTheme.colorScheme.primary,
+    icon: @Composable () -> Unit,
+) {
     CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
         Surface(
             onClick,
             shape = RoundedCornerShape(6.dp),
             modifier = Modifier.weight(1f).padding(horizontal = 4.dp).let { if (enabled) it else it.alpha(.6f) },
-            contentColor = MaterialTheme.colorScheme.primary,
+            contentColor = contentColor,
             enabled = enabled
         ) {
             Column(

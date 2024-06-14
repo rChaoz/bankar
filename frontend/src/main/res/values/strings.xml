@@ -328,7 +328,7 @@
     <string name="card_name">Card name</string>
     <string name="my_card">My card</string>
     <string name="spending">Spending</string>
-    <string name="spent_this_month">Spent this month</string>
+    <string name="spent_so_far">Spent so far</string>
     <string name="limit">Limit</string>
     <string name="no_limit">No limit</string>
     <string name="show_details">Show details</string>
@@ -336,11 +336,15 @@
     <string name="hide_details">Hide details</string>
     <string name="are_you_sure_show_card_details">Are you sure you want to make your card details visible?</string>
     <string name="rename_card">Rename card</string>
-    <string name="change_limit">Change limit</string>
+    <string name="set_limit">Set limit</string>
     <string name="clear_limit">Clear limit</string>
     <string name="no_recent_card_activity">You don\'t have any transactions with this card.</string>
     <string name="reset_limit">Reset limit</string>
     <string name="notifications">Notifications</string>
     <string name="notifications_rationale">"Push notifications are only used to notify you of payments, or when you receive a message or friend request.\nYou can always customize which notifications you'd like to receive in settings. "</string>
     <string name="allow">Allow</string>
+    <string name="delete_card">Delete card</string>
+    <string name="are_you_sure_delete_card">Are you sure you want to delete this card? This action is not reversible.</string>
+    <string name="delete">Delete</string>
+    <string name="deleted_card">Deleted card</string>
 </resources>

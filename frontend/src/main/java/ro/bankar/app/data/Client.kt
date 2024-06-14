@@ -55,7 +55,7 @@ inline fun <T, R> RequestResult<T>.fold(onFail: (Int) -> R, onSuccess: (T) -> R)
 }
 
 inline fun <T> RequestResult<Response<T>>.onSuccess(onSuccess: () -> Unit) =
-    if (this is RequestSuccess && response == SuccessResponse) {
+    if (this is RequestSuccess && (response == SuccessResponse || response is ValueResponse)) {
         onSuccess()
         this
     } else this

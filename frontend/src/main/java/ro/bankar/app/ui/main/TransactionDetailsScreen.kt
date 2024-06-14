@@ -35,6 +35,7 @@ import ro.bankar.app.ui.components.CardCard
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.theme.AppTheme
+import ro.bankar.model.SBankCard
 import ro.bankar.model.SCardTransaction
 import ro.bankar.util.format
 import ro.bankar.util.here
@@ -42,14 +43,17 @@ import ro.bankar.util.here
 @Composable
 fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCreateParty: (Double, Int) -> Unit, onNavigateToCard: (Int, Int) -> Unit) {
     val repository = LocalRepository.current
+    val deletedCard = SBankCard(0, stringResource(R.string.deleted_card), null, "••••", null, null, null, null, 0.0, 0.0, data.currency, emptyList())
     val card = remember {
-        repository.account(data.accountID).map { acc -> acc.cards.first { it.id == data.cardID } }
+        repository.account(data.accountID).map { acc -> acc.cards.find { it.id == data.cardID } ?: deletedCard }
     }.collectAsState(null).value
 
     NavScreen(onDismiss, title = R.string.transaction) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = 12.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 12.dp)
+        ) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Amount(amount = -data.amount, currency = data.currency, withPlusSign = true, textStyle = MaterialTheme.typography.headlineMedium)
@@ -77,7 +81,11 @@ fun TransactionDetailsScreen(onDismiss: () -> Unit, data: SCardTransaction, onCr
                         .fillMaxWidth()
                 ) {
                     Text(text = stringResource(R.string.paid_with), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    CardCard(card, onClick = { onNavigateToCard(data.accountID, data.cardID) }, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    CardCard(
+                        card,
+                        onClick = if (card === deletedCard) null else ({ onNavigateToCard(data.accountID, data.cardID) }),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
             }
             Surface(modifier = Modifier.padding(horizontal = 12.dp), tonalElevation = 1.dp, shape = MaterialTheme.shapes.small) {

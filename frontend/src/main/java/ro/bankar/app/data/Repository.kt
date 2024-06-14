@@ -238,6 +238,7 @@ abstract class Repository {
     abstract suspend fun sendCreateCard(accountID: Int, name: String): ResponseRequestResult<Int>
     abstract suspend fun sendUpdateCard(accountID: Int, cardID: Int, name: String, limit: Double): ResponseRequestResult<Unit>
     abstract suspend fun sendResetCardLimit(accountID: Int, cardID: Int): ResponseRequestResult<Unit>
+    abstract suspend fun sendDeleteCard(accountID: Int, cardID: Int): ResponseRequestResult<Unit>
     abstract fun card(accountID: Int, cardID: Int): RequestFlow<SBankCard>
 
     abstract fun logout()
@@ -309,7 +310,7 @@ private class RepositoryImpl(
         }
     }
 
-    private val namedFlows = mutableMapOf<Pair<String, String>, RequestFlow<*>>()
+    private val flows = mutableMapOf<String, RequestFlow<*>>()
 
     // Static data & password check
     override val countryData = createFlow<SCountries>("data/countries.json", raw = true)
@@ -356,9 +357,7 @@ private class RepositoryImpl(
         get("profile/friend_requests/cancel/$tag") { configureTimeout() }
     }.onSuccess { friendRequests.requestEmitNow() }
 
-    override fun conversation(tag: String) = getNamedCachedFlow<SConversation>(
-        "conversation",
-        tag,
+    override fun conversation(tag: String) = getCachedFlow<SConversation>(
         "messaging/conversation/$tag",
         { it.conversations[tag] },
         { copy(conversations = conversations + (tag to it)) }
@@ -379,7 +378,7 @@ private class RepositoryImpl(
         }
     }.onSuccess { recentActivity.requestEmitNow() }
 
-    override fun partyData(id: Int) = getNamedFlow<SPartyInformation>("party", id.toString(), "party/$id")
+    override fun partyData(id: Int) = getFlow<SPartyInformation>("party/$id")
     override suspend fun sendCancelParty(id: Int) = client.safeRequest<Unit> {
         get("party/cancel/$id")
     }.onSuccess { recentActivity.requestEmitNow() }
@@ -388,7 +387,7 @@ private class RepositoryImpl(
     // Recent activity
     override val recentActivity = createFlow<SRecentActivity>("recentActivity/short")
     override val allRecentActivity = createFlow<SRecentActivity>("recentActivity/long")
-    override fun recentActivityWith(tag: String) = getNamedFlow<List<SBankTransfer>>("recentActivity", tag, "transfer/list/$tag")
+    override fun recentActivityWith(tag: String) = getFlow<List<SBankTransfer>>("transfer/list/$tag")
 
     // Bank accounts
     override val defaultAccount = createFlow<SDefaultBankAccount>("defaultAccount")
@@ -401,7 +400,7 @@ private class RepositoryImpl(
         }.onSuccess { defaultAccount.requestEmitNow() }
 
     override val accounts = createFlow<List<SBankAccount>>("accounts")
-    override fun account(id: Int) = getNamedFlow<SBankAccountData>("account", id.toString(), "accounts/$id")
+    override fun account(id: Int) = getFlow<SBankAccountData>("accounts/$id")
     override suspend fun sendCreateAccount(account: SNewBankAccount) = client.safeRequest<Unit> {
         post("accounts/new") {
             setBody(account)
@@ -530,7 +529,11 @@ private class RepositoryImpl(
         }
     }
 
-    override fun card(accountID: Int, cardID: Int) = getNamedFlow<SBankCard>("card", "$accountID:$cardID", "accounts/$accountID/$cardID")
+    override suspend fun sendDeleteCard(accountID: Int, cardID: Int) = client.safeRequest<Unit> {
+        delete("accounts/$accountID/$cardID") { configureTimeout() }
+    }.onSuccess { account(accountID).requestEmitNow() }
+
+    override fun card(accountID: Int, cardID: Int) = getFlow<SBankCard>("accounts/$accountID/$cardID")
 
     // Request utility
     private fun HttpRequestBuilder.configureTimeout() {
@@ -568,7 +571,7 @@ private class RepositoryImpl(
     }.also { it.requestEmit() }
 
     @Suppress("UNCHECKED_CAST")
-    private inline fun <reified T> getNamedFlow(type: String, name: String, url: String) = namedFlows.getOrPut(type to name) {
+    private inline fun <reified T> getFlow(url: String) = flows.getOrPut(url) {
         createFlow<T>(url)
     } as RequestFlow<T>
 
@@ -581,13 +584,11 @@ private class RepositoryImpl(
     }.also { it.requestEmit() }
 
     @Suppress("UNCHECKED_CAST")
-    private inline fun <reified T> getNamedCachedFlow(
-        type: String,
-        name: String,
+    private inline fun <reified T> getCachedFlow(
         url: String,
         noinline mapFunc: (Cache) -> T?,
         noinline updateFunc: Cache.(T) -> Cache,
-    ) = namedFlows.getOrPut(type to name) {
+    ) = flows.getOrPut(url) {
         createCachedFlow<T>(url, mapFunc, updateFunc)
     } as RequestFlow<T>
 

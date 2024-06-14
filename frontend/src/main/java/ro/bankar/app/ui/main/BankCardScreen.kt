@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -74,7 +75,7 @@ import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.rememberMockNavController
 import ro.bankar.app.ui.theme.AppTheme
 
-class BankCardScreenModel(private val repository: Repository, private val accountID: Int, private val cardID: Int) : ViewModel() {
+class BankCardScreenModel(private val repository: Repository, private val onDismiss: () -> Unit, private val accountID: Int, private val cardID: Int) : ViewModel() {
     val cardData = repository.card(accountID, cardID)
     val newCardName = verifiableStateOf("") {
         when {
@@ -88,8 +89,11 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
     val newLimit = mutableStateOf("")
     var showChangeLimitDialog by mutableStateOf(false)
 
+    var showDeleteDialog by mutableStateOf(false)
+
     var isLoadingChangeLimit by mutableStateOf(false)
     var isLoadingResetLimit by mutableStateOf(false)
+    var isLoadingDelete by mutableStateOf(false)
 
     val snackbar = SnackbarHostState()
 
@@ -115,6 +119,17 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
         }
     }
 
+    fun onDelete(context: Context) {
+        isLoadingDelete = true
+        viewModelScope.launch {
+            repository.sendDeleteCard(accountID, cardID).handleSuccess(context) {
+                showDeleteDialog = false
+                onDismiss()
+            }
+            isLoadingDelete = false
+        }
+    }
+
     fun onResetLimit(context: Context) {
         isLoadingResetLimit = true
         viewModelScope.launch {
@@ -129,7 +144,7 @@ class BankCardScreenModel(private val repository: Repository, private val accoun
 fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, accountID: Int, cardID: Int) {
     val repository = LocalRepository.current
     val context = LocalContext.current
-    val model = viewModel { BankCardScreenModel(repository, accountID, cardID) }
+    val model = viewModel { BankCardScreenModel(repository, onDismiss, accountID, cardID) }
     val data = model.cardData.collectAsState(null).value
     val shimmer = rememberShimmer(ShimmerBounds.Window)
 
@@ -167,6 +182,36 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
         }
     }
 
+    // Delete card dialog
+    BottomDialog(
+        model.showDeleteDialog,
+        onDismissRequest = { model.showDeleteDialog = false },
+        buttonBar = {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TextButton(onClick = { model.showDeleteDialog = false }, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
+                Button(
+                    onClick = { model.onDelete(context) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(R.string.delete))
+                }
+            }
+        }
+    ) {
+        LoadingOverlay(model.isLoadingDelete) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(24.dp)) {
+                Text(text = stringResource(R.string.are_you_sure), style = MaterialTheme.typography.headlineSmall)
+                Text(text = stringResource(R.string.are_you_sure_delete_card))
+            }
+        }
+    }
+
     // Change limit dialog
     BottomDialog(
         model.showChangeLimitDialog,
@@ -199,7 +244,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
         LoadingOverlay(model.isLoadingChangeLimit) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = stringResource(R.string.change_limit),
+                    text = stringResource(R.string.set_limit),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(vertical = 12.dp)
                 )
@@ -273,7 +318,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
             Row(
                 modifier = Modifier
                     .padding(12.dp)
-                    .fillMaxWidth(.7f)
+                    .fillMaxWidth(.8f)
                     .align(Alignment.CenterHorizontally)
             ) {
                 LabeledIconButton(
@@ -296,6 +341,14 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                 ) {
                     Icon(imageVector = Icons.Default.Edit, contentDescription = null)
                 }
+                LabeledIconButton(
+                    onClick = { model.showDeleteDialog = true },
+                    text = R.string.delete_card,
+                    enabled = data != null,
+                    contentColor = MaterialTheme.colorScheme.error
+                ) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                }
             }
 
             Surface(modifier = Modifier.padding(horizontal = 12.dp), tonalElevation = 1.dp, shape = MaterialTheme.shapes.small) {
@@ -317,7 +370,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                                     modifier = Modifier
                                         .height(90.dp)
                                         .weight(1f)
-                                        .padding(horizontal = 20.dp)
+                                        .padding(horizontal = 8.dp)
                                         .grayShimmer(shimmer)
                                 )
                             }
@@ -325,11 +378,11 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                     } else {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
-                                text = stringResource(R.string.spent_this_month),
+                                text = stringResource(R.string.spent_so_far),
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelMedium,
                                 modifier = Modifier
-                                    .padding(horizontal = 20.dp)
+                                    .padding(horizontal = 8.dp)
                                     .weight(1f)
                             )
                             Text(
@@ -337,15 +390,15 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelMedium,
                                 modifier = Modifier
-                                    .padding(horizontal = 20.dp)
+                                    .padding(horizontal = 8.dp)
                                     .weight(1f)
                             )
                             Text(
-                                text = stringResource(R.string.change_limit),
+                                text = stringResource(R.string.set_limit),
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelMedium,
                                 modifier = Modifier
-                                    .padding(horizontal = 20.dp)
+                                    .padding(horizontal = 8.dp)
                                     .weight(1f)
                             )
                         }
@@ -355,7 +408,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelLarge,
                                 modifier = Modifier
-                                    .padding(horizontal = 20.dp)
+                                    .padding(horizontal = 8.dp)
                                     .weight(1f),
                                 color = data.limitCurrent.amountColor
                             )
@@ -364,7 +417,7 @@ fun BankCardScreen(onDismiss: () -> Unit, navigation: NavHostController, account
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelLarge,
                                 modifier = Modifier
-                                    .padding(horizontal = 20.dp)
+                                    .padding(horizontal = 8.dp)
                                     .weight(1f)
                             )
                             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {

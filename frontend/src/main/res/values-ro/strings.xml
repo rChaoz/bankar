@@ -325,7 +325,7 @@
     <string name="card_name">Numele cardului</string>
     <string name="my_card">Cardul meu</string>
     <string name="spending">Cheltuieli</string>
-    <string name="spent_this_month">Cheltuit luna asta</string>
+    <string name="spent_so_far">Cheltuit până acum</string>
     <string name="limit">Limită</string>
     <string name="no_limit">Fără limită</string>
     <string name="show_details">Arată detaliile</string>
@@ -333,11 +333,15 @@
     <string name="hide_details">Ascunde detaliile</string>
     <string name="are_you_sure_show_card_details">Ești sigur că vrei să-ți faci datele cardului vizibile?</string>
     <string name="rename_card">Redenumește cardul</string>
-    <string name="change_limit">Schimbă limita</string>
+    <string name="set_limit">Setează limita</string>
     <string name="clear_limit">Șterge limita</string>
     <string name="no_recent_card_activity">Nu ai tranzacții efectuate cu acest card.</string>
     <string name="reset_limit">Resetează limita</string>
     <string name="notifications">Notificări</string>
     <string name="notifications_rationale">Notificările push sunt folosite doar folosite pentru a te notifica de plăți sau de mesaje/cereri de prietenie nou.\nPoți oricand să alegi ce notificări vrei să primești din setări.</string>
     <string name="allow">Permite</string>
+    <string name="delete_card">Șterge cardul</string>
+    <string name="are_you_sure_delete_card">Sigur vrei să ștergi acest card? Acțiunea nu este reversibilă.</string>
+    <string name="delete">Șterge</string>
+    <string name="deleted_card">Card șters</string>
 </resources>
