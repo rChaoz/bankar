@@ -94,7 +94,7 @@ class NewBankAccountModel : ViewModel() {
             repository.sendCreateAccount(
                 SNewBankAccount(accountType, name.value.trim().ifEmpty { context.getString(R.string.s_account, context.getString(accountType.rString)) },
                     color.intValue, currency.value, creditAmount.value.toDoubleOrNull() ?: 0.0)
-            ).handleSuccess(this, snackBar, context) {}
+            ).handleSuccess(this, snackBar, context, onDismiss)
             isLoading = false
         }
     }

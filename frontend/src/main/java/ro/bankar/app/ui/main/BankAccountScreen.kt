@@ -40,6 +40,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -174,31 +176,41 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
                 }
             }
             PagerTabs(tabs = listOf(R.string.history, R.string.cards, R.string.actions), pagerState = pagerState) { tab ->
-                when (tab) {
-                    0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        if (activity == null) RecentActivityShimmer()
-                        else if (activity.transfers.isEmpty() && activity.transactions.isEmpty() && activity.parties.isEmpty()) item {
-                            InfoCard(R.string.no_recent_activity)
-                        } else {
-                            val (_, transfers, transactions, parties) = activity
-                            RecentActivityContent(transfers, transactions, parties, navigation)
-                        }
+                var isRefreshing by remember { mutableStateOf(false) }
+                @Suppress("DEPRECATION")
+                SwipeRefresh(rememberSwipeRefreshState(isRefreshing), onRefresh = {
+                    isRefreshing = true
+                    model.viewModelScope.launch {
+                        model.accountData.requestEmitNow()
+                        isRefreshing = false
                     }
-                    1 -> Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(start = 12.dp, end = 12.dp, top = 24.dp, bottom = 80.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        if (activity == null) CardCard(null)
-                        else {
-                            if (activity.cards.isEmpty()) InfoCard(R.string.no_cards)
-                            else for (card in activity.cards) CardCard(card, onClick = { onNavigateToCard(card.id) }, modifier = Modifier.fillMaxWidth())
+                }) {
+                    when (tab) {
+                        0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            if (activity == null) RecentActivityShimmer()
+                            else if (activity.transfers.isEmpty() && activity.transactions.isEmpty() && activity.parties.isEmpty()) item {
+                                InfoCard(R.string.no_recent_activity)
+                            } else {
+                                val (_, transfers, transactions, parties) = activity
+                                RecentActivityContent(transfers, transactions, parties, navigation)
+                            }
                         }
-                    }
-                    2 -> Box(modifier = Modifier.fillMaxSize()) {
-                        Text(text = "todo")
+                        1 -> Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(start = 12.dp, end = 12.dp, top = 24.dp, bottom = 80.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            if (activity == null) CardCard(null)
+                            else {
+                                if (activity.cards.isEmpty()) InfoCard(R.string.no_cards)
+                                else for (card in activity.cards) CardCard(card, onClick = { onNavigateToCard(card.id) }, modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                        2 -> Box(modifier = Modifier.fillMaxSize()) {
+                            Text(text = "todo")
+                        }
                     }
                 }
             }

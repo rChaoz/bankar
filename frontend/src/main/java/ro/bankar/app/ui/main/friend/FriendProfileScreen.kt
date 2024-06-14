@@ -56,7 +56,7 @@ import ro.bankar.util.todayHere
 fun FriendProfileScreen(profile: SPublicUserBase, navigation: NavHostController) {
     val repository = LocalRepository.current
     val countryData by repository.countryData.collectAsState(null)
-    val recentActivity by remember { repository.recentActivityWith(profile.tag) }.collectAsState(null)
+    val recentActivity by remember { repository.recentActivityWith(profile.tag).also { it.requestEmit() } }.collectAsState(null)
 
     NavScreen(onDismiss = { navigation.popBackStack() }, title = R.string.friend_profile) {
         Column(
