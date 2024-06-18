@@ -264,18 +264,18 @@ private object MockRepository : Repository() {
 
     override val defaultAccount = mockFlow(SDefaultBankAccount(1, true))
     override suspend fun sendDefaultAccount(id: Int?, alwaysUse: Boolean) = mockResponse<Unit>()
-    override val accounts = mockFlow(
-        listOf(
-            SBankAccount(
-                1, "RO24RBNK1921081333473500", SBankAccountType.Debit, 123.456, 0.0, Currency.ROMANIAN_LEU,
-                "Debit Account", 0, 0.0
-            ),
-            SBankAccount(
-                2, "RO56RBNK2342345546435657", SBankAccountType.Credit, -500.32, 1000.0, Currency.EURO,
-                "Credit Account", 0, 20.0
-            ),
-        )
+
+    private val mockAccounts = listOf(
+        SBankAccount(
+            1, "RO24RBNK1921081333473500", SBankAccountType.Debit, 123.456, 0.0, Currency.ROMANIAN_LEU,
+            "Debit Account", 0, 0.0
+        ),
+        SBankAccount(
+            2, "RO56RBNK2342345546435657", SBankAccountType.Credit, -500.32, 1000.0, Currency.EURO,
+            "Credit Account", 0, 20.0
+        ),
     )
+    override val accounts = mockFlow(mockAccounts)
 
     private val card = SBankCard(
         1, "Physical Card", "1234567813571234", "1234", "9876", Month.JUNE, 2069,
@@ -301,9 +301,10 @@ private object MockRepository : Repository() {
                     "123", 100.0, 34.45, Currency.EURO, emptyList()
                 ),
             ),
+            mockRecentActivity.transfers,
+            mockRecentActivity.transactions,
             emptyList(),
-            emptyList(),
-            emptyList()
+            mockAccounts[0]
         )
     )
 

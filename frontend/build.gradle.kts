@@ -16,8 +16,8 @@ android {
         applicationId = "ro.bankar.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.3.0"
+        versionCode = 5
+        versionName = "0.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.maxkeppeler.compose.state)
     implementation(libs.maxkeppeler.compose.info)
     implementation(libs.maxkeppeler.compose.input)
+    implementation(libs.maxkeppeler.compose.datetime)
     implementation(libs.io.coil)
     implementation(libs.image.cropper)
     implementation(libs.shimmer.compose)

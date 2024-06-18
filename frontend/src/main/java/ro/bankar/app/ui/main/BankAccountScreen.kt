@@ -2,15 +2,34 @@ package ro.bankar.app.ui.main
 
 import android.content.Context
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,7 +52,15 @@ import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
 import ro.bankar.app.data.handleValue
-import ro.bankar.app.ui.components.*
+import ro.bankar.app.ui.components.BottomDialog
+import ro.bankar.app.ui.components.CardCard
+import ro.bankar.app.ui.components.LoadingOverlay
+import ro.bankar.app.ui.components.MultiFab
+import ro.bankar.app.ui.components.MultiFabItem
+import ro.bankar.app.ui.components.NavScreen
+import ro.bankar.app.ui.components.PagerTabs
+import ro.bankar.app.ui.components.VerifiableField
+import ro.bankar.app.ui.components.verifiableStateOf
 import ro.bankar.app.ui.main.home.Amount
 import ro.bankar.app.ui.main.home.InfoCard
 import ro.bankar.app.ui.main.home.topBorder
@@ -47,7 +74,9 @@ class BankAccountScreenModel(private val repository: Repository, private val acc
 
     private var _showNewCardDialog by mutableStateOf(false)
     var showNewCardDialog
-        set(value) { _showNewCardDialog = value; if (value) newCardName.value = "" }
+        set(value) {
+            _showNewCardDialog = value; if (value) newCardName.value = ""
+        }
         get() = _showNewCardDialog
 
     var newCardLoading by mutableStateOf(false)
@@ -76,7 +105,13 @@ class BankAccountScreenModel(private val repository: Repository, private val acc
 }
 
 @Composable
-fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: NavHostController, onNavigateToCard: (Int) -> Unit) {
+fun BankAccountScreen(
+    onDismiss: () -> Unit,
+    data: SBankAccount,
+    navigation: NavHostController,
+    onNavigateToCard: (Int) -> Unit,
+    onNavigateToStats: () -> Unit
+) {
     val repository = LocalRepository.current
     val context = LocalContext.current
     val model = viewModel<BankAccountScreenModel> { BankAccountScreenModel(repository, data.id, onNavigateToCard) }
@@ -115,20 +150,28 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
     NavScreen(
         onDismiss,
         title = R.string.bank_account,
-        isFABVisible = pagerState.currentPage == 1,
+        isFABVisible = true,
         snackbar = model.snackbar,
         fabContent = {
-            MultiFab(
-                Icons.Default.Add, listOf(
-                    MultiFabItem("virtual", R.drawable.bank_account, R.string.virtual_card),
-                    MultiFabItem("physical", R.drawable.baseline_card_24, R.string.physical_card),
-                )
-            ) { id ->
-                when (id) {
-                    "virtual" -> model.showNewCardDialog = true
-                    "physical" -> {}
+            AnimatedContent(pagerState.currentPage, label = "FAB swap") { page ->
+                when (page) {
+                    0 -> FloatingActionButton(onClick = onNavigateToStats) {
+                        Icon(painter = painterResource(R.drawable.baseline_bar_chart_24), contentDescription = stringResource(R.string.statistics))
+                    }
+                    1 -> MultiFab(
+                        Icons.Default.Add, listOf(
+                            MultiFabItem("virtual", R.drawable.bank_account, R.string.virtual_card),
+                            MultiFabItem("physical", R.drawable.baseline_card_24, R.string.physical_card),
+                        )
+                    ) { id ->
+                        when (id) {
+                            "virtual" -> model.showNewCardDialog = true
+                            "physical" -> {}
+                        }
+                    }
                 }
             }
+
         }
     ) {
         Column {
@@ -162,13 +205,18 @@ fun BankAccountScreen(onDismiss: () -> Unit, data: SBankAccount, navigation: Nav
                     }
                 }) {
                     when (tab) {
-                        0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            if (activity == null) RecentActivityShimmer()
-                            else if (activity.transfers.isEmpty() && activity.transactions.isEmpty() && activity.parties.isEmpty()) item {
-                                InfoCard(R.string.no_recent_activity)
-                            } else {
-                                val (_, transfers, transactions, parties) = activity
-                                RecentActivityContent(transfers, transactions, parties, navigation)
+                        0 -> {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                if (activity == null) RecentActivityShimmer()
+                                else if (activity.transfers.isEmpty() && activity.transactions.isEmpty() && activity.parties.isEmpty()) item {
+                                    InfoCard(R.string.no_recent_activity)
+                                } else {
+                                    val (_, transfers, transactions, parties) = activity
+                                    RecentActivityContent(transfers, transactions, parties, navigation)
+                                    item {
+                                        Spacer(modifier = Modifier.height(24.dp))
+                                    }
+                                }
                             }
                         }
                         1 -> Column(
@@ -197,7 +245,7 @@ private fun BankAccountScreenPreview() {
     AppTheme {
         val repository = LocalRepository.current
         val data = remember { runBlocking { repository.accounts.first()[0] } }
-        BankAccountScreen(onDismiss = {}, data = data, navigation = rememberMockNavController(), onNavigateToCard = {})
+        BankAccountScreen(onDismiss = {}, data = data, navigation = rememberMockNavController(), onNavigateToCard = {}, onNavigateToStats = {})
     }
 }
 
@@ -207,6 +255,6 @@ private fun BankAccountScreenPreviewDark() {
     AppTheme {
         val repository = LocalRepository.current
         val data = remember { runBlocking { repository.accounts.first()[1] } }
-        BankAccountScreen(onDismiss = {}, data = data, navigation = rememberMockNavController(), onNavigateToCard = {})
+        BankAccountScreen(onDismiss = {}, data = data, navigation = rememberMockNavController(), onNavigateToCard = {}, onNavigateToStats = {})
     }
 }

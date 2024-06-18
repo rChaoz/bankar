@@ -17,4 +17,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "BanKAR"
 
-include(":backend", ":frontend", ":common")
+include(":backend", ":frontend", ":common", ":notebooks")

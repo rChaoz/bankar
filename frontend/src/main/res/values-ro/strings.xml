@@ -344,4 +344,12 @@
     <string name="are_you_sure_delete_card">Sigur vrei să ștergi acest card? Acțiunea nu este reversibilă.</string>
     <string name="delete">Șterge</string>
     <string name="deleted_card">Card șters</string>
+    <string name="statistics">Statistici</string>
+    <string name="spending_per_month">Cheltuieli per luna</string>
+    <string name="per_month">Per lună</string>
+    <string name="detailed">Detaliat</string>
+    <string name="up_to">Până la</string>
+    <string name="change_month">Schimbă luna</string>
+    <string name="select_month">Alege luna</string>
+    <string name="detailed_spending">Cheltuieli detaliate</string>
 </resources>

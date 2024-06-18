@@ -25,6 +25,11 @@ fun Instant.here() = toLocalDateTime(TimeZone.currentSystemDefault())
 
 fun LocalDate.atEndOfDayIn(timeZone: TimeZone) = atTime(23, 59, 59, 999_999_999).toInstant(timeZone)
 
+/**
+ * Returns a copy of the date with the day set to 1.
+ */
+fun LocalDate.atStartOfMonth() = LocalDate(this.year, this.month, 1)
+
 // Formatting
 private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!
 private val longDateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy")!!

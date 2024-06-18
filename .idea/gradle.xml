@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/backend" />
             <option value="$PROJECT_DIR$/common" />
             <option value="$PROJECT_DIR$/frontend" />
+            <option value="$PROJECT_DIR$/notebooks" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="false" />

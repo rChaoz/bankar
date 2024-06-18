@@ -4,7 +4,11 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SizedIterable
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.not
+import org.jetbrains.exposed.sql.or
 import ro.bankar.amount
 import ro.bankar.banking.SCreditData
 import ro.bankar.banking.calcIBANCheckDigits
@@ -61,15 +65,17 @@ class BankAccount(id: EntityID<Int>) : IntEntity(id) {
         transfers.orderBy(BankTransfers.timestamp to SortOrder.DESC).serializable(user),
         cards.flatMap { it.transactions.serializable() },
         parties.orderBy(Parties.timestamp to SortOrder.DESC).filter { it.completed }.previewSerializable(),
+        baseSerializable()
     )
+
+    fun baseSerializable() =
+        SBankAccount(this.id.value, this.iban, this.type, this.balance.toDouble(), this.limit.toDouble(), this.currency, this.name, this.color, this.interest)
 }
 
 /**
  * Converts a list of BankAccounts to a list of serializable objects
  */
-fun SizedIterable<BankAccount>.serializable() = orderBy(BankAccounts.id to SortOrder.ASC).filter { !it.closed }.map {
-    SBankAccount(it.id.value, it.iban, it.type, it.balance.toDouble(), it.limit.toDouble(), it.currency, it.name, it.color, it.interest)
-}
+fun SizedIterable<BankAccount>.serializable() = orderBy(BankAccounts.id to SortOrder.ASC).filter { !it.closed }.map(BankAccount::baseSerializable)
 
 internal object BankAccounts : IntIdTable(columnName = "bank_account_id") {
     val iban = varchar("iban", 34).uniqueIndex().clientDefault {

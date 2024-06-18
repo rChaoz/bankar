@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
@@ -36,6 +37,7 @@ import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -138,6 +140,21 @@ suspend fun SnackbarHostState.show(message: String) = coroutineScope { showSnack
 @Composable
 fun <T, R> Flow<T>.mapCollectAsState(initial: R, mapFunc: suspend (T) -> R) = produceState(initialValue = initial) {
     map(mapFunc).collect { value = it }
+}
+
+@Composable
+fun <T> MutableStateFlow<T>.collectAsMutableState(): MutableState<T> {
+    val value by collectAsState()
+    return remember {
+        object : MutableState<T> {
+            override var value: T
+                get() = value
+                set(value) { this@collectAsMutableState.value = value }
+
+            override fun component1(): T = value
+            override fun component2(): (T) -> Unit = { this.value = it }
+        }
+    }
 }
 
 // Read-only constant states

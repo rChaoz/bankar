@@ -36,7 +36,8 @@ data class SBankAccountData(
     val cards: List<SBankCard>,
     val transfers: List<SBankTransfer>,
     val transactions: List<SCardTransaction>,
-    val parties: List<SPartyPreview>
+    val parties: List<SPartyPreview>,
+    val base: SBankAccount
 )
 
 sealed class SBankAccountBase {

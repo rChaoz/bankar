@@ -347,4 +347,12 @@
     <string name="are_you_sure_delete_card">Are you sure you want to delete this card? This action is not reversible.</string>
     <string name="delete">Delete</string>
     <string name="deleted_card">Deleted card</string>
+    <string name="statistics">Statistics</string>
+    <string name="spending_per_month">Spending per month</string>
+    <string name="per_month">Per month</string>
+    <string name="detailed">Detailed</string>
+    <string name="up_to">Up to</string>
+    <string name="change_month">Change month</string>
+    <string name="select_month">Select month</string>
+    <string name="detailed_spending">Detailed spending</string>
 </resources>
