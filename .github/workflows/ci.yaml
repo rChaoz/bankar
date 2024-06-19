@@ -1,0 +1,19 @@
+name: Continuous Integration
+on:
+  push: {}
+  pull_request: {}
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Build & test all
+        run: ./gradlew build
