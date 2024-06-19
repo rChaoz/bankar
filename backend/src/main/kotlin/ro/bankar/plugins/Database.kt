@@ -1,8 +1,6 @@
 package ro.bankar.plugins
 
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.DatabaseConfig
-import org.jetbrains.exposed.sql.Schema
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import ro.bankar.database.*
@@ -16,9 +14,8 @@ private val tables = arrayOf(
 
 private fun Database.Companion.connect() = this.connect(
     url = System.getenv("DB_URL")!!.let { if (it.startsWith("jdbc:")) it else "jdbc:$it" },
-    user = System.getenv("DB_USER")!!,
-    password = System.getenv("DB_PASS")!!,
-    driver = "org.postgresql.Driver",
+    user = System.getenv("DB_USER") ?: "",
+    password = System.getenv("DB_PASS") ?: ""
 )
 
 fun Database.Companion.reset() {

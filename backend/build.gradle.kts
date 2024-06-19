@@ -31,6 +31,12 @@ ktor {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+    // When DB URL is not set, use in-memory H2 database
+    if ("DB_URL" !in environment) environment("DB_URL", "jdbc:h2:mem:regular;DB_CLOSE_DELAY=-1;")
+}
+
 dependencies {
 	implementation(project(":common"))
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
@@ -44,7 +50,6 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
     implementation("io.ktor:ktor-server-sessions-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-freemarker-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-hsts:$ktor_version")
     implementation("io.ktor:ktor-client-cio-jvm:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation-jvm:$ktor_version")
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
@@ -56,7 +61,8 @@ dependencies {
     implementation("net.axay:simplekotlinmail-core:1.4.0")
     implementation("com.github.librepdf:openpdf:1.3.30")
     implementation(libs.firebase.admin)
-    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version")
     testImplementation("io.ktor:ktor-server-test-host-jvm:$ktor_version")
+    testImplementation("com.h2database:h2:2.2.224")
 }

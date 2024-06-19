@@ -4,7 +4,6 @@ import freemarker.cache.ClassTemplateLoader
 import io.ktor.server.application.*
 import io.ktor.server.freemarker.*
 import io.ktor.server.plugins.autohead.*
-import io.ktor.server.plugins.hsts.*
 import org.jetbrains.exposed.sql.Database
 import ro.bankar.api.SmsService
 import ro.bankar.database.loadStaticData
@@ -34,6 +33,5 @@ fun Application.module() {
     install(FreeMarker) {
         templateLoader = ClassTemplateLoader(this::class.java.classLoader, "payment")
     }
-    if (!DEV_MODE) install(HSTS)
     configureRouting()
 }
