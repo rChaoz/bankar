@@ -35,6 +35,8 @@ tasks.test {
     useJUnitPlatform()
     // When DB URL is not set, use in-memory H2 database
     if ("DB_URL" !in environment) environment("DB_URL", "jdbc:h2:mem:regular;DB_CLOSE_DELAY=-1;")
+    // Set default @TestInstance lifecycle to PER_CLASS
+    //systemProperty("junit.jupiter.testinstance.lifecycle.default", "per_class")
 }
 
 dependencies {

@@ -1,31 +1,30 @@
 package ro.bankar.routing
 
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
-import kotlinx.datetime.LocalDate
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
-import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
-import ro.bankar.client
-import ro.bankar.model.SInitialLoginData
-import ro.bankar.model.SNewUser
-import ro.bankar.model.SSMSCodeData
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import ro.bankar.baseClient
+import ro.bankar.model.*
+import ro.bankar.resetDatabase
+import ro.bankar.testUser
+import kotlin.test.*
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 internal class UserAccountsTest {
     companion object {
-        private const val USERNAME = "test-user"
-        private const val PASSWORD = "Str0ngP@ss"
-    }
+        private lateinit var authToken: String
 
-    private lateinit var authToken: String
+        @JvmStatic
+        @BeforeAll
+        fun init() {
+            resetDatabase()
+        }
+    }
 
     /**
      * Should not be able to access protected routes without logging in
@@ -33,7 +32,7 @@ internal class UserAccountsTest {
     @Test
     @Order(0)
     fun testAccessDenied() = testApplication {
-        val client = client()
+        val client = baseClient()
         val response = client.get("profile")
         assertEquals(HttpStatusCode.Unauthorized, response.status)
     }
@@ -41,23 +40,10 @@ internal class UserAccountsTest {
     @Test
     @Order(1)
     fun testSignup() = testApplication {
-        val client = client()
+        val client = baseClient()
 
         var response = client.post("signup/initial") {
-            setBody(SNewUser(
-                email = "sample@email.com",
-                tag = USERNAME,
-                phone = "+40123456789",
-                password = PASSWORD,
-                firstName = "Test",
-                middleName = null,
-                lastName = "User",
-                dateOfBirth = LocalDate(2002, 2, 3),
-                countryCode = "RO",
-                state = "Bucuresti",
-                city = "Bucuresti",
-                address = "the address"
-            ))
+            setBody(testUser)
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -70,27 +56,26 @@ internal class UserAccountsTest {
         }
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertTrue { response.headers[HttpHeaders.Authorization]?.startsWith("Bearer ") ?: false }
-        authToken = response.headers[HttpHeaders.Authorization]!!
+        val token = response.headers[HttpHeaders.Authorization]
+        assertTrue { token?.startsWith("Bearer ") ?: false }
+        authToken = token!!
     }
 
     @Test
     @Order(2)
     fun testLogout() = testApplication {
-        val client = client()
-        val response = client.get("signOut") {
-            header(HttpHeaders.Authorization, authToken)
-        }
+        val client = baseClient(authToken)
+        val response = client.get("signOut")
         assertEquals(HttpStatusCode.OK, response.status)
     }
 
     @Test
     @Order(3)
     fun testLogin() = testApplication {
-        val client = client()
+        val client = baseClient()
 
         var response = client.post("login/initial") {
-            setBody(SInitialLoginData(USERNAME, PASSWORD))
+            setBody(SInitialLoginData(testUser.tag, testUser.password))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -103,6 +88,20 @@ internal class UserAccountsTest {
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue { response.headers[HttpHeaders.Authorization]?.startsWith("Bearer ") ?: false }
+        val token = response.headers[HttpHeaders.Authorization]
+        assertTrue { token?.startsWith("Bearer ") ?: false }
+        authToken = token!!
+    }
+
+    @Test
+    @Order(4)
+    fun testAccessGranted() = testApplication {
+        val client = baseClient(authToken)
+        val response = client.get("profile")
+        assertEquals(HttpStatusCode.OK, response.status)
+        when (val data = response.body<Response<SUser>>()) {
+            is ValueResponse -> assertEquals(testUser.tag, data.value.tag)
+            else -> fail("incorrect response type")
+        }
     }
 }
