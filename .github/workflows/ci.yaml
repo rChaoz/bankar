@@ -17,4 +17,4 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Build & test all
-        run: ./gradlew build
+        run: ./gradlew build --no-daemon

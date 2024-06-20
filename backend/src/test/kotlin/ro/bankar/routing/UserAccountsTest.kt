@@ -27,6 +27,17 @@ internal class UserAccountsTest {
 
     private lateinit var authToken: String
 
+    /**
+     * Should not be able to access protected routes without logging in
+     */
+    @Test
+    @Order(0)
+    fun testAccessDenied() = testApplication {
+        val client = client()
+        val response = client.get("profile")
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
     @Test
     @Order(1)
     fun testSignup() = testApplication {
