@@ -26,7 +26,7 @@ internal class BankAccountsTest {
         @BeforeAll
         fun init() {
             resetDatabase()
-            token = "Bearer " + transaction { User.createUser(testUser).createSessionToken() }
+            token = transaction { User.createUser(testUserA).createSessionToken() }
         }
     }
 

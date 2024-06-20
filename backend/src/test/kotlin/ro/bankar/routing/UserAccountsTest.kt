@@ -11,7 +11,7 @@ import org.junit.jupiter.api.TestMethodOrder
 import ro.bankar.baseClient
 import ro.bankar.model.*
 import ro.bankar.resetDatabase
-import ro.bankar.testUser
+import ro.bankar.testUserA
 import kotlin.test.*
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
@@ -43,7 +43,7 @@ internal class UserAccountsTest {
         val client = baseClient()
 
         var response = client.post("signup/initial") {
-            setBody(testUser)
+            setBody(testUserA)
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -75,7 +75,7 @@ internal class UserAccountsTest {
         val client = baseClient()
 
         var response = client.post("login/initial") {
-            setBody(SInitialLoginData(testUser.tag, testUser.password))
+            setBody(SInitialLoginData(testUserA.tag, testUserA.password))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -100,7 +100,7 @@ internal class UserAccountsTest {
         val response = client.get("profile")
         assertEquals(HttpStatusCode.OK, response.status)
         when (val data = response.body<Response<SUser>>()) {
-            is ValueResponse -> assertEquals(testUser.tag, data.value.tag)
+            is ValueResponse -> assertEquals(testUserA.tag, data.value.tag)
             else -> fail("incorrect response type")
         }
     }

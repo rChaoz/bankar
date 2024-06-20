@@ -25,7 +25,7 @@ internal fun ApplicationTestBuilder.baseClient(
     defaultRequest {
         contentType(ContentType.Application.Json)
         url.path("api/")
-        if (token != null) header(HttpHeaders.Authorization, token)
+        if (token != null) header(HttpHeaders.Authorization, if (token.startsWith("Bearer")) token else "Bearer $token")
         defaultRequest()
     }
     block()

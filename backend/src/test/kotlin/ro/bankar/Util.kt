@@ -12,7 +12,7 @@ internal fun resetDatabase() {
     Database.init()
 }
 
-internal val testUser = SNewUser(
+internal val testUserA = SNewUser(
     email = "sample@email.com",
     tag = "test-user",
     phone = "+40123456789",
@@ -25,4 +25,19 @@ internal val testUser = SNewUser(
     state = "Bucuresti",
     city = "Bucuresti",
     address = "the address"
+)
+
+internal val testUserB = SNewUser(
+    email = "sample2@email.com",
+    tag = "test-user2",
+    phone = "+40123456780",
+    password = "Str0ngP@ss",
+    firstName = "Another",
+    middleName = null,
+    lastName = "Tester",
+    dateOfBirth = LocalDate(2001, 3, 4),
+    countryCode = "RO",
+    state = "Bucuresti",
+    city = "Bucuresti",
+    address = "the address 2"
 )
