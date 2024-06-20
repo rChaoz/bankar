@@ -26,6 +26,7 @@ androidx-navigation = "2.7.7"
 firebase-bom = "33.1.0"
 firebase-admin = "9.1.1"
 vico = "1.14.0"
+commons-math = "2.2"
 
 [libraries]
 com-android-tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "com-android-tools-desugaring" }
@@ -71,6 +72,7 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
 firebase-admin = { group = "com.google.firebase", name = "firebase-admin", version.ref = "firebase-admin" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
+commons-math = { group = "org.apache.commons", name = "commons-math", version.ref = "commons-math" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle" }

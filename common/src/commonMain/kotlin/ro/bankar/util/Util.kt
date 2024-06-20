@@ -1,18 +1,6 @@
 package ro.bankar.util
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toJavaLocalDate
-import kotlinx.datetime.toJavaLocalDateTime
-import kotlinx.datetime.toJavaLocalTime
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.*
 import java.time.format.DateTimeFormatter
 
 fun Clock.nowHere() = now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -29,6 +17,11 @@ fun LocalDate.atEndOfDayIn(timeZone: TimeZone) = atTime(23, 59, 59, 999_999_999)
  * Returns a copy of the date with the day set to 1.
  */
 fun LocalDate.atStartOfMonth() = LocalDate(this.year, this.month, 1)
+
+/**
+ * Returns the number of days in the current month depicted by this date.
+ */
+fun LocalDate.daysInMonth() = atStartOfMonth().let { it.daysUntil(it + DatePeriod(months = 1)) }
 
 // Formatting
 private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")!!

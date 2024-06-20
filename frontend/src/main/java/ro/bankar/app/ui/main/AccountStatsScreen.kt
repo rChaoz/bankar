@@ -1,11 +1,6 @@
 package ro.bankar.app.ui.main
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -58,18 +53,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.*
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
-import kotlinx.datetime.toJavaLocalDate
-import kotlinx.datetime.toKotlinLocalDate
 import ro.bankar.app.R
 import ro.bankar.app.data.LocalRepository
 import ro.bankar.app.data.Repository
+import ro.bankar.app.ml.Features
+import ro.bankar.app.ml.LinearRegression
 import ro.bankar.app.ui.collectAsMutableState
 import ro.bankar.app.ui.components.NavScreen
 import ro.bankar.app.ui.components.PagerTabs
@@ -79,6 +70,7 @@ import ro.bankar.model.SBankTransfer
 import ro.bankar.model.SCardTransaction
 import ro.bankar.model.SDirection
 import ro.bankar.util.atStartOfMonth
+import ro.bankar.util.daysInMonth
 import ro.bankar.util.here
 import ro.bankar.util.todayHere
 import java.time.format.FormatStyle
@@ -122,16 +114,48 @@ class AccountStatsModel(repository: Repository, accountID: Int) : ViewModel() {
                     else -> throw IllegalStateException("impossible")
                 }
             }.toSortedMap()
-        var current = account.base.spendable
+        // Convert from map of spending per day to map of balance at day
+        var balance = account.base.spendable
         for (key in items.keys.reversed()) {
-            current += items[key]!!
-            items[key] = current
+            balance += items[key]!!
+            items[key] = balance
         }
-        val monthData = items.mapNotNull { (date, amount) ->
-            if (date.year != selectedMonth.year || date.month != selectedMonth.month) null
-            else entryOf(date.dayOfMonth, amount)
+
+        val monthData = mutableListOf<ChartEntry>()
+        val predictionData = mutableListOf<ChartEntry>()
+
+        val currentMonth = Clock.System.todayHere().atStartOfMonth()
+        if (selectedMonth > currentMonth) return@map emptyList()
+        else if (selectedMonth == currentMonth) {
+            val today = Clock.System.todayHere()
+            // Make a graph of current spending data
+            balance = account.base.spendable
+            for (day in today.dayOfMonth downTo 1) {
+                items[LocalDate(selectedMonth.year, selectedMonth.month, day)]?.let { balance = it }
+                monthData += entryOf(day, balance)
+            }
+            // Predict the spending for the rest of the month
+            val model = LinearRegression()
+            model.fit(items.keys.map(Features::fromDate).toTypedArray(), items.values.toDoubleArray())
+            for (day in selectedMonth.daysInMonth() downTo (today.dayOfMonth + 1)) {
+                predictionData += entryOf(day, model.predictPoint(Features.fromDate(LocalDate(selectedMonth.year, selectedMonth.month, day))))
+            }
+            if (predictionData.isNotEmpty()) predictionData += entryOf(today.dayOfMonth, items[today] ?: account.base.spendable)
+        } else {
+            // Get balance  at end of month
+            balance = items.tailMap(selectedMonth + DatePeriod(months = 1)).let {
+                if (it.isEmpty()) null else it[it.firstKey()]
+            } ?: account.base.spendable
+            // Generate chart data
+            for (day in selectedMonth.daysInMonth() downTo 1) {
+                items[LocalDate(selectedMonth.year, selectedMonth.month, day)]?.let { balance = it }
+                monthData += entryOf(day, balance)
+            }
         }
-        listOf(monthData)
+
+        monthData.reverse()
+        predictionData.reverse()
+        listOf(monthData, predictionData)
     }
     val perMonthModelProducer = ChartEntryModelProducer()
 
@@ -204,7 +228,7 @@ fun AccountStatsScreen(onDismiss: () -> Unit, accountID: Int) {
                                 spacing = 10.dp
                             ),
                             model.monthlyModelProducer,
-                            startAxis = rememberStartAxis(itemPlacer = itemPlacer, sizeConstraint = Axis.SizeConstraint.Exact(40f)),
+                            startAxis = rememberStartAxis(itemPlacer = itemPlacer, sizeConstraint = Axis.SizeConstraint.Exact(60f)),
                             bottomAxis = rememberBottomAxis(
                                 valueFormatter = { month, _ -> MonthNames.ENGLISH_ABBREVIATED.names[month.toInt() % 12] },
                             ),
@@ -221,6 +245,7 @@ fun AccountStatsScreen(onDismiss: () -> Unit, accountID: Int) {
                             modifier = Modifier.padding(end = 12.dp)
                         )
                     }
+
                     1 -> {
                         Text(text = stringResource(R.string.detailed_spending), style = MaterialTheme.typography.titleLarge)
 
