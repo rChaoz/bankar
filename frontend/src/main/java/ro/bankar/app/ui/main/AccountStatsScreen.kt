@@ -135,12 +135,13 @@ class AccountStatsModel(repository: Repository, accountID: Int) : ViewModel() {
                 monthData += entryOf(day, balance)
             }
             // Predict the spending for the rest of the month
-            val model = LinearRegression()
-            model.fit(items.keys.map(Features::fromDate).toTypedArray(), items.values.toDoubleArray())
-            for (day in selectedMonth.daysInMonth() downTo (today.dayOfMonth + 1)) {
-                predictionData += entryOf(day, model.predictPoint(Features.fromDate(LocalDate(selectedMonth.year, selectedMonth.month, day))))
+            if (items.size > 10) {
+                val model = LinearRegression()
+                model.fit(items.keys.map(Features::fromDate).toTypedArray(), items.values.toDoubleArray())
+                for (day in selectedMonth.daysInMonth() downTo (today.dayOfMonth + 1)) {
+                    predictionData += entryOf(day, model.predictPoint(Features.fromDate(LocalDate(selectedMonth.year, selectedMonth.month, day))))
+                }
             }
-            if (predictionData.isNotEmpty()) predictionData += entryOf(today.dayOfMonth, items[today] ?: account.base.spendable)
         } else {
             // Get balance  at end of month
             balance = items.tailMap(selectedMonth + DatePeriod(months = 1)).let {
